@@ -31,7 +31,7 @@ RpdViewer::RpdViewer(QWidget* parent, bool showBaseImage, bool showContoursImage
 	vmInitArgs.nOptions = 1;
 	vmInitArgs.options = new JavaVMOption[1];
 	string optionString = "-Djava.class.path=";
-	concatenatePath(optionString, "D:/Utilities/apache-jena-3.2.0/lib/", "*.jar");
+	concatenatePath(optionString, jenaLibPath, "*.jar");
 	vmInitArgs.options[0].optionString = const_cast<char*>(optionString.c_str());
 	vmInitArgs.ignoreUnrecognized = false;
 	JNI_CreateJavaVM(&vm_, reinterpret_cast<void**>(&env_), &vmInitArgs);

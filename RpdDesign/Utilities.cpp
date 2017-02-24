@@ -125,6 +125,8 @@ void drawSmoothCurve(Mat& designImage, const vector<Point> curve, float maxRadiu
 		polylines(designImage, *it, false, color, thickness, lineType);
 }
 
-RotatedRect teethEllipse;
-
 const int lineThicknessOfLevel[] = {1, 4, 7};
+
+const string jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";
+
+RotatedRect teethEllipse;

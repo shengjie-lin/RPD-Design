@@ -34,10 +34,6 @@ void concatenatePath(string& path, const string& searchDirectory, const string& 
 
 string getClsSig(const char* clsStr);
 
-extern const int lineThicknessOfLevel[];
-
-extern RotatedRect teethEllipse;
-
 Point2f computeNormalDirection(const Point2f& point, float* angle);
 
 void computeInscribedCircle(const vector<Point>& points, float maxRadius, EllipticCurve& ellipticCurve, vector<Point>& tangentPoints);
@@ -55,3 +51,9 @@ Point roundToInt(const Point_<T>& point) { return Point(round(point.x), round(po
 
 template <typename T>
 Size roundToInt(const Size_<T>& size) { return Size(round(size.width), round(size.height)); }
+
+extern const int lineThicknessOfLevel[];
+
+extern const string jenaLibPath;
+
+extern RotatedRect teethEllipse;

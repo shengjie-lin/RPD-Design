@@ -5,7 +5,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Java\jdk1.8.0_121\include\win32;C:\Program Files\Java\jdk1.8.0_121\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(JDK_DIR)\include;$(JDK_DIR)\include\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Program Files\Java\jdk1.8.0_121\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
