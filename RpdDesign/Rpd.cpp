@@ -2,7 +2,6 @@
 
 #include "Rpd.h"
 #include "Utilities.h"
-/*#include "EllipticCurve.h"*/
 
 Rpd::Position::Position(int zone, int ordinal): zone(zone), ordinal(ordinal) {}
 
