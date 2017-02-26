@@ -1,8 +1,5 @@
 #pragma once
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <QImage>
 
 #include "EllipticCurve.h"
@@ -22,10 +19,10 @@ Size qSize2Size(const QSize& size);
 QSize size2QSize(const Size& size);
 
 template <typename T>
-T degree2Radian(T degree) { return degree / 180 * M_PI; }
+T degree2Radian(T degree) { return degree / 180 * CV_PI; }
 
 template <typename T>
-T radian2Degree(T radian) { return radian / M_PI * 180; }
+T radian2Degree(T radian) { return radian / CV_PI * 180; }
 
 template <typename T>
 Point2f rotate(const Point_<T>& point, float angle) { return Point2f(point.x * cos(angle) - point.y * sin(angle), point.y * cos(angle) + point.x * sin(angle)); }

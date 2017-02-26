@@ -81,8 +81,8 @@ string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
 Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	auto direction = point - teethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degree2Radian(teethEllipse.angle);
-	if (thisAngle < -M_PI)
-		thisAngle += M_PI * 2;
+	if (thisAngle < -CV_PI)
+		thisAngle += CV_PI * 2;
 	if (angle)
 		*angle = thisAngle;
 	auto normalDirection = Point2f(pow(teethEllipse.size.height, 2) * cos(thisAngle), pow(teethEllipse.size.width, 2) * sin(thisAngle));
@@ -96,7 +96,7 @@ void computeInscribedCircle(const vector<Point>& anglePoints, float maxRadius, E
 	auto sinTheta = d1.cross(d2);
 	auto theta = asin(abs(sinTheta));
 	if (d1.dot(d2) < 0)
-		theta = M_PI - theta;
+		theta = CV_PI - theta;
 	auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
 	ellipticCurve = EllipticCurve(anglePoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radian2Degree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radian2Degree(theta));
 	auto l = radius / tan(theta / 2);

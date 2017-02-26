@@ -5,7 +5,7 @@
 
 Tooth::Tooth(const vector<Point>& contour): contour_(contour) {
 	auto moment = moments(contour_);
-	radius_ = sqrt(moment.m00 / M_PI);
+	radius_ = sqrt(moment.m00 / CV_PI);
 	centroid_ = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 }
 
@@ -47,16 +47,16 @@ void Tooth::setNormalDirection(const Point2f& normalDirection) { normalDirection
 
 void Tooth::findAnglePoints(int zoneNo) {
 	auto signVal = 1 - zoneNo % 2 * 2;
-	float deltaAngle = M_PI / 180;
+	float deltaAngle = CV_PI / 180;
 	int angle;
 	float targetAngle;
 	if (signVal == 1) {
 		angle = 0;
-		targetAngle = M_PI_2;
+		targetAngle = CV_PI / 2;
 	}
 	else {
 		angle = 359;
-		targetAngle = M_PI_2 * 3 - deltaAngle;
+		targetAngle = CV_PI / 2 * 3 - deltaAngle;
 	}
 	auto nPoints = contour_.size();
 	auto j = 0;

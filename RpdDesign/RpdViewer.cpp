@@ -63,7 +63,7 @@ void RpdViewer::analyzeBaseImage() {
 	sortIdx(angles, idx, SORT_ASCENDING);
 	vector<vector<uint8_t>> isInZone(4);
 	for (auto i = 0; i < 4; ++i)
-		inRange(angles, M_PI_2 * (i - 2), M_PI_2 * (i - 1), isInZone[i]);
+		inRange(angles, CV_PI / 2 * (i - 2), CV_PI / 2 * (i - 1), isInZone[i]);
 	for (auto i = 0; i < nTeeth; ++i) {
 		auto no = idx[i];
 		for (auto j = 0; j < 4; ++j)
