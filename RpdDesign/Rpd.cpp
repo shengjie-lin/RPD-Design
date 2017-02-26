@@ -2,6 +2,7 @@
 
 #include "Rpd.h"
 #include "Utilities.h"
+/*#include "EllipticCurve.h"*/
 
 Rpd::Position::Position(int zone, int ordinal): zone(zone), ordinal(ordinal) {}
 
@@ -203,7 +204,7 @@ void DentureBase::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) con
 	auto avgRadius = sumOfRadii / count;
 	for (auto i = 0; i < curve.size(); ++i)
 		curve[i] += roundToInt(computeNormalDirection(curve[i], nullptr) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0.25 : 1.6));
-	drawSmoothCurve(designImage, curve, avgRadius * 5, 0, lineThicknessOfLevel[2]);
+	polylines(designImage, computeSmoothCurve(curve, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithRangedSlots(startPosition, endPosition) {}
@@ -266,8 +267,8 @@ void EdentulousSpace::draw(Mat& designImage, const vector<vector<Tooth>>& teeth)
 		curve1[i] = curve[i] + delta;
 		curve2[i] = curve[i] - delta;
 	}
-	drawSmoothCurve(designImage, curve1, avgRadius * 5, 0, lineThicknessOfLevel[2]);
-	drawSmoothCurve(designImage, curve2, avgRadius * 5, 0, lineThicknessOfLevel[2]);
+	polylines(designImage, computeSmoothCurve(curve1, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, computeSmoothCurve(curve2, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
@@ -324,7 +325,7 @@ void IBar::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	inclination = radian2Degree(inclination);
 	if (t > 0)
 		t -= 180;
-	EllipticCurve(center, roundToInt(Size(a, b)), inclination, t, t + 180).draw(designImage, 0, lineThicknessOfLevel[2]);
+	ellipse(designImage, center, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 LingualRest::LingualRest(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
@@ -390,10 +391,16 @@ void PalatalPlate::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) co
 		Plating(Position(it->zone, it->ordinal)).draw(designImage, teeth);
 	vector<Point> curve;
 	auto zone = startPosition_.zone;
-	for (auto ordinal = startPosition_.ordinal;ordinal<=endPosition_.ordinal;++ordinal) {
+	for (auto ordinal = startPosition_.ordinal; ordinal <= endPosition_.ordinal; ++ordinal) {
+		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);
+		curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+	}
+	zone = endPosition_.zone;
+	for (auto ordinal = endPosition_.ordinal; ordinal >= startPosition_.ordinal; --ordinal) {
 		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 	}
+	polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 Plating::Plating(const Position& position): RpdWithSingleSlot(position) {}
@@ -417,9 +424,9 @@ void RingClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	vector<Point> curve;
 	if (position_.zone < 2)
-		curve = tooth.getCurve(60, 0, false);
+		curve = tooth.getCurve(60, 0);
 	else
-		curve = tooth.getCurve(0, 300, false);
+		curve = tooth.getCurve(0, 300);
 	if (material_ == CAST) {
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 		OcclusalRest(position_, RpdWithDirection::DISTAL).draw(designImage, teeth);

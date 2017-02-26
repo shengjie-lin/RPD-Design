@@ -8,7 +8,7 @@ public:
 	explicit Tooth(const vector<Point>& contour);
 	vector<Point> getContour() const;
 	Point getAnglePoint(int angle) const;
-	vector<Point> getCurve(int startAngle, int endAngle, bool shallReverse = false, bool isConvex = true) const;
+	vector<Point> getCurve(int startAngle, int endAngle, bool isConvex = true) const;
 	Point2f getCentroid() const;
 	void setNormalDirection(const Point2f& normalDirection);
 	void findAnglePoints(int zoneNo);

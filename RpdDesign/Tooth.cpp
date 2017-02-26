@@ -13,13 +13,11 @@ vector<Point> Tooth::getContour() const { return contour_; }
 
 Point Tooth::getAnglePoint(int angle) const { return contour_[anglePointIndices_[angle]]; }
 
-vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool shallReverse, bool isConvex) const {
+vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool isConvex) const {
 	auto midAngle = (startAngle + endAngle) / 2;
 	if (startAngle > endAngle)
 		midAngle = (midAngle + 180) % 360;
 	auto startIdx = anglePointIndices_[startAngle], midIdx = anglePointIndices_[midAngle], endIdx = anglePointIndices_[endAngle];
-	if (shallReverse)
-		swap(startIdx, endIdx);
 	vector<Point> curve;
 	if ((midIdx - startIdx) * (endIdx - midIdx) >= 0)
 		if (startIdx < endIdx)

@@ -2,9 +2,8 @@
 
 #include <QImage>
 
-#include "EllipticCurve.h"
-
 using namespace std;
+using namespace cv;
 
 Mat qImage2Mat(const QImage& inputImage);
 
@@ -33,9 +32,7 @@ string getClsSig(const char* clsStr);
 
 Point2f computeNormalDirection(const Point2f& point, float* angle);
 
-void computeInscribedCircle(const vector<Point>& points, float maxRadius, EllipticCurve& ellipticCurve, vector<Point>& tangentPoints);
-
-void drawSmoothCurve(Mat& designImage, const vector<Point> curve, float maxRadius, const Scalar& color, int thickness, LineTypes lineType = LINE_AA);
+vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius);
 
 template <typename T>
 Point2f normalize(const Point_<T>& point) { return static_cast<Point2f>(point) / norm(point); }

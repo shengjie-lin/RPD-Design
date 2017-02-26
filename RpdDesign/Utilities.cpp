@@ -5,6 +5,7 @@
 #include <QMessageBox>
 
 #include "Utilities.h"
+#include "EllipticCurve.h"
 
 Mat qImage2Mat(const QImage& inputImage) {
 	switch (inputImage.format()) {
@@ -89,40 +90,26 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	return normalDirection / norm(normalDirection);
 }
 
-void computeInscribedCircle(const vector<Point>& anglePoints, float maxRadius, EllipticCurve& ellipticCurve, vector<Point>& tangentPoints) {
-	Point2f v1 = anglePoints[0] - anglePoints[1], v2 = anglePoints[2] - anglePoints[1];
-	auto l1 = norm(v1), l2 = norm(v2);
-	auto d1 = v1 / l1, d2 = v2 / l2;
-	auto sinTheta = d1.cross(d2);
-	auto theta = asin(abs(sinTheta));
-	if (d1.dot(d2) < 0)
-		theta = CV_PI - theta;
-	auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
-	ellipticCurve = EllipticCurve(anglePoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radian2Degree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radian2Degree(theta));
-	auto l = radius / tan(theta / 2);
-	tangentPoints.clear();
-	tangentPoints.push_back(anglePoints[1] + roundToInt(d1 * l));
-	tangentPoints.push_back(anglePoints[1] + roundToInt(d2 * l));
-}
-
-void drawSmoothCurve(Mat& designImage, const vector<Point> curve, float maxRadius, const Scalar& color, int thickness, LineTypes lineType) {
-	vector<Point> lineSegment(2), tangentPoints;
-	vector<EllipticCurve> ellipticCurves;
-	vector<vector<Point>> lineSegments;
-	lineSegment[0] = curve[0];
+vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius) {
+	vector<Point> smoothCurve = {curve[0]};
+	auto tangentPoint = curve[0];
 	for (auto it = curve.begin() + 1; it < curve.end() - 1; ++it) {
-		ellipticCurves.push_back(EllipticCurve());
-		computeInscribedCircle({lineSegment[0], *it, *(it + 1)}, maxRadius, ellipticCurves.back(), tangentPoints);
-		lineSegment[1] = tangentPoints[0];
-		lineSegments.push_back(lineSegment);
-		lineSegment[0] = tangentPoints[1];
+		vector<Point> anglePoints = { tangentPoint, *it, *(it + 1) };
+		Point2f v1 = anglePoints[0] - anglePoints[1], v2 = anglePoints[2] - anglePoints[1];
+		auto l1 = norm(v1), l2 = norm(v2);
+		auto d1 = v1 / l1, d2 = v2 / l2;
+		auto sinTheta = d1.cross(d2);
+		auto theta = asin(abs(sinTheta));
+		if (d1.dot(d2) < 0)
+			theta = CV_PI - theta;
+		auto radius = min({ maxRadius, static_cast<float>(min({ l1, l2 }) * tan(theta / 2) / 2) });
+		tangentPoint = anglePoints[1] + roundToInt(d2 * radius / tan(theta / 2));
+		auto ellipticCurve = EllipticCurve(anglePoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radian2Degree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radian2Degree(theta), sinTheta > 0).getCurve();
+		
+		smoothCurve.insert(smoothCurve.end(), ellipticCurve.begin(), ellipticCurve.end());
 	}
-	lineSegment[1] = curve.back();
-	lineSegments.push_back(lineSegment);
-	for (auto it = ellipticCurves.begin(); it < ellipticCurves.end(); ++it)
-		it->draw(designImage, color, thickness, lineType);
-	for (auto it = lineSegments.begin(); it < lineSegments.end(); ++it)
-		polylines(designImage, *it, false, color, thickness, lineType);
+	smoothCurve.push_back(curve.back());
+	return smoothCurve;
 }
 
 const int lineThicknessOfLevel[] = {1, 4, 7};

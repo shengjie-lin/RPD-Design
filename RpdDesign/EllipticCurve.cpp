@@ -2,13 +2,18 @@
 
 #include "EllipticCurve.h"
 
-EllipticCurve::EllipticCurve(): inclination_(0), startAngle_(0), endAngle_(0) {}
+EllipticCurve::EllipticCurve(): inclination_(0), startAngle_(0), endAngle_(0), shallReverse_(false) {}
 
-EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float endAngle): EllipticCurve(center, axes, inclination, 0, endAngle) {}
+EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float endAngle, bool shallReverse): EllipticCurve(center, axes, inclination, 0, endAngle, shallReverse) {}
 
-EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float startAngle, float endAngle): center_(center), axes_(axes), inclination_(inclination), startAngle_(startAngle), endAngle_(endAngle) {}
+EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float startAngle, float endAngle, bool shallReverse): center_(center), axes_(axes), inclination_(inclination), startAngle_(startAngle), endAngle_(endAngle), shallReverse_(shallReverse) {}
 
-void EllipticCurve::draw(Mat& designImage, const Scalar& color, int thickness, LineTypes lineType) const {
-	if (endAngle_ - startAngle_ > 0.5)
-		ellipse(designImage, center_, axes_, inclination_, startAngle_, endAngle_, color, thickness, lineType);
+vector<Point> EllipticCurve::getCurve() const {
+	vector<Point> curve;
+	if (endAngle_ - startAngle_ > 0.5) {
+		ellipse2Poly(center_, axes_, inclination_, startAngle_, endAngle_, 1, curve);
+		if (shallReverse_)
+			return vector<Point>(curve.rbegin(), curve.rend());
+	}
+	return curve;
 }
