@@ -113,9 +113,9 @@ void Clasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	vector<Point> curve;
 	if (direction_ == MESIAL)
-		curve = tooth.getCurve(60, 300, false);
+		curve = tooth.getCurve(60, 300);
 	else
-		curve = tooth.getCurve(240, 120, false);
+		curve = tooth.getCurve(240, 120);
 	if (material_ == CAST)
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	else
@@ -388,13 +388,18 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* env, jmethodID midGetIn
 void PalatalPlate::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	for (auto it = lingualConfrontations_.begin(); it < lingualConfrontations_.end(); ++it)
 		Plating(Position(it->zone, it->ordinal)).draw(designImage, teeth);
-	/*TODO*/
+	vector<Point> curve;
+	auto zone = startPosition_.zone;
+	for (auto ordinal = startPosition_.ordinal;ordinal<=endPosition_.ordinal;++ordinal) {
+		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);
+		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+	}
 }
 
 Plating::Plating(const Position& position): RpdWithSingleSlot(position) {}
 
 void Plating::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	auto curve = teeth[position_.zone][position_.ordinal].getCurve(180, 359);
+	auto curve = teeth[position_.zone][position_.ordinal].getCurve(180, 0);
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 

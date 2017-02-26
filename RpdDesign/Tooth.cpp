@@ -13,29 +13,51 @@ vector<Point> Tooth::getContour() const { return contour_; }
 
 Point Tooth::getAnglePoint(int angle) const { return contour_[anglePointIndices_[angle]]; }
 
-vector<Point> Tooth::getCurve(int angle1, int angle2, bool isMinorArc, bool isConvex) const {
-	auto minMaxIndices = minmax({anglePointIndices_[angle1], anglePointIndices_[angle2]});
+vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool shallReverse, bool isConvex) const {
+	auto midAngle = (startAngle + endAngle) / 2;
+	if (startAngle > endAngle)
+		midAngle = (midAngle + 180) % 360;
+	auto startIdx = anglePointIndices_[startAngle], midIdx = anglePointIndices_[midAngle], endIdx = anglePointIndices_[endAngle];
+	if (shallReverse)
+		swap(startIdx, endIdx);
 	vector<Point> curve;
-	if ((static_cast<Point2f>(contour_[minMaxIndices.first]) - centroid_).cross(static_cast<Point2f>(contour_[minMaxIndices.second]) - centroid_) > 0 ^ isMinorArc)
-		curve = vector<Point>(contour_.begin() + minMaxIndices.first, contour_.begin() + minMaxIndices.second + 1);
+	if ((midIdx - startIdx) * (endIdx - midIdx) >= 0)
+		if (startIdx < endIdx)
+			curve = vector<Point>(contour_.begin() + startIdx, contour_.begin() + endIdx + 1);
+		else
+			curve = vector<Point>(contour_.rend() - startIdx - 1, contour_.rend() - endIdx);
+	else if (startIdx < endIdx) {
+		curve = vector<Point>(contour_.rend() - startIdx - 1, contour_.rend());
+		curve.insert(curve.end(), contour_.rbegin(), contour_.rend() - endIdx);
+	}
 	else {
-		curve = vector<Point>(contour_.begin() + minMaxIndices.second, contour_.end());
-		curve.insert(curve.end(), contour_.begin(), contour_.begin() + minMaxIndices.first + 1);
+		curve = vector<Point>(contour_.begin() + startIdx, contour_.end());
+		curve.insert(curve.end(), contour_.begin(), contour_.begin() + endIdx + 1);
 	}
 	if (isConvex) {
 		vector<int> convexIdx;
 		convexHull(curve, convexIdx);
 		auto minMaxIts = minmax_element(convexIdx.begin(), convexIdx.end());
 		vector<Point> convexCurve;
-		if (minMaxIts.first < minMaxIts.second) {
-			for (auto it = minMaxIts.second; it < convexIdx.end(); ++it)
+		if (minMaxIts.first < minMaxIts.second)
+			if ((minMaxIts.second - minMaxIts.first) * 2 >= convexIdx.size())
+				for (auto it = minMaxIts.first; it <= minMaxIts.second; ++it)
+					convexCurve.push_back(curve[*it]);
+			else {
+				for (auto it = vector<int>::reverse_iterator(minMaxIts.first) - 1; it < convexIdx.rend(); ++it)
+					convexCurve.push_back(curve[*it]);
+				for (auto it = convexIdx.rbegin(); it < vector<int>::reverse_iterator(minMaxIts.second); ++it)
+					convexCurve.push_back(curve[*it]);
+			}
+		else if ((minMaxIts.first - minMaxIts.second) * 2 >= convexIdx.size())
+			for (auto it = vector<int>::reverse_iterator(minMaxIts.first) - 1; it < vector<int>::reverse_iterator(minMaxIts.second); ++it)
 				convexCurve.push_back(curve[*it]);
-			for (auto it = convexIdx.begin(); it <= minMaxIts.first; ++it)
+		else {
+			for (auto it = minMaxIts.first; it < convexIdx.end(); ++it)
+				convexCurve.push_back(curve[*it]);
+			for (auto it = convexIdx.begin(); it <= minMaxIts.second; ++it)
 				convexCurve.push_back(curve[*it]);
 		}
-		else
-			for (auto it = minMaxIts.second; it <= minMaxIts.first; ++it)
-				convexCurve.push_back(curve[*it]);
 		return convexCurve;
 	}
 	return curve;
