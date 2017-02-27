@@ -29,7 +29,8 @@ private:
 	};
 
 	static map<string, RpdClass> rpdMapping_;
-	Mat baseImage_, designImage_, curImage_;
+	vector<Mat> designImages_ = vector<Mat>(2);
+	Mat baseImage_, curImage_;
 	QSize imageSize_;
 	bool hasImage_ = false, hasRpd_ = false, showBaseImage_, showDesignImage_;
 	vector<vector<Tooth>> teeth_ = vector<vector<Tooth>>(4);

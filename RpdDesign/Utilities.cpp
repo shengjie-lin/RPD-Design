@@ -93,8 +93,8 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius) {
 	vector<Point> smoothCurve = {curve[0]};
 	auto tangentPoint = curve[0];
-	for (auto it = curve.begin() + 1; it < curve.end() - 1; ++it) {
-		vector<Point> anglePoints = { tangentPoint, *it, *(it + 1) };
+	for (auto point = curve.begin() + 1; point < curve.end() - 1; ++point) {
+		vector<Point> anglePoints = {tangentPoint, *point, *(point + 1)};
 		Point2f v1 = anglePoints[0] - anglePoints[1], v2 = anglePoints[2] - anglePoints[1];
 		auto l1 = norm(v1), l2 = norm(v2);
 		auto d1 = v1 / l1, d2 = v2 / l2;
@@ -102,10 +102,10 @@ vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius) {
 		auto theta = asin(abs(sinTheta));
 		if (d1.dot(d2) < 0)
 			theta = CV_PI - theta;
-		auto radius = min({ maxRadius, static_cast<float>(min({ l1, l2 }) * tan(theta / 2) / 2) });
+		auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
 		tangentPoint = anglePoints[1] + roundToInt(d2 * radius / tan(theta / 2));
 		auto ellipticCurve = EllipticCurve(anglePoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radian2Degree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radian2Degree(theta), sinTheta > 0).getCurve();
-		
+
 		smoothCurve.insert(smoothCurve.end(), ellipticCurve.begin(), ellipticCurve.end());
 	}
 	smoothCurve.push_back(curve.back());

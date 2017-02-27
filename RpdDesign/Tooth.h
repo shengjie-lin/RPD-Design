@@ -10,6 +10,7 @@ public:
 	Point getAnglePoint(int angle) const;
 	vector<Point> getCurve(int startAngle, int endAngle, bool isConvex = true) const;
 	Point2f getCentroid() const;
+	Point2f getNormalDirection() const;
 	void setNormalDirection(const Point2f& normalDirection);
 	void findAnglePoints(int zoneNo);
 	float getRadius() const;

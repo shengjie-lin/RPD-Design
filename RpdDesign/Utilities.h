@@ -30,7 +30,7 @@ void concatenatePath(string& path, const string& searchDirectory, const string& 
 
 string getClsSig(const char* clsStr);
 
-Point2f computeNormalDirection(const Point2f& point, float* angle);
+Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
 
 vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius);
 

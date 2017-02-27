@@ -97,19 +97,19 @@ AkersClasp* AkersClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, j
 	return new AkersClasp(position, claspMaterial, claspTipDirection);
 }
 
-void AkersClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void AkersClasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	if (material_ == UNSPECIFIED) {
-		HalfClasp(position_, buccalMaterial_, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
-		HalfClasp(position_, lingualMaterial_, direction_, HalfClasp::LINGUAL).draw(designImage, teeth);
+		HalfClasp(position_, buccalMaterial_, direction_, HalfClasp::BUCCAL).draw(designImages, teeth);
+		HalfClasp(position_, lingualMaterial_, direction_, HalfClasp::LINGUAL).draw(designImages, teeth);
 	}
 	else
-		Clasp(position_, material_, direction_).draw(designImage, teeth);
-	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
+		Clasp(position_, material_, direction_).draw(designImages, teeth);
+	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImages, teeth);
 }
 
 Clasp::Clasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction) {}
 
-void Clasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void Clasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	vector<Point> curve;
 	if (direction_ == MESIAL)
@@ -117,9 +117,9 @@ void Clasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	else
 		curve = tooth.getCurve(240, 120);
 	if (material_ == CAST)
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	else
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
 }
 
 CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material): RpdWithRangedSlots(startPosition, endPosition), RpdWithMaterial(material) {}
@@ -132,16 +132,16 @@ CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv* env, jmethodID midGet
 	return new CombinedClasp(startPosition, endPosition, claspMaterial);
 }
 
-void CombinedClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	Clasp(endPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
-	OcclusalRest(endPosition_, RpdWithDirection::MESIAL).draw(designImage, teeth);
+void CombinedClasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
+	Clasp(endPosition_, material_, RpdWithDirection::DISTAL).draw(designImages, teeth);
+	OcclusalRest(endPosition_, RpdWithDirection::MESIAL).draw(designImages, teeth);
 	if (startPosition_.zone == endPosition_.zone) {
-		Clasp(startPosition_, material_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-		OcclusalRest(startPosition_, RpdWithDirection::DISTAL).draw(designImage, teeth);
+		Clasp(startPosition_, material_, RpdWithDirection::MESIAL).draw(designImages, teeth);
+		OcclusalRest(startPosition_, RpdWithDirection::DISTAL).draw(designImages, teeth);
 	}
 	else {
-		Clasp(startPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
-		OcclusalRest(startPosition_, RpdWithDirection::MESIAL).draw(designImage, teeth);
+		Clasp(startPosition_, material_, RpdWithDirection::DISTAL).draw(designImages, teeth);
+		OcclusalRest(startPosition_, RpdWithDirection::MESIAL).draw(designImages, teeth);
 	}
 }
 
@@ -153,7 +153,7 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* env, jmethodID midGetInt,
 	return new DentureBase(startPosition, endPosition);
 }
 
-void DentureBase::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void DentureBase::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	vector<Point> curve;
 	const Tooth *curTooth = nullptr, *lastTooth = nullptr;
 	float sumOfRadii = 0;
@@ -202,8 +202,8 @@ void DentureBase::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) con
 	curve.push_back(curve.back());
 	auto avgRadius = sumOfRadii / count;
 	for (auto i = 0; i < curve.size(); ++i)
-		curve[i] += roundToInt(computeNormalDirection(curve[i], nullptr) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0.25 : 1.6));
-	polylines(designImage, computeSmoothCurve(curve, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+		curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0.25 : 1.6));
+	polylines(designImages[1], computeSmoothCurve(curve, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithRangedSlots(startPosition, endPosition) {}
@@ -214,7 +214,7 @@ EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv* env, jmethodID mi
 	return new EdentulousSpace(startPosition, endPosition);
 }
 
-void EdentulousSpace::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void EdentulousSpace::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	vector<Point> curve;
 	const Tooth *curTooth = nullptr, *lastTooth = nullptr;
 	float sumOfRadii = 0;
@@ -262,28 +262,28 @@ void EdentulousSpace::draw(Mat& designImage, const vector<vector<Tooth>>& teeth)
 	auto avgRadius = sumOfRadii / count;
 	vector<Point> curve1(curve.size()), curve2(curve.size());
 	for (auto i = 0; i < curve.size(); ++i) {
-		auto delta = roundToInt(computeNormalDirection(curve[i], nullptr) * avgRadius * 0.25);
+		auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 0.25);
 		curve1[i] = curve[i] + delta;
 		curve2[i] = curve[i] - delta;
 	}
-	polylines(designImage, computeSmoothCurve(curve1, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, computeSmoothCurve(curve2, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImages[1], computeSmoothCurve(curve1, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImages[1], computeSmoothCurve(curve2, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
 
-void GuidingPlate::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void GuidingPlate::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	Point centroid = tooth.getCentroid();
 	auto point = centroid + (tooth.getAnglePoint(180) - centroid) * 1.1;
-	auto direction = roundToInt(computeNormalDirection(point, nullptr) * tooth.getRadius() * 2 / 3);
-	line(designImage, point, point + direction, 0, lineThicknessOfLevel[2], LINE_AA);
-	line(designImage, point, point - direction, 0, lineThicknessOfLevel[2], LINE_AA);
+	auto direction = roundToInt(computeNormalDirection(point) * tooth.getRadius() * 2 / 3);
+	line(designImages[1], point, point + direction, 0, lineThicknessOfLevel[2], LINE_AA);
+	line(designImages[1], point, point - direction, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 HalfClasp::HalfClasp(const Position& position, const Material& material, const Direction& direction, const Side& side): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), side_(side) {}
 
-void HalfClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void HalfClasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	vector<Point> curve;
 	switch (direction_ * 2 + side_) {
@@ -302,19 +302,19 @@ void HalfClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const
 		default: ;
 	}
 	if (material_ == CAST)
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	else
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
 }
 
 IBar::IBar(const Position& position): RpdWithSingleSlot(position) {}
 
-void IBar::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void IBar::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	auto a = tooth.getRadius() * 1.5;
 	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
 	auto center = (point1 + point2) / 2;
-	auto direction = computeNormalDirection(center, nullptr);
+	auto direction = computeNormalDirection(center);
 	auto r = point1 - center;
 	auto rou = norm(r);
 	auto sinTheta = direction.cross(r) / rou;
@@ -324,7 +324,7 @@ void IBar::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	inclination = radian2Degree(inclination);
 	if (t > 0)
 		t -= 180;
-	ellipse(designImage, center, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
+	ellipse(designImages[1], center, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 LingualRest::LingualRest(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
@@ -337,10 +337,10 @@ LingualRest* LingualRest::createFromIndividual(JNIEnv* env, jmethodID midGetInt,
 	return new LingualRest(position, restMesialOrDistal);
 }
 
-void LingualRest::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void LingualRest::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto curve = teeth[position_.zone][position_.ordinal].getCurve(240, 300);
-	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
-	fillConvexPoly(designImage, curve, 0, LINE_AA);
+	polylines(designImages[1], curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
+	fillConvexPoly(designImages[1], curve, 0, LINE_AA);
 }
 
 OcclusalRest::OcclusalRest(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
@@ -353,7 +353,7 @@ OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv* env, jmethodID midGetIn
 	return new OcclusalRest(position, restMesialOrDistal);
 }
 
-void OcclusalRest::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void OcclusalRest::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	Point2f point;
 	vector<Point> curve;
@@ -367,8 +367,8 @@ void OcclusalRest::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) co
 	}
 	auto centroid = tooth.getCentroid();
 	curve.push_back(centroid + (point - centroid) / 2);
-	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
-	fillConvexPoly(designImage, curve, 0, LINE_AA);
+	polylines(designImages[1], curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
+	fillConvexPoly(designImages[1], curve, 0, LINE_AA);
 }
 
 PalatalPlate::PalatalPlate(const Position& startPosition, const Position& endPosition, const vector<Position>& lingualConfrontations): RpdWithRangedSlots(startPosition, endPosition), lingualConfrontations_(lingualConfrontations) {}
@@ -385,28 +385,35 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* env, jmethodID midGetIn
 	return new PalatalPlate(startPosition, endPosition, lingualConfrontations);
 }
 
-void PalatalPlate::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	for (auto it = lingualConfrontations_.begin(); it < lingualConfrontations_.end(); ++it)
-		Plating(Position(it->zone, it->ordinal)).draw(designImage, teeth);
-	vector<Point> curve;
+void PalatalPlate::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
+	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
+		Plating(*position).draw(designImages, teeth);
+	vector<Tooth> vertexTeeth = {teeth[startPosition_.zone][startPosition_.ordinal] , teeth[startPosition_.zone][endPosition_.ordinal] , teeth[endPosition_.zone][endPosition_.ordinal] , teeth[endPosition_.zone][startPosition_.ordinal]};
+	vector<Point> curve, mesialCurve = {vertexTeeth[3].getAnglePoint(0),vertexTeeth[3].getAnglePoint(0) - roundToInt(computeNormalDirection(vertexTeeth[3].getAnglePoint(180)) * vertexTeeth[3].getRadius()), (vertexTeeth[3].getAnglePoint(180) + vertexTeeth[0].getAnglePoint(180)) / 2, vertexTeeth[0].getAnglePoint(0) - roundToInt(computeNormalDirection(vertexTeeth[0].getAnglePoint(180)) * vertexTeeth[0].getRadius()),vertexTeeth[0].getAnglePoint(0)}, distalCurve = {vertexTeeth[1].getAnglePoint(180),vertexTeeth[1].getAnglePoint(180) - roundToInt(vertexTeeth[1].getNormalDirection() * vertexTeeth[1].getRadius()), (vertexTeeth[1].getAnglePoint(0) + vertexTeeth[2].getAnglePoint(0)) / 2, vertexTeeth[2].getAnglePoint(180) - roundToInt(vertexTeeth[2].getNormalDirection() * vertexTeeth[2].getRadius()),vertexTeeth[2].getAnglePoint(180)};
+	mesialCurve = computeSmoothCurve(mesialCurve, INFINITY);
+	distalCurve = computeSmoothCurve(distalCurve, INFINITY);
 	auto zone = startPosition_.zone;
 	for (auto ordinal = startPosition_.ordinal; ordinal <= endPosition_.ordinal; ++ordinal) {
 		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);
 		curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
 	}
+	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	zone = endPosition_.zone;
 	for (auto ordinal = endPosition_.ordinal; ordinal >= startPosition_.ordinal; --ordinal) {
 		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 	}
-	polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
+	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
+	fillPoly(designImages[0], vector<vector<Point>>{curve}, 128, LINE_AA);
+	polylines(designImages[1], mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImages[1], distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 Plating::Plating(const Position& position): RpdWithSingleSlot(position) {}
 
-void Plating::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void Plating::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto curve = teeth[position_.zone][position_.ordinal].getCurve(180, 0);
-	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 RingClasp::RingClasp(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material) {}
@@ -419,7 +426,7 @@ RingClasp* RingClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jme
 	return new RingClasp(position, claspMaterial);
 }
 
-void RingClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
+void RingClasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
 	auto tooth = teeth[position_.zone][position_.ordinal];
 	vector<Point> curve;
 	if (position_.zone < 2)
@@ -427,12 +434,12 @@ void RingClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const
 	else
 		curve = tooth.getCurve(0, 300);
 	if (material_ == CAST) {
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-		OcclusalRest(position_, RpdWithDirection::DISTAL).draw(designImage, teeth);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+		OcclusalRest(position_, RpdWithDirection::DISTAL).draw(designImages, teeth);
 	}
 	else
-		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
-	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
+		polylines(designImages[1], curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
+	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImages, teeth);
 }
 
 Rpa::Rpa(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material) {}
@@ -445,10 +452,10 @@ Rpa* Rpa::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midRe
 	return new Rpa(position, claspMaterial);
 }
 
-void Rpa::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-	GuidingPlate(position_).draw(designImage, teeth);
-	HalfClasp(position_, material_, RpdWithDirection::MESIAL, HalfClasp::BUCCAL).draw(designImage, teeth);
+void Rpa::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
+	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImages, teeth);
+	GuidingPlate(position_).draw(designImages, teeth);
+	HalfClasp(position_, material_, RpdWithDirection::MESIAL, HalfClasp::BUCCAL).draw(designImages, teeth);
 }
 
 Rpi::Rpi(const Position& position): RpdWithSingleSlot(position) {}
@@ -459,10 +466,10 @@ Rpi* Rpi::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midRe
 	return new Rpi(position);
 }
 
-void Rpi::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-	GuidingPlate(position_).draw(designImage, teeth);
-	IBar(position_).draw(designImage, teeth);
+void Rpi::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
+	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImages, teeth);
+	GuidingPlate(position_).draw(designImages, teeth);
+	IBar(position_).draw(designImages, teeth);
 }
 
 WwClasp::WwClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
@@ -475,7 +482,7 @@ WwClasp* WwClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethod
 	return new WwClasp(position, claspTipDirection);
 }
 
-void WwClasp::draw(Mat& designImage, const vector<vector<Tooth>>& teeth) const {
-	Clasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_).draw(designImage, teeth);
-	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
+void WwClasp::draw(const vector<Mat>& designImages, const vector<vector<Tooth>>& teeth) const {
+	Clasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_).draw(designImages, teeth);
+	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImages, teeth);
 }

@@ -63,6 +63,8 @@ vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool isConvex) const
 
 Point2f Tooth::getCentroid() const { return centroid_; }
 
+Point2f Tooth::getNormalDirection() const { return normalDirection_; }
+
 void Tooth::setNormalDirection(const Point2f& normalDirection) { normalDirection_ = normalDirection; }
 
 void Tooth::findAnglePoints(int zoneNo) {
