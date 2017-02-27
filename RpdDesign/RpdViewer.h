@@ -34,7 +34,7 @@ private:
 	QSize imageSize_;
 	bool hasImage_ = false, hasRpd_ = false, showBaseImage_, showDesignImage_;
 	vector<vector<Tooth>> teeth_ = vector<vector<Tooth>>(4);
-	vector<Rpd*> rpds_;
+	vector<Rpd*> rpds_; /*TODO: determine the necessity to maintain a list of RPDs*/
 	JavaVM* vm_;
 	JNIEnv* env_;
 	void analyzeBaseImage();

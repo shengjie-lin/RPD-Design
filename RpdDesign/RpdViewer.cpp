@@ -97,7 +97,7 @@ void RpdViewer::resizeEvent(QResizeEvent* event) {
 }
 
 void RpdViewer::refreshDisplay() {
-	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSize2Size(imageSize_), CV_8UC3, Scalar(255, 255, 255));
+	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSize2Size(imageSize_), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		Mat designImage;
 		bitwise_and(designImages_[0], designImages_[1], designImage);
@@ -115,7 +115,7 @@ void RpdViewer::loadBaseImage() {
 		if (image.empty())
 			QMessageBox::information(this, u8"错误", u8"无效的图像文件！");
 		else {
-			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar(255, 255, 255));
+			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
 			imageSize_ = size2QSize(baseImage_.size());
 			hasImage_ = true;
 			analyzeBaseImage();
