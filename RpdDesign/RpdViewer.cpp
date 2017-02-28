@@ -79,15 +79,15 @@ void RpdViewer::analyzeBaseImage() {
 }
 
 void RpdViewer::updateRpdDesign() {
-	designImages_[0] = (designImages_[1] = Mat(qSize2Size(imageSize_), CV_8U, 255)).clone();
+	designImage_ = Mat(qSize2Size(imageSize_), CV_8U, 255);
 	for (auto i = 0; i < 4; ++i) {
 		auto teethZone = teeth_[i];
 		for (auto j = 0; j < teethZone.size(); ++j)
-			polylines(designImages_[1], teethZone[j].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+			polylines(designImage_, teethZone[j].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 	}
 	if (hasRpd_)
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
-			(*rpd)->draw(designImages_, teeth_);
+			(*rpd)->draw(designImage_, teeth_);
 }
 
 void RpdViewer::resizeEvent(QResizeEvent* event) {
@@ -100,9 +100,8 @@ void RpdViewer::refreshDisplay() {
 	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSize2Size(imageSize_), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		Mat designImage;
-		bitwise_and(designImages_[0], designImages_[1], designImage);
-		cvtColor(designImage, designImage, COLOR_GRAY2BGR);
-		bitwise_and(curImage, designImage, curImage);
+		cvtColor(designImage_, designImage, COLOR_GRAY2BGR);
+		bitwise_and(designImage, curImage, curImage);
 	}
 	cv::resize(curImage, curImage, qSize2Size(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
 	setPixmap(mat2QPixmap(curImage));
