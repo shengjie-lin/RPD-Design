@@ -31,7 +31,7 @@ private:
 	static map<string, RpdClass> rpdMapping_;
 	Mat baseImage_, curImage_, designImage_;
 	QSize imageSize_;
-	bool hasImage_ = false, hasRpd_ = false, showBaseImage_, showDesignImage_;
+	bool hasImage_ = false, showBaseImage_, showDesignImage_;
 	vector<vector<Tooth>> teeth_ = vector<vector<Tooth>>(4);
 	vector<Rpd*> rpds_;
 	JavaVM* vm_;

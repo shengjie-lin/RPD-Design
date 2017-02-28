@@ -89,9 +89,8 @@ void RpdViewer::updateRpdDesign() {
 		for (auto j = 0; j < teethZone.size(); ++j)
 			polylines(designImage_, teethZone[j].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 	}
-	if (hasRpd_)
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
-			(*rpd)->draw(designImage_, teeth_);
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
+		(*rpd)->draw(designImage_, teeth_);
 }
 
 void RpdViewer::resizeEvent(QResizeEvent* event) {
@@ -251,7 +250,6 @@ void RpdViewer::loadRpdInfo() {
 		}
 		if (rpds.size()) {
 			rpds_ = rpds;
-			hasRpd_ = true;
 			if (hasImage_) {
 				updateRpdDesign();
 				refreshDisplay();
