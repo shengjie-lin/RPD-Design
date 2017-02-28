@@ -8,7 +8,7 @@ class RpdDesign: public QWidget {
 
 public:
 	explicit RpdDesign(QWidget* parent = nullptr);
-
+	~RpdDesign();
 private:
 	Ui::RpdDesignClass ui;
 	RpdViewer* rpdViewer_;

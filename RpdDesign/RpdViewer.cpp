@@ -38,7 +38,11 @@ RpdViewer::RpdViewer(QWidget* parent, bool showBaseImage, bool showContoursImage
 	delete[] vmInitArgs.options;
 }
 
-RpdViewer::~RpdViewer() { vm_->DestroyJavaVM(); }
+RpdViewer::~RpdViewer() {
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
+		delete *rpd;
+	vm_->DestroyJavaVM();
+}
 
 void RpdViewer::analyzeBaseImage() {
 	Mat tmpImage;
@@ -127,11 +131,6 @@ void RpdViewer::loadBaseImage() {
 void RpdViewer::loadRpdInfo() {
 	auto fileName = QFileDialog::getOpenFileName(this, u8"—°‘ÒRPD–≈œ¢", "", "Ontology files (*.owl)");
 	if (!fileName.isEmpty()) {
-		auto tmp = fileName.toUtf8();
-		auto ontPath = tmp.data();
-		string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
-		vector<Rpd*> rpds;
-
 		auto clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
 		auto clsStrIndividual = "org/apache/jena/ontology/Individual";
 		auto clsStrIterator = "java/util/Iterator";
@@ -172,10 +171,11 @@ void RpdViewer::loadRpdInfo() {
 		auto midStatementGetProperty = env_->GetMethodID(clsStatement, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
 
 		auto ontModel = env_->CallStaticObjectMethod(clsModelFactory, midCreateOntologyModel, env_->GetStaticObjectField(clsOntModelSpec, env_->GetStaticFieldID(clsOntModelSpec, "OWL_DL_MEM", getClsSig(clsStrOntModelSpec).c_str())));
-		auto tmpStr = env_->NewStringUTF(ontPath);
+		auto tmpStr = env_->NewStringUTF(fileName.toUtf8().data());
 		env_->CallVoidMethod(ontModel, midRead, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 
+		string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
 		tmpStr = env_->NewStringUTF((ontPrefix + "buccal_clasp_material").c_str());
 		auto dpBuccalClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -207,6 +207,7 @@ void RpdViewer::loadRpdInfo() {
 		auto dpToothZone = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 
+		vector<Rpd*> rpds;
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);

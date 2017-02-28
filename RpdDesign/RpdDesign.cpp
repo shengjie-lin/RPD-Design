@@ -10,3 +10,5 @@ RpdDesign::RpdDesign(QWidget* parent): QWidget(parent) {
 	connect(ui.baseCheckBox, SIGNAL(toggled(bool)), rpdViewer_, SLOT(onShowBaseChanged(bool)));
 	connect(ui.designCheckBox, SIGNAL(toggled(bool)), rpdViewer_, SLOT(onShowDesignChanged(bool)));
 }
+
+RpdDesign::~RpdDesign() { delete rpdViewer_; }
