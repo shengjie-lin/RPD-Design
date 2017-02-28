@@ -1,8 +1,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include <QMessageBox>
 #include <QFileDialog>
+#include <QMessageBox>
 
 #include "RpdViewer.h"
 #include "Utilities.h"
