@@ -277,43 +277,11 @@ __pycache__/
 # tools/**
 # !tools/packages.config
 
-# C++ objects and libs
+# Telerik's JustMock configuration file
+*.jmconfig
 
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.dll
-*.dylib
-
-# Qt-es
-
-/.qmake.cache
-/.qmake.stash
-*.pro.user
-*.pro.user.*
-*.qbs.user
-*.qbs.user.*
-*.moc
-moc_*.cpp
-qrc_*.cpp
-ui_*.h
-Makefile*
-*build-*
-
-# QtCreator
-
-*.autosave
-
-# QtCtreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
-
-# QtCtreator CMake
-CMakeLists.txt.user*
-
+# Qt VS Tools
 GeneratedFiles/
+
+# Protege
 catalog-v001.xml
