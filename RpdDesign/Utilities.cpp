@@ -83,6 +83,49 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
 
+void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius) {
+	Point lastPoint;
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	if (startPosition.zone == endPosition.zone) {
+		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
+			++nTeeth;
+			auto tooth = teeth[zone][ordinal];
+			sumOfRadii += tooth.getRadius();
+			if (ordinal == startPosition.ordinal)
+				curve.push_back(tooth.getAnglePoint(0));
+			else
+				curve.push_back((tooth.getAnglePoint(0) + lastPoint) / 2);
+			curve.push_back(tooth.getCentroid());
+			lastPoint = tooth.getAnglePoint(180);
+			if (ordinal == endPosition.ordinal)
+				curve.push_back(lastPoint);
+		}
+	}
+	else {
+		auto step = -1;
+		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; zone == startPosition.zone || ordinal <= endPosition.ordinal; ordinal += step) {
+			++nTeeth;
+			auto tooth = teeth[zone][ordinal];
+			sumOfRadii += tooth.getRadius();
+			if (zone == startPosition.zone && ordinal == startPosition.ordinal)
+				curve.push_back(tooth.getAnglePoint(180));
+			else
+				curve.push_back((tooth.getAnglePoint(step ? 90 * (1 - step) : 0) + lastPoint) / 2);
+			curve.push_back(tooth.getCentroid());
+			lastPoint = tooth.getAnglePoint(step ? 90 * (1 + step) : 180);
+			if (zone == endPosition.zone && ordinal == endPosition.ordinal)
+				curve.push_back(lastPoint);
+			if (ordinal == 0) {
+				if (step == -1)
+					++zone;
+				++step;
+			}
+		}
+	}
+	avgRadius = sumOfRadii / nTeeth;
+}
+
 Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	auto direction = point - teethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
@@ -94,7 +137,7 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	return normalDirection / norm(normalDirection);
 }
 
-void computeIncribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend) {
+void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend) {
 	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
 	auto l1 = norm(v1), l2 = norm(v2);
 	auto d1 = v1 / l1, d2 = v2 / l2;
@@ -109,23 +152,22 @@ void computeIncribedCurve(const vector<Point>& cornerPoints, float maxRadius, ve
 	curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 }
 
-vector<Point> computeSmoothCurve(const vector<Point> curve, bool isClosed, float maxRadius) {
-	vector<Point> smoothCurve;
+void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed, float maxRadius) {
+	smoothCurve.clear();
 	for (auto point = curve.begin(); point < curve.end(); ++point) {
 		if (point == curve.begin())
 			if (isClosed)
-				computeIncribedCurve({curve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+				computeInscribedCurve({curve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
 			else
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else if (point == curve.end() - 1)
 			if (isClosed)
-				computeIncribedCurve({smoothCurve.back(), *point, curve[0]}, maxRadius, smoothCurve);
+				computeInscribedCurve({smoothCurve.back(), *point, curve[0]}, maxRadius, smoothCurve);
 			else
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else
-			computeIncribedCurve({smoothCurve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
 	}
-	return smoothCurve;
 }
 
 const string jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";

@@ -116,3 +116,7 @@ void Tooth::findAnglePoints(int zoneNo) {
 }
 
 float Tooth::getRadius() const { return radius_; }
+
+Tooth::LingualBlocking Tooth::getLingualBlocking() const { return lingualBlocking_; }
+
+void Tooth::setLingualBlocking(LingualBlocking lingualBlocking) { lingualBlocking_ = lingualBlocking; }

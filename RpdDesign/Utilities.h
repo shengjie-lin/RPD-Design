@@ -2,6 +2,8 @@
 
 #include <QImage>
 
+#include "Rpd.h"
+
 using namespace std;
 using namespace cv;
 
@@ -40,11 +42,13 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr);
 
+void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius);
+
 Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
 
-void computeIncribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend = true);
+void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend = true);
 
-vector<Point> computeSmoothCurve(const vector<Point> curve, bool isClosed = false, float maxRadius = INFINITY);
+void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed = false, float maxRadius = INFINITY);
 
 extern const string jenaLibPath;
 
