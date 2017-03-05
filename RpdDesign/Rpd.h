@@ -61,8 +61,7 @@ protected:
 class AkersClasp: public RpdWithSingleSlot, public RpdWithMaterial, public RpdWithDirection {
 public:
 	AkersClasp(const Position& position, const Material& material, const Direction& direction);
-	AkersClasp(const Position& position, const Material& buccalMaterial, const Material& lingualMaterial, const Direction& direction);
-	static AkersClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpBuccalClaspMaterial, jobject dpLingualClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
+	static AkersClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 

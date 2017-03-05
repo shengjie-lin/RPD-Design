@@ -7,7 +7,7 @@
 #include "Utilities.h"
 #include "EllipticCurve.h"
 
-Mat qImage2Mat(const QImage& inputImage) {
+Mat qImageToMat(const QImage& inputImage) {
 	switch (inputImage.format()) {
 			// 8-bit, 4 channel
 		case QImage::Format_ARGB32:
@@ -25,12 +25,12 @@ Mat qImage2Mat(const QImage& inputImage) {
 		case QImage::Format_Indexed8:
 			return Mat(inputImage.height(), inputImage.width(), CV_8UC1, const_cast<uchar*>(inputImage.bits()), static_cast<size_t>(inputImage.bytesPerLine())).clone();
 		default:
-			QMessageBox::information(nullptr, "", "qImage2Mat() - QImage format not handled: " + QString(inputImage.format()));
+			QMessageBox::information(nullptr, "", "qImageToMat() - QImage format not handled: " + QString(inputImage.format()));
 			return Mat();
 	}
 }
 
-QImage mat2QImage(const Mat& inputMat) {
+QImage matToQImage(const Mat& inputMat) {
 	switch (inputMat.type()) {
 			// 8-bit, 4 channel
 		case CV_8UC4:
@@ -52,20 +52,24 @@ QImage mat2QImage(const Mat& inputMat) {
 			return image;
 		}
 		default:
-			QMessageBox::information(nullptr, "", "mat2QImage() - Mat type not handled: " + QString(to_string(inputMat.type()).data()));
+			QMessageBox::information(nullptr, "", "matToQImage() - Mat type not handled: " + QString(to_string(inputMat.type()).data()));
 			return QImage();
 	}
 }
 
-Mat qPixmap2Mat(const QPixmap& inputPixmap) { return qImage2Mat(inputPixmap.toImage()); }
+Mat qPixmapToMat(const QPixmap& inputPixmap) { return qImageToMat(inputPixmap.toImage()); }
 
-QPixmap mat2QPixmap(const Mat& inputMat) { return QPixmap::fromImage(mat2QImage(inputMat)); }
+QPixmap matToQPixmap(const Mat& inputMat) { return QPixmap::fromImage(matToQImage(inputMat)); }
 
-Size qSize2Size(const QSize& size) { return Size(size.width(), size.height()); }
+Size qSizeToSize(const QSize& size) { return Size(size.width(), size.height()); }
 
-QSize size2QSize(const Size& size) { return QSize(size.width, size.height); }
+QSize sizeToQSize(const Size& size) { return QSize(size.width, size.height); }
 
-void concatenatePath(string& path, const string& searchDirectory, const string& extension) {
+float degreeToRadian(float degree) { return degree / 180 * CV_PI; }
+
+float radianToDegree(float radian) { return radian / CV_PI * 180; }
+
+void catPath(string& path, const string& searchDirectory, const string& extension) {
 	auto searchPattern = searchDirectory + extension;
 	WIN32_FIND_DATA findData;
 	auto hFind = FindFirstFile(searchPattern.c_str(), &findData);
@@ -81,7 +85,7 @@ string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
 
 Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	auto direction = point - teethEllipse.center;
-	auto thisAngle = atan2(direction.y, direction.x) - degree2Radian(teethEllipse.angle);
+	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
 	if (thisAngle < -CV_PI)
 		thisAngle += CV_PI * 2;
 	if (angle)
@@ -90,29 +94,42 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	return normalDirection / norm(normalDirection);
 }
 
-vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius) {
-	vector<Point> smoothCurve{curve[0]};
-	auto tangentPoint = curve[0];
-	for (auto point = curve.begin() + 1; point < curve.end() - 1; ++point) {
-		vector<Point> anglePoints{tangentPoint, *point, *(point + 1)};
-		Point2f v1 = anglePoints[0] - anglePoints[1], v2 = anglePoints[2] - anglePoints[1];
-		auto l1 = norm(v1), l2 = norm(v2);
-		auto d1 = v1 / l1, d2 = v2 / l2;
-		auto sinTheta = d1.cross(d2);
-		auto theta = asin(abs(sinTheta));
-		if (d1.dot(d2) < 0)
-			theta = CV_PI - theta;
-		auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
-		tangentPoint = anglePoints[1] + roundToInt(d2 * radius / tan(theta / 2));
-		auto ellipticCurve = EllipticCurve(anglePoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radian2Degree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radian2Degree(theta), sinTheta > 0).getCurve();
-		smoothCurve.insert(smoothCurve.end(), ellipticCurve.begin(), ellipticCurve.end());
+void computeIncribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend) {
+	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
+	auto l1 = norm(v1), l2 = norm(v2);
+	auto d1 = v1 / l1, d2 = v2 / l2;
+	auto sinTheta = d1.cross(d2);
+	auto theta = asin(abs(sinTheta));
+	if (d1.dot(d2) < 0)
+		theta = CV_PI - theta;
+	auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
+	auto thisCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve();
+	if (!shouldAppend)
+		curve.clear();
+	curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+}
+
+vector<Point> computeSmoothCurve(const vector<Point> curve, bool isClosed, float maxRadius) {
+	vector<Point> smoothCurve;
+	for (auto point = curve.begin(); point < curve.end(); ++point) {
+		if (point == curve.begin())
+			if (isClosed)
+				computeIncribedCurve({curve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+			else
+				smoothCurve.insert(smoothCurve.end(), *point);
+		else if (point == curve.end() - 1)
+			if (isClosed)
+				computeIncribedCurve({smoothCurve.back(), *point, curve[0]}, maxRadius, smoothCurve);
+			else
+				smoothCurve.insert(smoothCurve.end(), *point);
+		else
+			computeIncribedCurve({smoothCurve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
 	}
-	smoothCurve.push_back(curve.back());
 	return smoothCurve;
 }
 
-const int lineThicknessOfLevel[]{1, 4, 7};
-
 const string jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";
+
+const int lineThicknessOfLevel[]{1, 4, 7};
 
 RotatedRect teethEllipse;

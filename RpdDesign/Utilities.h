@@ -5,34 +5,24 @@
 using namespace std;
 using namespace cv;
 
-Mat qImage2Mat(const QImage& inputImage);
+Mat qImageToMat(const QImage& inputImage);
 
-QImage mat2QImage(const Mat& inputMat);
+QImage matToQImage(const Mat& inputMat);
 
-Mat qPixmap2Mat(const QPixmap& inputPixmap);
+Mat qPixmapToMat(const QPixmap& inputPixmap);
 
-QPixmap mat2QPixmap(const Mat& inputMat);
+QPixmap matToQPixmap(const Mat& inputMat);
 
-Size qSize2Size(const QSize& size);
+Size qSizeToSize(const QSize& size);
 
-QSize size2QSize(const Size& size);
+QSize sizeToQSize(const Size& size);
 
-template <typename T>
-T degree2Radian(T degree) { return degree / 180 * CV_PI; }
+float degreeToRadian(float degree);
 
-template <typename T>
-T radian2Degree(T radian) { return radian / CV_PI * 180; }
+float radianToDegree(float radian);
 
 template <typename T>
 Point2f rotate(const Point_<T>& point, float angle) { return Point2f(point.x * cos(angle) - point.y * sin(angle), point.y * cos(angle) + point.x * sin(angle)); }
-
-void concatenatePath(string& path, const string& searchDirectory, const string& extension);
-
-string getClsSig(const char* clsStr);
-
-Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
-
-vector<Point> computeSmoothCurve(const vector<Point> curve, float maxRadius);
 
 template <typename T>
 Point2f normalize(const Point_<T>& point) { return static_cast<Point2f>(point) / norm(point); }
@@ -46,8 +36,18 @@ Point roundToInt(const Point_<T>& point) { return Point(round(point.x), round(po
 template <typename T>
 Size roundToInt(const Size_<T>& size) { return Size(round(size.width), round(size.height)); }
 
-extern const int lineThicknessOfLevel[];
+void catPath(string& path, const string& searchDirectory, const string& extension);
+
+string getClsSig(const char* clsStr);
+
+Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
+
+void computeIncribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend = true);
+
+vector<Point> computeSmoothCurve(const vector<Point> curve, bool isClosed = false, float maxRadius = INFINITY);
 
 extern const string jenaLibPath;
+
+extern const int lineThicknessOfLevel[];
 
 extern RotatedRect teethEllipse;

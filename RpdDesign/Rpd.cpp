@@ -83,17 +83,13 @@ void RpdWithDirection::extractDirection(JNIEnv* env, jmethodID midGetInt, jmetho
 
 AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction) {}
 
-AkersClasp::AkersClasp(const Position& position, const Material& buccalMaterial, const Material& lingualMaterial, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(buccalMaterial, lingualMaterial), RpdWithDirection(direction) {}
-
-AkersClasp* AkersClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpBuccalClaspMaterial, jobject dpLingualClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
+AkersClasp* AkersClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position position;
 	Direction claspTipDirection;
-	Material claspMaterial, buccalClaspMaterial, lingualClaspMaterial;
+	Material claspMaterial;
 	extractToothInfo(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
 	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
-	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, dpBuccalClaspMaterial, dpLingualClaspMaterial, individual, claspMaterial, buccalClaspMaterial, lingualClaspMaterial);
-	if (claspMaterial == UNSPECIFIED)
-		return new AkersClasp(position, buccalClaspMaterial, lingualClaspMaterial, claspTipDirection);
+	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new AkersClasp(position, claspMaterial, claspTipDirection);
 }
 
@@ -202,8 +198,8 @@ void DentureBase::draw(const Mat& designImage, const vector<vector<Tooth>>& teet
 	curve.push_back(curve.back());
 	auto avgRadius = sumOfRadii / count;
 	for (auto i = 0; i < curve.size(); ++i)
-		curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0.25 : 1.6));
-	polylines(designImage, computeSmoothCurve(curve, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+		curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0 : 1.6));
+	polylines(designImage, computeSmoothCurve(curve, false), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithRangedSlots(startPosition, endPosition) {}
@@ -262,12 +258,12 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<vector<Tooth>>& 
 	auto avgRadius = sumOfRadii / count;
 	vector<Point> curve1(curve.size()), curve2(curve.size());
 	for (auto i = 0; i < curve.size(); ++i) {
-		auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 0.25);
+		auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius / 4);
 		curve1[i] = curve[i] + delta;
 		curve2[i] = curve[i] - delta;
 	}
-	polylines(designImage, computeSmoothCurve(curve1, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, computeSmoothCurve(curve2, avgRadius * 5), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, computeSmoothCurve(curve1), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, computeSmoothCurve(curve2), false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
@@ -320,8 +316,8 @@ void IBar::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) cons
 	auto sinTheta = direction.cross(r) / rou;
 	auto b = rou * abs(sinTheta) / sqrt(1 - pow(rou / a, 2) * (1 - pow(sinTheta, 2)));
 	auto inclination = atan2(direction.y, direction.x);
-	auto t = radian2Degree(asin(rotate(r, -inclination).y / b));
-	inclination = radian2Degree(inclination);
+	auto t = radianToDegree(asin(rotate(r, -inclination).y / b));
+	inclination = radianToDegree(inclination);
 	if (t > 0)
 		t -= 180;
 	ellipse(designImage, center, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
@@ -390,8 +386,8 @@ void PalatalPlate::draw(const Mat& designImage, const vector<vector<Tooth>>& tee
 		Plating(*position).draw(designImage, teeth);
 	vector<Tooth> vertexTeeth = {teeth[startPosition_.zone][startPosition_.ordinal] , teeth[startPosition_.zone][endPosition_.ordinal] , teeth[endPosition_.zone][endPosition_.ordinal] , teeth[endPosition_.zone][startPosition_.ordinal]};
 	vector<Point> curve, mesialCurve = {vertexTeeth[3].getAnglePoint(0),vertexTeeth[3].getAnglePoint(0) - roundToInt(computeNormalDirection(vertexTeeth[3].getAnglePoint(180)) * vertexTeeth[3].getRadius()), (vertexTeeth[3].getAnglePoint(180) + vertexTeeth[0].getAnglePoint(180)) / 2, vertexTeeth[0].getAnglePoint(0) - roundToInt(computeNormalDirection(vertexTeeth[0].getAnglePoint(180)) * vertexTeeth[0].getRadius()),vertexTeeth[0].getAnglePoint(0)}, distalCurve = {vertexTeeth[1].getAnglePoint(180),vertexTeeth[1].getAnglePoint(180) - roundToInt(vertexTeeth[1].getNormalDirection() * vertexTeeth[1].getRadius()), (vertexTeeth[1].getAnglePoint(0) + vertexTeeth[2].getAnglePoint(0)) / 2, vertexTeeth[2].getAnglePoint(180) - roundToInt(vertexTeeth[2].getNormalDirection() * vertexTeeth[2].getRadius()),vertexTeeth[2].getAnglePoint(180)};
-	mesialCurve = computeSmoothCurve(mesialCurve, INFINITY);
-	distalCurve = computeSmoothCurve(distalCurve, INFINITY);
+	mesialCurve = computeSmoothCurve(mesialCurve);
+	distalCurve = computeSmoothCurve(distalCurve);
 	auto zone = startPosition_.zone;
 	for (auto ordinal = startPosition_.ordinal; ordinal <= endPosition_.ordinal; ++ordinal) {
 		auto thisCurve = teeth[zone][ordinal].getCurve(180, 0);

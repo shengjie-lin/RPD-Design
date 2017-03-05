@@ -5,7 +5,6 @@ using namespace cv;
 
 class EllipticCurve {
 public:
-	EllipticCurve();
 	EllipticCurve(Point2f center, Size axes, float inclination, float endAngle, bool shallReverse);
 	EllipticCurve(Point2f center, Size axes, float inclination, float startAngle, float endAngle, bool shallReverse);
 	vector<Point> getCurve() const;

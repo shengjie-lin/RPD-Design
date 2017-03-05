@@ -31,7 +31,7 @@ RpdViewer::RpdViewer(QWidget* parent, bool showBaseImage, bool showContoursImage
 	vmInitArgs.nOptions = 1;
 	vmInitArgs.options = new JavaVMOption[1];
 	string optionString = "-Djava.class.path=";
-	concatenatePath(optionString, jenaLibPath, "*.jar");
+	catPath(optionString, jenaLibPath, "*.jar");
 	vmInitArgs.options[0].optionString = const_cast<char*>(optionString.c_str());
 	vmInitArgs.ignoreUnrecognized = false;
 	JNI_CreateJavaVM(&vm_, reinterpret_cast<void**>(&env_), &vmInitArgs);
@@ -83,7 +83,7 @@ void RpdViewer::analyzeBaseImage() {
 }
 
 void RpdViewer::updateRpdDesign() {
-	designImage_ = Mat(qSize2Size(imageSize_), CV_8U, 255);
+	designImage_ = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto i = 0; i < 4; ++i) {
 		auto teethZone = teeth_[i];
 		for (auto j = 0; j < teethZone.size(); ++j)
@@ -100,14 +100,14 @@ void RpdViewer::resizeEvent(QResizeEvent* event) {
 }
 
 void RpdViewer::refreshDisplay() {
-	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSize2Size(imageSize_), CV_8UC3, Scalar::all(255));
+	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize_), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		Mat designImage;
 		cvtColor(designImage_, designImage, COLOR_GRAY2BGR);
 		bitwise_and(designImage, curImage, curImage);
 	}
-	cv::resize(curImage, curImage, qSize2Size(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
-	setPixmap(mat2QPixmap(curImage));
+	cv::resize(curImage, curImage, qSizeToSize(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
+	setPixmap(matToQPixmap(curImage));
 }
 
 void RpdViewer::loadBaseImage() {
@@ -118,7 +118,7 @@ void RpdViewer::loadBaseImage() {
 			QMessageBox::information(this, u8"错误", u8"无效的图像文件！");
 		else {
 			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
-			imageSize_ = size2QSize(baseImage_.size());
+			imageSize_ = sizeToQSize(baseImage_.size());
 			hasImage_ = true;
 			analyzeBaseImage();
 			updateRpdDesign();
@@ -213,7 +213,7 @@ void RpdViewer::loadRpdInfo() {
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
 				case AKERS_CLASP:
-					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpBuccalClaspMaterial, dpLingualClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case COMBINED_CLASP:
 					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
