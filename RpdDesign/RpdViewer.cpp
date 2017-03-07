@@ -44,7 +44,11 @@ RpdViewer::~RpdViewer() {
 	vm_->DestroyJavaVM();
 }
 
-void RpdViewer::updateRpdDesign() {
+void RpdViewer::updateRpdDesign(bool shouldResetLingualBlockage) {
+	if (shouldResetLingualBlockage)
+		for (auto zone = 0; zone < 4; ++zone)
+			for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
+				teeth_[zone][ordinal].setLingualBlockage(RpdWithLingualBlockage::NONE);
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage) {
@@ -56,14 +60,9 @@ void RpdViewer::updateRpdDesign() {
 				updateLingualBlockage(teeth_, dynamic_cast<RpdWithMultipleSlots*>(*rpd)->getStartEndPositions(), lingualBlockage, scope);
 		}
 	}
-	designImage_ = Mat(qSizeToSize(imageSize_), CV_8U, 255);
-	for (auto i = 0; i < 4; ++i) {
-		auto teethZone = teeth_[i];
-		for (auto j = 0; j < teethZone.size(); ++j)
-			polylines(designImage_, teethZone[j].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
-	}
+	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
-		(*rpd)->draw(designImage_, teeth_);
+		(*rpd)->draw(designImages_[1], teeth_);
 }
 
 void RpdViewer::resizeEvent(QResizeEvent* event) {
@@ -76,7 +75,8 @@ void RpdViewer::refreshDisplay() {
 	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize_), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		Mat designImage;
-		cvtColor(designImage_, designImage, COLOR_GRAY2BGR);
+		bitwise_and(designImages_[0], designImages_[1], designImage);
+		cvtColor(designImage, designImage, COLOR_GRAY2BGR);
 		bitwise_and(designImage, curImage, curImage);
 	}
 	cv::resize(curImage, curImage, qSizeToSize(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
@@ -113,9 +113,10 @@ void RpdViewer::loadBaseImage() {
 			vector<int> idx;
 			sortIdx(angles, idx, SORT_ASCENDING);
 			vector<vector<uint8_t>> isInZone(4);
-			for (auto i = 0; i < 4; ++i)
+			for (auto i = 0; i < 4; ++i) {
 				inRange(angles, CV_PI / 2 * (i - 2), CV_PI / 2 * (i - 1), isInZone[i]);
-			teeth_ = vector<vector<Tooth>>(4);
+				teeth_[i].clear();
+			}
 			for (auto i = 0; i < nTeeth; ++i) {
 				auto no = idx[i];
 				for (auto j = 0; j < 4; ++j)
@@ -128,6 +129,10 @@ void RpdViewer::loadBaseImage() {
 						break;
 					}
 			}
+			designImages_[0] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
+			for (auto zone = 0; zone < 4; ++zone)
+				for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
+					polylines(designImages_[0], teeth_[zone][ordinal].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 			updateRpdDesign();
 			refreshDisplay();
 		}
@@ -257,7 +262,7 @@ void RpdViewer::loadRpdInfo() {
 		if (rpds.size()) {
 			rpds_ = rpds;
 			if (baseImage_.data) {
-				updateRpdDesign();
+				updateRpdDesign(true);
 				refreshDisplay();
 			}
 		}

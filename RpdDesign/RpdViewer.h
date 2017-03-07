@@ -33,14 +33,15 @@ private:
 	};
 
 	static map<string, RpdClass> rpdMapping_;
-	Mat baseImage_, curImage_, designImage_;
+	Mat baseImage_, curImage_;
+	Mat designImages_[2];
 	QSize imageSize_;
 	bool showBaseImage_, showDesignImage_;
-	vector<vector<Tooth>> teeth_;
+	vector<Tooth> teeth_[4];
 	vector<Rpd*> rpds_;
 	JavaVM* vm_;
 	JNIEnv* env_;
-	void updateRpdDesign();
+	void updateRpdDesign(bool shouldResetLingualBlockage = false);
 	void resizeEvent(QResizeEvent* event) override;
 	void refreshDisplay();
 

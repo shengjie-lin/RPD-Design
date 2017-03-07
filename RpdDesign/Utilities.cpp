@@ -82,7 +82,7 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
 
-void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage) {
+void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
@@ -181,9 +181,9 @@ void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, b
 	}
 }
 
-void updateLingualBlockage(vector<vector<Tooth>>& teeth, const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
+void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
 
-void updateLingualBlockage(vector<vector<Tooth>>& teeth, const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope) {
+void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope) {
 	if (scope == RpdWithLingualBlockage::LINE)
 		if (positions[0].zone == positions[1].zone)
 			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)

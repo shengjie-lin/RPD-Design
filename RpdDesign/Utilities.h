@@ -39,7 +39,7 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr);
 
-void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage = nullptr);
+void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage = nullptr);
 
 Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
 
@@ -47,9 +47,9 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, v
 
 void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed = false, float maxRadius = INFINITY);
 
-void updateLingualBlockage(vector<vector<Tooth>>& teeth, const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage);
+void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage);
 
-void updateLingualBlockage(vector<vector<Tooth>>& teeth, const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope);
+void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope);
 
 extern const string jenaLibPath;
 
