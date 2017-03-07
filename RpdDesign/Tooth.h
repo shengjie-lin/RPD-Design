@@ -1,16 +1,9 @@
 #pragma once
 
-using namespace std;
-using namespace cv;
+#include "Rpd.h"
 
 class Tooth {
 public:
-	enum LingualBlocking {
-		NONE,
-		CLASP,
-		MAJOR_CONNECTOR
-	};
-
 	explicit Tooth(const vector<Point>& contour);
 	vector<Point> getContour() const;
 	Point getAnglePoint(int angle) const;
@@ -20,8 +13,8 @@ public:
 	void setNormalDirection(const Point2f& normalDirection);
 	void findAnglePoints(int zoneNo);
 	float getRadius() const;
-	LingualBlocking getLingualBlocking() const;
-	void setLingualBlocking(LingualBlocking lingualBlocking);
+	RpdWithLingualBlockage::LingualBlockage getLingualBlockage() const;
+	void setLingualBlockage(RpdWithLingualBlockage::LingualBlockage lingualBlockage);
 
 private:
 	vector<Point> contour_;
@@ -29,5 +22,5 @@ private:
 	Point2f normalDirection_;
 	vector<int> anglePointIndices_ = vector<int>(360);
 	float radius_;
-	LingualBlocking lingualBlocking_ = NONE;
+	RpdWithLingualBlockage::LingualBlockage lingualBlockage_ = RpdWithLingualBlockage::NONE;
 };

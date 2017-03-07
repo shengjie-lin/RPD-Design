@@ -1,7 +1,8 @@
 #pragma once
 
 #include "ui_RpdDesign.h"
-#include "RpdViewer.h"
+
+class RpdViewer;
 
 class RpdDesign: public QWidget {
 	Q_OBJECT

@@ -1,4 +1,5 @@
 #include "RpdDesign.h"
+#include "RpdViewer.h"
 
 RpdDesign::RpdDesign(QWidget* parent): QWidget(parent) {
 	ui.setupUi(this);

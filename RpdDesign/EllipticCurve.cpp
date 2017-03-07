@@ -7,12 +7,13 @@ EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float
 
 EllipticCurve::EllipticCurve(Point2f center, Size axes, float inclination, float startAngle, float endAngle, bool shallReverse): center_(center), axes_(axes), inclination_(inclination), startAngle_(startAngle), endAngle_(endAngle), shallReverse_(shallReverse) {}
 
-vector<Point> EllipticCurve::getCurve() const {
-	vector<Point> curve;
+bool EllipticCurve::getCurve(vector<Point>& curve) const {
+	if (axes_.width < 0)
+		return false;
 	ellipse2Poly(center_, axes_, inclination_, startAngle_, endAngle_, 1, curve);
 	if (norm(curve[0] - roundToInt(center_)) < sqrt(axes_.area()) / 2)
-		return {};
+		return false;
 	if (shallReverse_)
-		return vector<Point>(curve.rbegin(), curve.rend());
-	return curve;
+		reverse(curve.begin(), curve.end());
+	return true;
 }

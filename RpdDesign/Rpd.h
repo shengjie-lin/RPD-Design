@@ -2,7 +2,10 @@
 
 #include <jni.h>
 
-#include "Tooth.h"
+using namespace std;
+using namespace cv;
+
+class Tooth;
 
 class Rpd {
 public:
@@ -16,15 +19,19 @@ public:
 };
 
 class RpdWithSingleSlot: public virtual Rpd {
+public:
+	Position getPosition() const;
 protected:
 	explicit RpdWithSingleSlot(const Position& position);
 	static void extractToothInfo(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, Position& position);
 	Position position_;
 };
 
-class RpdWithRangedSlots: public virtual Rpd {
+class RpdWithMultipleSlots: public virtual Rpd {
+public:
+	vector<Position> getStartEndPositions() const;
 protected:
-	RpdWithRangedSlots(const Position& startPosition, const Position& endPosition);
+	RpdWithMultipleSlots(const Position& startPosition, const Position& endPosition);
 	static void extractToothInfo(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, Position& startPosition, Position& endPosition);
 	Position startPosition_, endPosition_;
 };
@@ -58,21 +65,33 @@ protected:
 	Direction direction_;
 };
 
-class RpdWithLingualBlocking : public virtual Rpd {
-protected:
-	enum RangeType {
-		LINEAR,
-		PLANAR
+class RpdWithLingualBlockage : public virtual Rpd {
+public:
+	enum LingualBlockage {
+		NONE,
+		CLASP,
+		MAJOR_CONNECTOR
 	};
 
-	RpdWithLingualBlocking(const Position& position, vector<vector<Tooth>>& teeth);
-	RpdWithLingualBlocking(const Position& startPosition, const Position& endPosition, vector<vector<Tooth>>& teeth, RangeType rangeType, Tooth::LingualBlocking lingualBlocking);
+	enum Scope {
+		POINT,
+		LINE,
+		PLANE
+	};
+
+	RpdWithLingualBlockage();
+	RpdWithLingualBlockage(LingualBlockage lingualBlockage, Scope scope);
+	LingualBlockage getLingualBlockage() const;
+	Scope getScope() const;
+private:
+	LingualBlockage lingualBlockage_;
+	Scope scope_;
 };
 
-class AkersClasp: public RpdWithSingleSlot, public RpdWithMaterial, public RpdWithDirection, public RpdWithLingualBlocking {
+class AkersClasp: public RpdWithSingleSlot, public RpdWithMaterial, public RpdWithDirection, public RpdWithLingualBlockage {
 public:
-	AkersClasp(const Position& position, const Material& material, const Direction& direction, vector<vector<Tooth>>& teeth);
-	static AkersClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth);
+	AkersClasp(const Position& position, const Material& material, const Direction& direction);
+	static AkersClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
@@ -82,21 +101,21 @@ public:
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class CombinedClasp: public RpdWithRangedSlots, public RpdWithMaterial, public RpdWithLingualBlocking {
+class CombinedClasp: public RpdWithMultipleSlots, public RpdWithMaterial, public RpdWithLingualBlockage {
 public:
-	CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material, vector<vector<Tooth>>& teeth);
-	static CombinedClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth);
+	CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material);
+	static CombinedClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class DentureBase: public RpdWithRangedSlots {
+class DentureBase: public RpdWithMultipleSlots {
 public:
 	DentureBase(const Position& startPosition, const Position& endPosition);
 	static DentureBase* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class EdentulousSpace: public RpdWithRangedSlots {
+class EdentulousSpace: public RpdWithMultipleSlots {
 public:
 	EdentulousSpace(const Position& startPosition, const Position& endPosition);
 	static EdentulousSpace* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
@@ -142,10 +161,10 @@ public:
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class PalatalPlate: public RpdWithRangedSlots, public RpdWithLingualBlocking {
+class PalatalPlate: public RpdWithMultipleSlots, public RpdWithLingualBlockage {
 public:
-	PalatalPlate(const Position& startPosition, const Position& endPosition, vector<vector<Tooth>>& teeth, const vector<Position>& lingualConfrontations);
-	static PalatalPlate* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject opMajorConnectorKeyPosition, jobject individual, vector<vector<Tooth>>& teeth);
+	PalatalPlate(const Position& startPosition, const Position& endPosition, const vector<Position>& lingualConfrontations);
+	static PalatalPlate* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject opMajorConnectorKeyPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 private:
 	vector<Position> lingualConfrontations_;
@@ -157,10 +176,10 @@ public:
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class RingClasp: public RpdWithSingleSlot, public RpdWithMaterial, public RpdWithLingualBlocking {
+class RingClasp: public RpdWithSingleSlot, public RpdWithMaterial, public RpdWithLingualBlockage {
 public:
-	RingClasp(const Position& position, const Material& material, vector<vector<Tooth>>& teeth);
-	static RingClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth);
+	RingClasp(const Position& position, const Material& material);
+	static RingClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
@@ -178,9 +197,9 @@ public:
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };
 
-class WwClasp: public RpdWithSingleSlot, public RpdWithDirection, public RpdWithLingualBlocking {
+class WwClasp: public RpdWithSingleSlot, public RpdWithDirection, public RpdWithLingualBlockage {
 public:
-	WwClasp(const Position& position, const Direction& direction, vector<vector<Tooth>>& teeth);
-	static WwClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth);
+	WwClasp(const Position& position, const Direction& direction);
+	static WwClasp* createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual);
 	void draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const override;
 };

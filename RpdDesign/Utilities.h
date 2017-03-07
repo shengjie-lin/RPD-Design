@@ -4,9 +4,6 @@
 
 #include "Rpd.h"
 
-using namespace std;
-using namespace cv;
-
 Mat qImageToMat(const QImage& inputImage);
 
 QImage matToQImage(const Mat& inputMat);
@@ -42,13 +39,17 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr);
 
-void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius);
+void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage = nullptr);
 
 Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend = true);
 
 void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed = false, float maxRadius = INFINITY);
+
+void updateLingualBlockage(vector<vector<Tooth>>& teeth, const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage);
+
+void updateLingualBlockage(vector<vector<Tooth>>& teeth, const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope);
 
 extern const string jenaLibPath;
 

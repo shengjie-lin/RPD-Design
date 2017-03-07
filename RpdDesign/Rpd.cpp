@@ -1,9 +1,12 @@
 #include <opencv2/imgproc.hpp>
 
 #include "Rpd.h"
+#include "Tooth.h"
 #include "Utilities.h"
 
 Rpd::Position::Position(int zone, int ordinal): zone(zone), ordinal(ordinal) {}
+
+Rpd::Position RpdWithSingleSlot::getPosition() const { return position_; }
 
 RpdWithSingleSlot::RpdWithSingleSlot(const Position& position): position_(position) {}
 
@@ -13,9 +16,11 @@ void RpdWithSingleSlot::extractToothInfo(JNIEnv* env, jmethodID midGetInt, jmeth
 	position.ordinal = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1;
 }
 
-RpdWithRangedSlots::RpdWithRangedSlots(const Position& startPosition, const Position& endPosition): startPosition_(startPosition), endPosition_(endPosition) {}
+vector<Rpd::Position> RpdWithMultipleSlots::getStartEndPositions() const { return {startPosition_, endPosition_}; }
 
-void RpdWithRangedSlots::extractToothInfo(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, Position& startPosition, Position& endPosition) {
+RpdWithMultipleSlots::RpdWithMultipleSlots(const Position& startPosition, const Position& endPosition): startPosition_(startPosition), endPosition_(endPosition) {}
+
+void RpdWithMultipleSlots::extractToothInfo(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, Position& startPosition, Position& endPosition) {
 	auto teeth = env->CallObjectMethod(individual, midListProperties, opComponentPosition);
 	vector<Position> positions;
 	auto count = 0;
@@ -81,46 +86,24 @@ RpdWithDirection::RpdWithDirection(const Direction& direction): direction_(direc
 
 void RpdWithDirection::extractDirection(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jobject dpClaspTipDirection, jobject individual, Direction& claspTipDirection) { claspTipDirection = static_cast<Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
 
-RpdWithLingualBlocking::RpdWithLingualBlocking(const Position& position, vector<vector<Tooth>>& teeth) { teeth[position.zone][position.ordinal].setLingualBlocking(Tooth::CLASP); }
+RpdWithLingualBlockage::RpdWithLingualBlockage(): lingualBlockage_(CLASP), scope_(POINT) {}
 
-RpdWithLingualBlocking::RpdWithLingualBlocking(const Position& startPosition, const Position& endPosition, vector<vector<Tooth>>& teeth, RangeType rangeType, Tooth::LingualBlocking lingualBlocking) : Rpd() {
-	if (rangeType == LINEAR)
-		if (startPosition.zone == endPosition.zone)
-			for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal)
-				teeth[zone][ordinal].setLingualBlocking(lingualBlocking);
-		else {
-			auto step = -1;
-			for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; zone == startPosition.zone || ordinal <= endPosition.ordinal; ordinal += step) {
-				teeth[zone][ordinal].setLingualBlocking(lingualBlocking);
-				if (ordinal == 0)
-					if (step) {
-						step = 0;
-						++zone;
-					}
-					else
-						step = 1;
-			}
-		}
-	else {
-		auto zone = startPosition.zone;
-		for (auto ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal)
-			teeth[zone][ordinal].setLingualBlocking(lingualBlocking);
-		zone = endPosition.zone;
-		for (auto ordinal = endPosition.ordinal; ordinal >= startPosition.ordinal; --ordinal)
-			teeth[zone][ordinal].setLingualBlocking(lingualBlocking);
-	}
-}
+RpdWithLingualBlockage::RpdWithLingualBlockage(LingualBlockage lingualBlockage, Scope scope) : lingualBlockage_(lingualBlockage), scope_(scope) {}
 
-AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction, vector<vector<Tooth>>& teeth): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), RpdWithLingualBlocking(position, teeth) {}
+RpdWithLingualBlockage::LingualBlockage RpdWithLingualBlockage::getLingualBlockage() const { return lingualBlockage_; }
 
-AkersClasp* AkersClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth) {
+RpdWithLingualBlockage::Scope RpdWithLingualBlockage::getScope() const { return scope_; }
+
+AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), RpdWithLingualBlockage() {}
+
+AkersClasp* AkersClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position position;
 	Direction claspTipDirection;
 	Material claspMaterial;
 	extractToothInfo(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
 	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
-	return new AkersClasp(position, claspMaterial, claspTipDirection, teeth);
+	return new AkersClasp(position, claspMaterial, claspTipDirection);
 }
 
 void AkersClasp::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {
@@ -143,14 +126,14 @@ void Clasp::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) con
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
 }
 
-CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material, vector<vector<Tooth>>& teeth): RpdWithRangedSlots(startPosition, endPosition), RpdWithMaterial(material), RpdWithLingualBlocking(startPosition, endPosition, teeth, LINEAR, Tooth::CLASP) {}
+CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material): RpdWithMultipleSlots(startPosition, endPosition), RpdWithMaterial(material), RpdWithLingualBlockage(CLASP, LINE) {}
 
-CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth) {
+CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position startPosition, endPosition;
 	Material claspMaterial;
 	extractToothInfo(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition);
 	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
-	return new CombinedClasp(startPosition, endPosition, claspMaterial, teeth);
+	return new CombinedClasp(startPosition, endPosition, claspMaterial);
 }
 
 void CombinedClasp::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {
@@ -166,7 +149,7 @@ void CombinedClasp::draw(const Mat& designImage, const vector<vector<Tooth>>& te
 	}
 }
 
-DentureBase::DentureBase(const Position& startPosition, const Position& endPosition): RpdWithRangedSlots(startPosition, endPosition) {}
+DentureBase::DentureBase(const Position& startPosition, const Position& endPosition): RpdWithMultipleSlots(startPosition, endPosition) {}
 
 DentureBase* DentureBase::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position startPosition, endPosition;
@@ -177,23 +160,43 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* env, jmethodID midGetInt,
 void DentureBase::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {
 	vector<Point> curve;
 	float avgRadius;
-	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius);
-	curve.insert(curve.begin(), curve[0]);
-	curve.push_back(curve.back());
-	/*TODO*/
-	// vector<Point> curve1(curve.size()), curve2(curve.size());
-	// for (auto i = 0; i < curve.size(); ++i) {
-	// 	auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius / 4);
-	// 	curve1[i] = curve[i] + delta;
-	// 	curve2[i] = curve[i] - delta;
-	// }
-	for (auto i = 0; i < curve.size(); ++i)
-		curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * (i == 0 || i == curve.size() - 1 ? 0 : 1.6));
-	computeSmoothCurve(curve, curve);
-	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	bool haslingualBlockage;
+	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius, &haslingualBlockage);
+	auto isCoveringTail = false;
+	auto zone = startPosition_.zone;
+	if (startPosition_.ordinal == teeth[zone].size() - 1) {
+		isCoveringTail = true;
+		Point2f tmp = teeth[zone].back().getAnglePoint(180);
+		curve[0] = roundToInt(tmp + rotate(computeNormalDirection(tmp), -CV_PI / 2) * avgRadius);
+	}
+	zone = endPosition_.zone;
+	if (endPosition_.ordinal == teeth[zone].size() - 1) {
+		isCoveringTail = true;
+		Point2f tmp = teeth[zone].back().getAnglePoint(180);
+		curve.back() = roundToInt(tmp + rotate(computeNormalDirection(tmp), CV_PI * (zone % 2 - 0.5)) * avgRadius);
+	}
+	if (isCoveringTail || !haslingualBlockage) {
+		vector<Point> tmpCurve(curve.size());
+		for (auto i = 0; i < curve.size(); ++i) {
+			auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.75);
+			tmpCurve[i] = curve[i] + delta;
+			curve[i] -= delta;
+		}
+		curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+		computeSmoothCurve(curve, curve, true);
+		polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
+	}
+	else {
+		curve.insert(curve.begin(), curve[0]);
+		curve.push_back(curve.back());
+		for (auto i = 1; i < curve.size() - 1; ++i)
+			curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.75);
+		computeSmoothCurve(curve, curve);
+		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	}
 }
 
-EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithRangedSlots(startPosition, endPosition) {}
+EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithMultipleSlots(startPosition, endPosition) {}
 
 EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position startPosition, endPosition;
@@ -318,9 +321,9 @@ void OcclusalRest::draw(const Mat& designImage, const vector<vector<Tooth>>& tee
 	fillConvexPoly(designImage, curve, 0, LINE_AA);
 }
 
-PalatalPlate::PalatalPlate(const Position& startPosition, const Position& endPosition, vector<vector<Tooth>>& teeth, const vector<Position>& lingualConfrontations): RpdWithRangedSlots(startPosition, endPosition), RpdWithLingualBlocking(startPosition, endPosition, teeth, PLANAR, Tooth::MAJOR_CONNECTOR), lingualConfrontations_(lingualConfrontations) {}
+PalatalPlate::PalatalPlate(const Position& startPosition, const Position& endPosition, const vector<Position>& lingualConfrontations): RpdWithMultipleSlots(startPosition, endPosition), RpdWithLingualBlockage(MAJOR_CONNECTOR, PLANE), lingualConfrontations_(lingualConfrontations) {}
 
-PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opMajorConnectorKeyPosition, jobject dpLingualConfrontation, jobject individual, vector<vector<Tooth>>& teeth) {
+PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midHasNext, jmethodID midListProperties, jmethodID midNext, jmethodID midStatementGetProperty, jobject dpToothZone, jobject dpToothOrdinal, jobject opMajorConnectorKeyPosition, jobject dpLingualConfrontation, jobject individual) {
 	Position startPosition, endPosition;
 	vector<Position> lingualConfrontations;
 	extractToothInfo(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opMajorConnectorKeyPosition, individual, startPosition, endPosition);
@@ -329,7 +332,7 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* env, jmethodID midGetIn
 		auto tooth = env->CallObjectMethod(lcTeeth, midNext);
 		lingualConfrontations.push_back(Position(env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1, env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1));
 	}
-	return new PalatalPlate(startPosition, endPosition, teeth, lingualConfrontations);
+	return new PalatalPlate(startPosition, endPosition, lingualConfrontations);
 }
 
 void PalatalPlate::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {
@@ -365,14 +368,14 @@ void Plating::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) c
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
-RingClasp::RingClasp(const Position& position, const Material& material, vector<vector<Tooth>>& teeth): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithLingualBlocking(position, teeth) {}
+RingClasp::RingClasp(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithLingualBlockage() {}
 
-RingClasp* RingClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth) {
+RingClasp* RingClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspMaterial, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position position;
 	Material claspMaterial;
 	extractToothInfo(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
 	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
-	return new RingClasp(position, claspMaterial, teeth);
+	return new RingClasp(position, claspMaterial);
 }
 
 void RingClasp::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {
@@ -421,14 +424,14 @@ void Rpi::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const
 	IBar(position_).draw(designImage, teeth);
 }
 
-WwClasp::WwClasp(const Position& position, const Direction& direction, vector<vector<Tooth>>& teeth): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdWithLingualBlocking(position, teeth) {}
+WwClasp::WwClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdWithLingualBlockage() {}
 
-WwClasp* WwClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual, vector<vector<Tooth>>& teeth) {
+WwClasp* WwClasp::createFromIndividual(JNIEnv* env, jmethodID midGetInt, jmethodID midResourceGetProperty, jmethodID midStatementGetProperty, jobject dpClaspTipDirection, jobject dpToothZone, jobject dpToothOrdinal, jobject opComponentPosition, jobject individual) {
 	Position position;
 	Direction claspTipDirection;
 	extractToothInfo(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
 	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
-	return new WwClasp(position, claspTipDirection, teeth);
+	return new WwClasp(position, claspTipDirection);
 }
 
 void WwClasp::draw(const Mat& designImage, const vector<vector<Tooth>>& teeth) const {

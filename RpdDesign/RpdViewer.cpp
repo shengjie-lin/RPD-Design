@@ -1,10 +1,10 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
 #include <QFileDialog>
 #include <QMessageBox>
 
 #include "RpdViewer.h"
+#include "Tooth.h"
 #include "Utilities.h"
 
 map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
@@ -44,45 +44,18 @@ RpdViewer::~RpdViewer() {
 	vm_->DestroyJavaVM();
 }
 
-void RpdViewer::analyzeBaseImage() {
-	Mat tmpImage;
-	cvtColor(baseImage_, tmpImage, COLOR_BGR2GRAY);
-	threshold(tmpImage, tmpImage, 0, 255, THRESH_BINARY | THRESH_OTSU);
-	vector<vector<Point>> contours;
-	vector<Tooth> teeth;
-	vector<Vec4i> hierarchy;
-	findContours(tmpImage, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
-	for (auto i = hierarchy[0][2]; i >= 0; i = hierarchy[i][0])
-		for (auto j = hierarchy[i][2]; j >= 0; j = hierarchy[j][0])
-			teeth.push_back(Tooth(contours[j]));
-	auto nTeeth = teeth.size();
-	vector<Point2f> centroids(nTeeth);
-	for (auto i = 0; i < nTeeth; ++i)
-		centroids[i] = teeth[i].getCentroid();
-	teethEllipse = fitEllipse(centroids);
-	vector<float> angles(nTeeth);
-	for (auto i = 0; i < nTeeth; ++i)
-		teeth[i].setNormalDirection(computeNormalDirection(centroids[i], &angles[i]));
-	vector<int> idx;
-	sortIdx(angles, idx, SORT_ASCENDING);
-	vector<vector<uint8_t>> isInZone(4);
-	for (auto i = 0; i < 4; ++i)
-		inRange(angles, CV_PI / 2 * (i - 2), CV_PI / 2 * (i - 1), isInZone[i]);
-	for (auto i = 0; i < nTeeth; ++i) {
-		auto no = idx[i];
-		for (auto j = 0; j < 4; ++j)
-			if (isInZone[j][no]) {
-				teeth[no].findAnglePoints(j);
-				if (j % 2)
-					teeth_[j].push_back(teeth[no]);
-				else
-					teeth_[j].insert(teeth_[j].begin(), teeth[no]);
-				break;
-			}
-	}
-}
-
 void RpdViewer::updateRpdDesign() {
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
+		if (rpdWithLingualBlockage) {
+			auto lingualBlockage = rpdWithLingualBlockage->getLingualBlockage();
+			auto scope = rpdWithLingualBlockage->getScope();
+			if (scope == RpdWithLingualBlockage::POINT)
+				updateLingualBlockage(teeth_, dynamic_cast<RpdWithSingleSlot*>(*rpd)->getPosition(), lingualBlockage);
+			else
+				updateLingualBlockage(teeth_, dynamic_cast<RpdWithMultipleSlots*>(*rpd)->getStartEndPositions(), lingualBlockage, scope);
+		}
+	}
 	designImage_ = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto i = 0; i < 4; ++i) {
 		auto teethZone = teeth_[i];
@@ -95,7 +68,7 @@ void RpdViewer::updateRpdDesign() {
 
 void RpdViewer::resizeEvent(QResizeEvent* event) {
 	QLabel::resizeEvent(event);
-	if (hasImage_)
+	if (baseImage_.data)
 		refreshDisplay();
 }
 
@@ -119,8 +92,42 @@ void RpdViewer::loadBaseImage() {
 		else {
 			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
 			imageSize_ = sizeToQSize(baseImage_.size());
-			hasImage_ = true;
-			analyzeBaseImage();
+			Mat tmpImage;
+			cvtColor(baseImage_, tmpImage, COLOR_BGR2GRAY);
+			threshold(tmpImage, tmpImage, 0, 255, THRESH_BINARY | THRESH_OTSU);
+			vector<vector<Point>> contours;
+			vector<Tooth> tmpTeeth;
+			vector<Vec4i> hierarchy;
+			findContours(tmpImage, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+			for (auto i = hierarchy[0][2]; i >= 0; i = hierarchy[i][0])
+				for (auto j = hierarchy[i][2]; j >= 0; j = hierarchy[j][0])
+					tmpTeeth.push_back(Tooth(contours[j]));
+			auto nTeeth = tmpTeeth.size();
+			vector<Point2f> centroids(nTeeth);
+			for (auto i = 0; i < nTeeth; ++i)
+				centroids[i] = tmpTeeth[i].getCentroid();
+			teethEllipse = fitEllipse(centroids);
+			vector<float> angles(nTeeth);
+			for (auto i = 0; i < nTeeth; ++i)
+				tmpTeeth[i].setNormalDirection(computeNormalDirection(centroids[i], &angles[i]));
+			vector<int> idx;
+			sortIdx(angles, idx, SORT_ASCENDING);
+			vector<vector<uint8_t>> isInZone(4);
+			for (auto i = 0; i < 4; ++i)
+				inRange(angles, CV_PI / 2 * (i - 2), CV_PI / 2 * (i - 1), isInZone[i]);
+			teeth_ = vector<vector<Tooth>>(4);
+			for (auto i = 0; i < nTeeth; ++i) {
+				auto no = idx[i];
+				for (auto j = 0; j < 4; ++j)
+					if (isInZone[j][no]) {
+						tmpTeeth[no].findAnglePoints(j);
+						if (j % 2)
+							teeth_[j].push_back(tmpTeeth[no]);
+						else
+							teeth_[j].insert(teeth_[j].begin(), tmpTeeth[no]);
+						break;
+					}
+			}
 			updateRpdDesign();
 			refreshDisplay();
 		}
@@ -205,24 +212,18 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "tooth_zone").c_str());
 		auto dpToothZone = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-
 		vector<Rpd*> rpds;
-		auto teeth = teeth_;
-		for (auto i = 0; i < 4; ++i) {
-			auto teethZone = teeth[i];
-			for (auto j = 0; j < teethZone.size(); ++j)
-				teethZone[j].setLingualBlocking(Tooth::NONE);
-		}
+		auto lingualBlockages = vector<vector<RpdWithLingualBlockage::LingualBlockage>>(4);
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
 				case AKERS_CLASP:
-					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, teeth));
+					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case COMBINED_CLASP:
-					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, teeth));
+					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case DENTURE_BASE:
 					rpds.push_back(DentureBase::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
@@ -237,10 +238,10 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case PALATAL_PLATE:
-					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opMajorConnectorKeyPosition, dpLingualConfrontation, individual, teeth));
+					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opMajorConnectorKeyPosition, dpLingualConfrontation, individual));
 					break;
 				case RING_CLASP:
-					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, teeth));
+					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case RPA:
 					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
@@ -249,15 +250,14 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case WW_CLASP:
-					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, teeth));
+					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				default: ;
 			}
 		}
 		if (rpds.size()) {
 			rpds_ = rpds;
-			teeth_ = teeth;
-			if (hasImage_) {
+			if (baseImage_.data) {
 				updateRpdDesign();
 				refreshDisplay();
 			}
@@ -269,12 +269,12 @@ void RpdViewer::loadRpdInfo() {
 
 void RpdViewer::onShowBaseChanged(bool showBaseImage) {
 	showBaseImage_ = showBaseImage;
-	if (hasImage_)
+	if (baseImage_.data)
 		refreshDisplay();
 }
 
 void RpdViewer::onShowDesignChanged(bool showDesignImage) {
 	showDesignImage_ = showDesignImage;
-	if (hasImage_)
+	if (baseImage_.data)
 		refreshDisplay();
 }

@@ -1,11 +1,10 @@
 #include <Windows.h>
-
 #include <opencv2/imgproc.hpp>
-
 #include <QMessageBox>
 
 #include "Utilities.h"
 #include "EllipticCurve.h"
+#include "Tooth.h"
 
 Mat qImageToMat(const QImage& inputImage) {
 	switch (inputImage.format()) {
@@ -83,10 +82,12 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
 
-void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius) {
+void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
+	if (hasLingualBlockage)
+		*hasLingualBlockage = false;
 	if (startPosition.zone == endPosition.zone) {
 		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
 			++nTeeth;
@@ -100,6 +101,9 @@ void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Positi
 			lastPoint = tooth.getAnglePoint(180);
 			if (ordinal == endPosition.ordinal)
 				curve.push_back(lastPoint);
+			if (hasLingualBlockage)
+				if (tooth.getLingualBlockage())
+					*hasLingualBlockage = true;
 		}
 	}
 	else {
@@ -121,6 +125,9 @@ void computeStringingCurve(const vector<vector<Tooth>>& teeth, const Rpd::Positi
 					++zone;
 				++step;
 			}
+			if (hasLingualBlockage)
+				if (tooth.getLingualBlockage())
+					*hasLingualBlockage = true;
 		}
 	}
 	avgRadius = sumOfRadii / nTeeth;
@@ -130,7 +137,7 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	auto direction = point - teethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
 	if (thisAngle < -CV_PI)
-		thisAngle += CV_PI * 2;
+		thisAngle += CV_2PI;
 	if (angle)
 		*angle = thisAngle;
 	auto normalDirection = Point2f(pow(teethEllipse.size.height, 2) * cos(thisAngle), pow(teethEllipse.size.width, 2) * sin(thisAngle));
@@ -146,10 +153,14 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, v
 	if (d1.dot(d2) < 0)
 		theta = CV_PI - theta;
 	auto radius = min({maxRadius, static_cast<float>(min({l1, l2}) * tan(theta / 2) / 2)});
-	auto thisCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve();
+	vector<Point> thisCurve;
+	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
 	if (!shouldAppend)
 		curve.clear();
-	curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+	if (isValidCurve)
+		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+	else
+		curve.push_back(cornerPoints[1]);
 }
 
 void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed, float maxRadius) {
@@ -167,6 +178,36 @@ void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, b
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else
 			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+	}
+}
+
+void updateLingualBlockage(vector<vector<Tooth>>& teeth, const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
+
+void updateLingualBlockage(vector<vector<Tooth>>& teeth, const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope) {
+	if (scope == RpdWithLingualBlockage::LINE)
+		if (positions[0].zone == positions[1].zone)
+			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
+				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
+		else {
+			auto step = -1;
+			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; zone == positions[0].zone || ordinal <= positions[1].ordinal; ordinal += step) {
+				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
+				if (ordinal == 0)
+					if (step) {
+						step = 0;
+						++zone;
+					}
+					else
+						step = 1;
+			}
+		}
+	else {
+		auto zone = positions[0].zone;
+		for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
+			teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
+		zone = positions[1].zone;
+		for (auto ordinal = positions[1].ordinal; ordinal >= positions[0].ordinal; --ordinal)
+			teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
 	}
 }
 
