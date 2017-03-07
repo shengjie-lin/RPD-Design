@@ -213,7 +213,6 @@ void RpdViewer::loadRpdInfo() {
 		auto dpToothZone = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		vector<Rpd*> rpds;
-		auto lingualBlockages = vector<vector<RpdWithLingualBlockage::LingualBlockage>>(4);
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
