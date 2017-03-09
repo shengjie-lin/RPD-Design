@@ -5,16 +5,16 @@
 class Tooth {
 public:
 	explicit Tooth(const vector<Point>& contour);
-	vector<Point> getContour() const;
-	Point getAnglePoint(int angle) const;
-	vector<Point> getCurve(int startAngle, int endAngle, bool isConvex = true) const;
-	Point2f getCentroid() const;
-	Point2f getNormalDirection() const;
+	const vector<Point>& getContour() const;
+	const Point& getAnglePoint(const int& angle) const;
+	vector<Point> getCurve(const int& startAngle, const int& endAngle, const bool& isConvex = true) const;
+	const Point2f& getCentroid() const;
+	const Point2f& getNormalDirection() const;
 	void setNormalDirection(const Point2f& normalDirection);
-	void findAnglePoints(int zoneNo);
-	float getRadius() const;
-	RpdWithLingualBlockage::LingualBlockage getLingualBlockage() const;
-	void setLingualBlockage(RpdWithLingualBlockage::LingualBlockage lingualBlockage);
+	void findAnglePoints(const int& zoneNo);
+	const float& getRadius() const;
+	const RpdWithLingualBlockage::LingualBlockage& getLingualBlockage() const;
+	void setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
 
 private:
 	vector<Point> contour_;

@@ -9,15 +9,17 @@ Tooth::Tooth(const vector<Point>& contour): contour_(contour) {
 	centroid_ = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 }
 
-vector<Point> Tooth::getContour() const { return contour_; }
+const vector<Point>& Tooth::getContour() const { return contour_; }
 
-Point Tooth::getAnglePoint(int angle) const { return contour_[anglePointIndices_[angle]]; }
+const Point& Tooth::getAnglePoint(const int& angle) const { return contour_[anglePointIndices_[angle]]; }
 
-vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool isConvex) const {
+vector<Point> Tooth::getCurve(const int& startAngle, const int& endAngle, const bool& isConvex) const {
 	auto midAngle = (startAngle + endAngle) / 2;
 	if (startAngle > endAngle)
 		midAngle = (midAngle + 180) % 360;
-	auto startIdx = anglePointIndices_[startAngle], midIdx = anglePointIndices_[midAngle], endIdx = anglePointIndices_[endAngle];
+	const auto& startIdx = anglePointIndices_[startAngle];
+	const auto& midIdx = anglePointIndices_[midAngle];
+	const auto& endIdx = anglePointIndices_[endAngle];
 	vector<Point> curve;
 	if ((midIdx - startIdx) * (endIdx - midIdx) >= 0)
 		if (startIdx < endIdx)
@@ -61,13 +63,13 @@ vector<Point> Tooth::getCurve(int startAngle, int endAngle, bool isConvex) const
 	return curve;
 }
 
-Point2f Tooth::getCentroid() const { return centroid_; }
+const Point2f& Tooth::getCentroid() const { return centroid_; }
 
-Point2f Tooth::getNormalDirection() const { return normalDirection_; }
+const Point2f& Tooth::getNormalDirection() const { return normalDirection_; }
 
 void Tooth::setNormalDirection(const Point2f& normalDirection) { normalDirection_ = normalDirection; }
 
-void Tooth::findAnglePoints(int zoneNo) {
+void Tooth::findAnglePoints(const int& zoneNo) {
 	auto signVal = 1 - zoneNo % 2 * 2;
 	auto deltaAngle = degreeToRadian(1);
 	int angle;
@@ -86,8 +88,8 @@ void Tooth::findAnglePoints(int zoneNo) {
 		auto isFound = false;
 		auto d = rotate(normalDirection_, targetAngle);
 		while (!isFound) {
-			auto p1 = contour_[j];
-			auto p2 = contour_[(j + 1) % nPoints];
+			const auto& p1 = contour_[j];
+			const auto& p2 = contour_[(j + 1) % nPoints];
 			auto t = d.cross(centroid_ - static_cast<Point2f>(p1)) / d.cross(p2 - p1);
 			if (t >= 0 && t < 1) {
 				auto point = p1 + t * (p2 - p1);
@@ -115,8 +117,8 @@ void Tooth::findAnglePoints(int zoneNo) {
 	}
 }
 
-float Tooth::getRadius() const { return radius_; }
+const float& Tooth::getRadius() const { return radius_; }
 
-RpdWithLingualBlockage::LingualBlockage Tooth::getLingualBlockage() const { return lingualBlockage_; }
+const RpdWithLingualBlockage::LingualBlockage& Tooth::getLingualBlockage() const { return lingualBlockage_; }
 
-void Tooth::setLingualBlockage(RpdWithLingualBlockage::LingualBlockage lingualBlockage) { lingualBlockage_ = lingualBlockage; }
+void Tooth::setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { lingualBlockage_ = lingualBlockage; }

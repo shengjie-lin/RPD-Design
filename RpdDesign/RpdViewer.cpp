@@ -9,6 +9,7 @@
 
 map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"Akers_clasp", AKERS_CLASP},
+	{"combination_clasp", COMBINATION_CLASP},
 	{"combined_clasp", COMBINED_CLASP},
 	{"denture_base", DENTURE_BASE},
 	{"edentulous_space", EDENTULOUS_SPACE},
@@ -21,11 +22,9 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
-RpdViewer::RpdViewer(QWidget* parent, bool showBaseImage, bool showContoursImage): QLabel(parent) {
+RpdViewer::RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage): QLabel(parent), showBaseImage_(showBaseImage), showDesignImage_(showContoursImage) {
 	setAlignment(Qt::AlignCenter);
 	setMinimumSize(128, 128);
-	showBaseImage_ = showBaseImage;
-	showDesignImage_ = showContoursImage;
 	JavaVMInitArgs vmInitArgs;
 	vmInitArgs.version = JNI_VERSION_1_8;
 	vmInitArgs.nOptions = 1;
@@ -44,11 +43,12 @@ RpdViewer::~RpdViewer() {
 	vm_->DestroyJavaVM();
 }
 
-void RpdViewer::updateRpdDesign(bool shouldResetLingualBlockage) {
+void RpdViewer::updateRpdDesign(const bool& shouldResetLingualBlockage) {
 	if (shouldResetLingualBlockage)
 		for (auto zone = 0; zone < 4; ++zone)
 			for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
 				teeth_[zone][ordinal].setLingualBlockage(RpdWithLingualBlockage::NONE);
+	bool hasEighthTooth[4] = {};
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage) {
@@ -56,8 +56,10 @@ void RpdViewer::updateRpdDesign(bool shouldResetLingualBlockage) {
 			auto scope = rpdWithLingualBlockage->getScope();
 			if (scope == RpdWithLingualBlockage::POINT)
 				updateLingualBlockage(teeth_, dynamic_cast<RpdWithSingleSlot*>(*rpd)->getPosition(), lingualBlockage);
-			else
-				updateLingualBlockage(teeth_, dynamic_cast<RpdWithMultipleSlots*>(*rpd)->getStartEndPositions(), lingualBlockage, scope);
+			else {
+				auto rpdWithMultiSlots = dynamic_cast<RpdWithMultiSlots*>(*rpd);
+				updateLingualBlockage(teeth_, {rpdWithMultiSlots->getStartPosition(),rpdWithMultiSlots->getEndPosition()}, lingualBlockage, scope);
+			}
 		}
 	}
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
@@ -187,6 +189,9 @@ void RpdViewer::loadRpdInfo() {
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 
 		string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
+		tmpStr = env_->NewStringUTF((ontPrefix + "anchor_mesial_or_distal").c_str());
+		auto dpAnchorMesialOrDistal = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "buccal_clasp_material").c_str());
 		auto dpBuccalClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -205,8 +210,8 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-		tmpStr = env_->NewStringUTF((ontPrefix + "major_connector_key_position").c_str());
-		auto opMajorConnectorKeyPosition = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		tmpStr = env_->NewStringUTF((ontPrefix + "major_connector_anchor").c_str());
+		auto opMajorConnectorAnchor = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "rest_mesial_or_distal").c_str());
 		auto dpRestMesialOrDistal = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
@@ -226,6 +231,9 @@ void RpdViewer::loadRpdInfo() {
 				case AKERS_CLASP:
 					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
+				case COMBINATION_CLASP:
+					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					break;
 				case COMBINED_CLASP:
 					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
@@ -242,7 +250,7 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
 					break;
 				case PALATAL_PLATE:
-					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opMajorConnectorKeyPosition, dpLingualConfrontation, individual));
+					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual));
 					break;
 				case RING_CLASP:
 					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));

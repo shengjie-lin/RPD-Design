@@ -4,11 +4,7 @@
 
 #include "Rpd.h"
 
-Mat qImageToMat(const QImage& inputImage);
-
 QImage matToQImage(const Mat& inputMat);
-
-Mat qPixmapToMat(const QPixmap& inputPixmap);
 
 QPixmap matToQPixmap(const Mat& inputMat);
 
@@ -16,18 +12,18 @@ Size qSizeToSize(const QSize& size);
 
 QSize sizeToQSize(const Size& size);
 
-float degreeToRadian(float degree);
+float degreeToRadian(const float& degree);
 
-float radianToDegree(float radian);
+float radianToDegree(const float& radian);
 
 template <typename T>
-Point2f rotate(const Point_<T>& point, float angle) { return Point2f(point.x * cos(angle) - point.y * sin(angle), point.y * cos(angle) + point.x * sin(angle)); }
+Point2f rotate(const Point_<T>& point, const float& angle) { return Point2f(point.x * cos(angle) - point.y * sin(angle), point.y * cos(angle) + point.x * sin(angle)); }
 
 template <typename T>
 Point2f normalize(const Point_<T>& point) { return static_cast<Point2f>(point) / norm(point); }
 
 template <typename T>
-int roundToInt(T num) { return round(num); }
+int roundToInt(const T& num) { return round(num); }
 
 template <typename T>
 Point roundToInt(const Point_<T>& point) { return Point(round(point.x), round(point.y)); }
@@ -37,19 +33,23 @@ Size roundToInt(const Size_<T>& size) { return Size(round(size.width), round(siz
 
 void catPath(string& path, const string& searchDirectory, const string& extension);
 
-string getClsSig(const char* clsStr);
+string getClsSig(const char*const& clsStr);
 
-void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage = nullptr);
+const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position, const bool& shouldMirror = false);
 
-Point2f computeNormalDirection(const Point2f& point, float* angle = nullptr);
+const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend = true);
+void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
 
-void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed = false, float maxRadius = INFINITY);
+Point2f computeNormalDirection(const Point2f& point, float*const& angle = nullptr);
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage);
+void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& maxRadius, const bool& shouldAppend = true);
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope);
+void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& maxRadius = INFINITY);
+
+void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
+
+void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope);
 
 extern const string jenaLibPath;
 

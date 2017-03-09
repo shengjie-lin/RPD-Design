@@ -6,38 +6,15 @@
 #include "EllipticCurve.h"
 #include "Tooth.h"
 
-Mat qImageToMat(const QImage& inputImage) {
-	switch (inputImage.format()) {
-			// 8-bit, 4 channel
-		case QImage::Format_ARGB32:
-		case QImage::Format_ARGB32_Premultiplied:
-			return Mat(inputImage.height(), inputImage.width(), CV_8UC4, const_cast<uchar*>(inputImage.bits()), static_cast<size_t>(inputImage.bytesPerLine())).clone();
-			// 8-bit, 3 channel
-		case QImage::Format_RGB32:
-		case QImage::Format_RGB888: {
-			auto tmp = inputImage.rgbSwapped();
-			if (tmp.format() == QImage::Format_RGB32)
-				tmp = tmp.convertToFormat(QImage::Format_RGB888);
-			return Mat(tmp.height(), tmp.width(), CV_8UC3, const_cast<uchar*>(tmp.bits()), static_cast<size_t>(tmp.bytesPerLine())).clone();
-		}
-			// 8-bit, 1 channel
-		case QImage::Format_Indexed8:
-			return Mat(inputImage.height(), inputImage.width(), CV_8UC1, const_cast<uchar*>(inputImage.bits()), static_cast<size_t>(inputImage.bytesPerLine())).clone();
-		default:
-			QMessageBox::information(nullptr, "", "qImageToMat() - QImage format not handled: " + QString(inputImage.format()));
-			return Mat();
-	}
-}
-
 QImage matToQImage(const Mat& inputMat) {
 	switch (inputMat.type()) {
-			// 8-bit, 4 channel
+			// 8-bit, 4-channel
 		case CV_8UC4:
-			return QImage(inputMat.data, inputMat.cols, inputMat.rows, static_cast<int>(inputMat.step), QImage::Format_ARGB32);
-			// 8-bit, 3 channel
+			return QImage(inputMat.data, inputMat.cols, inputMat.rows, inputMat.step, QImage::Format_ARGB32);
+			// 8-bit, 3-channel
 		case CV_8UC3:
-			return QImage(inputMat.data, inputMat.cols, inputMat.rows, static_cast<int>(inputMat.step), QImage::Format_RGB888).rgbSwapped();
-			// 8-bit, 1 channel
+			return QImage(inputMat.data, inputMat.cols, inputMat.rows, inputMat.step, QImage::Format_RGB888).rgbSwapped();
+			// 8-bit, 1-channel
 		case CV_8UC1: {
 			static auto isColorTableReady = false;
 			static QVector<QRgb> colorTable(256);
@@ -46,17 +23,15 @@ QImage matToQImage(const Mat& inputMat) {
 					colorTable[i] = qRgb(i, i, i);
 				isColorTableReady = true;
 			}
-			QImage image(inputMat.data, inputMat.cols, inputMat.rows, static_cast<int>(inputMat.step), QImage::Format_Indexed8);
+			QImage image(inputMat.data, inputMat.cols, inputMat.rows, inputMat.step, QImage::Format_Indexed8);
 			image.setColorTable(colorTable);
 			return image;
 		}
 		default:
-			QMessageBox::information(nullptr, "", "matToQImage() - Mat type not handled: " + QString(to_string(inputMat.type()).data()));
+			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled: " + to_string(inputMat.type())).data()));
 			return QImage();
 	}
 }
-
-Mat qPixmapToMat(const QPixmap& inputPixmap) { return qImageToMat(inputPixmap.toImage()); }
 
 QPixmap matToQPixmap(const Mat& inputMat) { return QPixmap::fromImage(matToQImage(inputMat)); }
 
@@ -64,9 +39,9 @@ Size qSizeToSize(const QSize& size) { return Size(size.width(), size.height()); 
 
 QSize sizeToQSize(const Size& size) { return QSize(size.width, size.height); }
 
-float degreeToRadian(float degree) { return degree / 180 * CV_PI; }
+float degreeToRadian(const float& degree) { return degree / 180 * CV_PI; }
 
-float radianToDegree(float radian) { return radian / CV_PI * 180; }
+float radianToDegree(const float& radian) { return radian / CV_PI * 180; }
 
 void catPath(string& path, const string& searchDirectory, const string& extension) {
 	auto searchPattern = searchDirectory + extension;
@@ -80,16 +55,35 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 	FindClose(hFind);
 }
 
-string getClsSig(const char* clsStr) { return 'L' + string(clsStr) + ';'; }
+string getClsSig(const char*const& clsStr) { return 'L' + string(clsStr) + ';'; }
 
-void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool* hasLingualBlockage) {
+const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position, const bool& shouldMirror) {
+	auto zone = position.zone;
+	if (shouldMirror)
+		zone += 1 - zone % 2 * 2;
+	return teeth[zone][position.ordinal];
+}
+
+const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
+	const auto& direction = anchor.direction;
+	auto deltaOrdinal = 0;
+	if (shift > 0 && direction == RpdWithDirection::DISTAL)
+		deltaOrdinal = 1;
+	else if (shift < 0 && direction == RpdWithDirection::MESIAL)
+		deltaOrdinal = -1;
+	const auto& position = anchor.position;
+	return getTooth(teeth, Rpd::Position(position.zone, position.ordinal + deltaOrdinal), shouldMirror).getAnglePoint(shift > 0 || shift == 0 && direction == RpdWithDirection::DISTAL ? 180 : 0);
+}
+
+void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
 	if (hasLingualBlockage)
 		*hasLingualBlockage = false;
 	if (startPosition.zone == endPosition.zone) {
-		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
+		const auto& zone = startPosition.zone;
+		for (auto ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
 			++nTeeth;
 			auto tooth = teeth[zone][ordinal];
 			sumOfRadii += tooth.getRadius();
@@ -133,7 +127,7 @@ void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& st
 	avgRadius = sumOfRadii / nTeeth;
 }
 
-Point2f computeNormalDirection(const Point2f& point, float* angle) {
+Point2f computeNormalDirection(const Point2f& point, float*const& angle) {
 	auto direction = point - teethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
 	if (thisAngle < -CV_PI)
@@ -144,7 +138,7 @@ Point2f computeNormalDirection(const Point2f& point, float* angle) {
 	return normalDirection / norm(normalDirection);
 }
 
-void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, vector<Point>& curve, bool shouldAppend) {
+void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& maxRadius, const bool& shouldAppend) {
 	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
 	auto l1 = norm(v1), l2 = norm(v2);
 	auto d1 = v1 / l1, d2 = v2 / l2;
@@ -163,31 +157,33 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, float maxRadius, v
 		curve.push_back(cornerPoints[1]);
 }
 
-void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, bool isClosed, float maxRadius) {
+void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed, const float& maxRadius) {
 	smoothCurve.clear();
 	for (auto point = curve.begin(); point < curve.end(); ++point) {
 		if (point == curve.begin())
 			if (isClosed)
-				computeInscribedCurve({curve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+				computeInscribedCurve({curve.back(),*point, *(point + 1)}, smoothCurve, maxRadius);
 			else
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else if (point == curve.end() - 1)
 			if (isClosed)
-				computeInscribedCurve({smoothCurve.back(), *point, curve[0]}, maxRadius, smoothCurve);
+				computeInscribedCurve({smoothCurve.back(), *point, curve[0]}, smoothCurve, maxRadius);
 			else
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else
-			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, maxRadius, smoothCurve);
+			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, smoothCurve, maxRadius);
 	}
 }
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, RpdWithLingualBlockage::LingualBlockage lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
+void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, RpdWithLingualBlockage::LingualBlockage lingualBlockage, RpdWithLingualBlockage::Scope scope) {
+void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope) {
 	if (scope == RpdWithLingualBlockage::LINE)
-		if (positions[0].zone == positions[1].zone)
-			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
+		if (positions[0].zone == positions[1].zone) {
+			const auto& zone = positions[0].zone;
+			for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
 				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
+		}
 		else {
 			auto step = -1;
 			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; zone == positions[0].zone || ordinal <= positions[1].ordinal; ordinal += step) {
@@ -202,12 +198,10 @@ void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& 
 			}
 		}
 	else {
-		auto zone = positions[0].zone;
 		for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
-			teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
-		zone = positions[1].zone;
+			teeth[positions[0].zone][ordinal].setLingualBlockage(lingualBlockage);
 		for (auto ordinal = positions[1].ordinal; ordinal >= positions[0].ordinal; --ordinal)
-			teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
+			teeth[positions[1].zone][ordinal].setLingualBlockage(lingualBlockage);
 	}
 }
 

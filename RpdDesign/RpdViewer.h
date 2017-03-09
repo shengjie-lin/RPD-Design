@@ -12,14 +12,13 @@ class Tooth;
 
 class RpdViewer: public QLabel {
 	Q_OBJECT
-
 public:
-	RpdViewer(QWidget* parent, bool showBaseImage, bool showContoursImage);
+	RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage);
 	~RpdViewer();
-
 private:
 	enum RpdClass {
 		AKERS_CLASP = 1,
+		COMBINATION_CLASP,
 		COMBINED_CLASP,
 		DENTURE_BASE,
 		EDENTULOUS_SPACE,
@@ -33,15 +32,14 @@ private:
 	};
 
 	static map<string, RpdClass> rpdMapping_;
-	Mat baseImage_, curImage_;
-	Mat designImages_[2];
+	Mat baseImage_, curImage_, designImages_[2];
 	QSize imageSize_;
 	bool showBaseImage_, showDesignImage_;
 	vector<Tooth> teeth_[4];
 	vector<Rpd*> rpds_;
 	JavaVM* vm_;
 	JNIEnv* env_;
-	void updateRpdDesign(bool shouldResetLingualBlockage = false);
+	void updateRpdDesign(const bool& shouldResetLingualBlockage = false);
 	void resizeEvent(QResizeEvent* event) override;
 	void refreshDisplay();
 
