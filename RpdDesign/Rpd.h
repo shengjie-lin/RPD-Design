@@ -49,8 +49,8 @@ public:
 protected:
 	explicit RpdWithMaterial(const Material& material);
 	RpdWithMaterial(const Material& buccalMaterial, const Material& lingualMaterial);
-	static void extractMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial);
-	static void extractMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& dpBuccalClaspMaterial, const jobject& dpLingualClaspMaterial, const jobject& individual, Material& claspMaterial, Material& buccalClaspMaterial, Material& lingualClaspMaterial);
+	static void queryMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial);
+	static void queryMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& dpBuccalClaspMaterial, const jobject& dpLingualClaspMaterial, const jobject& individual, Material& claspMaterial, Material& buccalClaspMaterial, Material& lingualClaspMaterial);
 	Material material_, buccalMaterial_, lingualMaterial_;
 };
 
@@ -63,7 +63,7 @@ public:
 
 protected:
 	explicit RpdWithDirection(const Direction& direction);
-	static void extractDirection(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Direction& claspTipDirection);
+	static void queryDirection(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Direction& claspTipDirection);
 	Direction direction_;
 };
 

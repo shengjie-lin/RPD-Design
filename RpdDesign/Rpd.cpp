@@ -45,7 +45,7 @@ RpdWithMaterial::RpdWithMaterial(const Material& material): material_(material),
 
 RpdWithMaterial::RpdWithMaterial(const Material& buccalMaterial, const Material& lingualMaterial): material_(UNSPECIFIED), buccalMaterial_(buccalMaterial), lingualMaterial_(lingualMaterial) {}
 
-void RpdWithMaterial::extractMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial) {
+void RpdWithMaterial::queryMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial) {
 	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpClaspMaterial);
 	if (tmp)
 		claspMaterial = static_cast<Material>(env->CallIntMethod(tmp, midGetInt));
@@ -53,7 +53,7 @@ void RpdWithMaterial::extractMaterial(JNIEnv*const& env, const jmethodID& midGet
 		claspMaterial = CAST;
 }
 
-void RpdWithMaterial::extractMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& dpBuccalClaspMaterial, const jobject& dpLingualClaspMaterial, const jobject& individual, Material& claspMaterial, Material& buccalClaspMaterial, Material& lingualClaspMaterial) {
+void RpdWithMaterial::queryMaterial(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& dpBuccalClaspMaterial, const jobject& dpLingualClaspMaterial, const jobject& individual, Material& claspMaterial, Material& buccalClaspMaterial, Material& lingualClaspMaterial) {
 	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpClaspMaterial);
 	if (tmp) {
 		claspMaterial = static_cast<Material>(env->CallIntMethod(tmp, midGetInt));
@@ -76,7 +76,7 @@ void RpdWithMaterial::extractMaterial(JNIEnv*const& env, const jmethodID& midGet
 
 RpdWithDirection::RpdWithDirection(const Direction& direction): direction_(direction) {}
 
-void RpdWithDirection::extractDirection(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Direction& claspTipDirection) { claspTipDirection = static_cast<Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
+void RpdWithDirection::queryDirection(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Direction& claspTipDirection) { claspTipDirection = static_cast<Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
 
 RpdWithLingualBlockage::RpdWithLingualBlockage(): lingualBlockage_(CLASP), scope_(POINT) {}
 
@@ -138,8 +138,8 @@ AkersClasp* AkersClasp::createFromIndividual(JNIEnv*const& env, const jmethodID&
 	Direction claspTipDirection;
 	Material claspMaterial;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
-	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
+	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
+	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new AkersClasp(position, claspMaterial, claspTipDirection);
 }
 
@@ -169,7 +169,7 @@ CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv*const& env, cons
 	Position position;
 	Direction claspTipDirection;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
+	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	return new CombinationClasp(position, claspTipDirection);
 }
 
@@ -185,7 +185,7 @@ CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv*const& env, const jmet
 	Position startPosition, endPosition;
 	Material claspMaterial;
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition);
-	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
+	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new CombinedClasp(startPosition, endPosition, claspMaterial);
 }
 
@@ -276,7 +276,7 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[4])
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
 
 void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = teeth[position_.zone][position_.ordinal];
+	const auto& tooth = getTooth(teeth, position_);
 	Point centroid = tooth.getCentroid();
 	auto point = centroid + (tooth.getAnglePoint(180) - centroid) * 1.1;
 	auto direction = roundToInt(computeNormalDirection(point) * tooth.getRadius() * 2 / 3);
@@ -287,7 +287,7 @@ void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 HalfClasp::HalfClasp(const Position& position, const Material& material, const Direction& direction, const Side& side): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), side_(side) {}
 
 void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = teeth[position_.zone][position_.ordinal];
+	const auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	switch (direction_ * 2 + side_) {
 		case 0b00:
@@ -313,7 +313,7 @@ void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const
 IBar::IBar(const Position& position): RpdWithSingleSlot(position) {}
 
 void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = teeth[position_.zone][position_.ordinal];
+	const auto& tooth = getTooth(teeth, position_);
 	auto a = tooth.getRadius() * 1.5;
 	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
 	auto center = (point1 + point2) / 2;
@@ -336,7 +336,7 @@ LingualRest* LingualRest::createFromIndividual(JNIEnv*const& env, const jmethodI
 	Position position;
 	Direction restMesialOrDistal;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
+	queryDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
 	return new LingualRest(position, restMesialOrDistal);
 }
 
@@ -352,7 +352,7 @@ OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv*const& env, const jmetho
 	Position position;
 	Direction restMesialOrDistal;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
+	queryDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
 	return new OcclusalRest(position, restMesialOrDistal);
 }
 
@@ -389,7 +389,7 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmetho
 }
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	/*TODO: consider lingual blockage*/
+	/*TODO: 1. consider lingual blockage 2. ugly drawing!*/
 	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
 		Plating(*position).draw(designImage, teeth);
 	vector<Point> curve, mesialCurve, distalCurve;
@@ -441,12 +441,12 @@ RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& m
 	Position position;
 	Material claspMaterial;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
+	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new RingClasp(position, claspMaterial);
 }
 
 void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = teeth[position_.zone][position_.ordinal];
+	const auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	if (position_.zone < 2)
 		curve = tooth.getCurve(60, 0);
@@ -467,7 +467,7 @@ Rpa* Rpa::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, co
 	Position position;
 	Material claspMaterial;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
+	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new Rpa(position, claspMaterial);
 }
 
@@ -497,7 +497,7 @@ WwClasp* WwClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGe
 	Position position;
 	Direction claspTipDirection;
 	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position);
-	extractDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
+	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	return new WwClasp(position, claspTipDirection);
 }
 

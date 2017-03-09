@@ -48,7 +48,7 @@ void RpdViewer::updateRpdDesign(const bool& shouldResetLingualBlockage) {
 		for (auto zone = 0; zone < 4; ++zone)
 			for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
 				teeth_[zone][ordinal].setLingualBlockage(RpdWithLingualBlockage::NONE);
-	bool hasEighthTooth[4] = {};
+	bool hasEighthTooth[4] = {}; /*TODO: the eighth tooth*/
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage) {
