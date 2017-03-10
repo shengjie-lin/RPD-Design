@@ -5204,7 +5204,7 @@ note : set for tooth now</rdfs:comment>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor361"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor470"/>
+        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor471"/>
     </owl:NamedIndividual>
     
 
