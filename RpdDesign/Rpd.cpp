@@ -388,34 +388,40 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmetho
 }
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	/*TODO: 1. consider lingual blockage 2. ugly drawing!*/
+	/*TODO: consider lingual blockage*/
 	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
 		Plating(*position).draw(designImage, teeth);
 	vector<Point> curve, mesialCurve, distalCurve;
-	auto delta = anchors_[3].position.ordinal - anchors_[0].position.ordinal + static_cast<float>(anchors_[3].direction - anchors_[0].direction) / 2;
-	mesialCurve = {
-		getPoint(teeth, anchors_[3]),
-		getPoint(teeth, anchors_[3]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[3], 1)) * getTooth(teeth, anchors_[3].position).getRadius()),
-		getPoint(teeth, anchors_[0]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[0], 1)) * getTooth(teeth, anchors_[0].position).getRadius()),
-		getPoint(teeth, anchors_[0])
-	};
-	mesialCurve.insert(mesialCurve.begin() + 2, delta > 0 ? initializer_list<Point>{(getPoint(teeth, anchors_[3], 1) + getPoint(teeth, anchors_[3], 1, true)) / 2, getPoint(teeth, anchors_[3], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[3], 1, true)) * getTooth(teeth, anchors_[3].position, true).getRadius())} : delta < 0 ? initializer_list<Point>{getPoint(teeth, anchors_[0], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[0], 1, true)) * getTooth(teeth, anchors_[0].position, true).getRadius()), (getPoint(teeth, anchors_[0], 1) + getPoint(teeth, anchors_[0], 1, true)) / 2} : initializer_list<Point>{(getPoint(teeth, anchors_[3], 1) + getPoint(teeth, anchors_[0], 1)) / 2});
+	auto delta = anchors_[3].position.ordinal - anchors_[0].position.ordinal + anchors_[3].direction - anchors_[0].direction;
+	mesialCurve = {getPoint(teeth, anchors_[3]), getPoint(teeth, anchors_[3]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[3], 1)) * getTooth(teeth, anchors_[3]).getRadius() * (1 + max(delta, 0))), getPoint(teeth, anchors_[0]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[0], 1)) * getTooth(teeth, anchors_[0]).getRadius() * (1 - min(delta, 0))), getPoint(teeth, anchors_[0])};
+	mesialCurve.insert(mesialCurve.begin() + 2, delta > 0 ? initializer_list<Point>{roundToInt((getTooth(teeth, anchors_[3], 1).getCentroid() + getTooth(teeth, anchors_[3], 1, true).getCentroid()) / 2), getPoint(teeth, anchors_[3], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[3], 1, true)) * getTooth(teeth, anchors_[3], true).getRadius() * (1 + delta))} : delta < 0 ? initializer_list<Point>{getPoint(teeth, anchors_[0], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[0], 1, true)) * getTooth(teeth, anchors_[0], true).getRadius() * (1 - delta)), roundToInt((getTooth(teeth, anchors_[0], 1).getCentroid() + getTooth(teeth, anchors_[0], 1, true).getCentroid()) / 2)} : initializer_list<Point>{roundToInt((getTooth(teeth, anchors_[3], 1).getCentroid() + getTooth(teeth, anchors_[0], 1).getCentroid()) / 2)});
 	computeSmoothCurve(mesialCurve, mesialCurve);
-	delta = anchors_[2].position.ordinal - anchors_[1].position.ordinal + static_cast<float>(anchors_[2].direction - anchors_[1].direction) / 2;
-	distalCurve = {
-		getPoint(teeth, anchors_[1]),
-		getPoint(teeth, anchors_[1]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[1], -1)) * getTooth(teeth, anchors_[1].position).getRadius()),
-		getPoint(teeth, anchors_[2]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[2], -1)) * getTooth(teeth, anchors_[2].position).getRadius()),
-		getPoint(teeth, anchors_[2])
-	};
-	distalCurve.insert(distalCurve.begin() + 2, delta > 0 ? initializer_list<Point>{(getPoint(teeth, anchors_[1], -1) + getPoint(teeth, anchors_[1], -1, true)) / 2, getPoint(teeth, anchors_[1], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[1], -1, true)) * getTooth(teeth, anchors_[1].position, true).getRadius())} : delta < 0 ? initializer_list<Point>{getPoint(teeth, anchors_[2], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[2], -1, true)) * getTooth(teeth, anchors_[2].position, true).getRadius()), (getPoint(teeth, anchors_[2], -1) + getPoint(teeth, anchors_[2], -1, true)) / 2} : initializer_list<Point>{(getPoint(teeth, anchors_[1], -1) + getPoint(teeth, anchors_[2], -1)) / 2});
+	delta = anchors_[2].position.ordinal - anchors_[1].position.ordinal + anchors_[2].direction - anchors_[1].direction;
+	distalCurve = {getPoint(teeth, anchors_[1]), getPoint(teeth, anchors_[1]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[1], -1)) * getTooth(teeth, anchors_[1]).getRadius() * (1 + max(delta, 0))), getPoint(teeth, anchors_[2]) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[2], -1)) * getTooth(teeth, anchors_[2]).getRadius() * (1 - min(delta, 0))), getPoint(teeth, anchors_[2])};
+	distalCurve.insert(distalCurve.begin() + 2, delta > 0 ? initializer_list<Point>{roundToInt((getTooth(teeth, anchors_[1], -1).getCentroid() + getTooth(teeth, anchors_[1], -1, true).getCentroid()) / 2), getPoint(teeth, anchors_[1], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[1], -1, true)) * getTooth(teeth, anchors_[1], true).getRadius() * (1 + delta))} : delta < 0 ? initializer_list<Point>{getPoint(teeth, anchors_[2], 0, true) - roundToInt(computeNormalDirection(getPoint(teeth, anchors_[2], -1, true)) * getTooth(teeth, anchors_[2], true).getRadius() * (1 - delta)), roundToInt((getTooth(teeth, anchors_[2], -1).getCentroid() + getTooth(teeth, anchors_[2], -1, true).getCentroid()) / 2)} : initializer_list<Point>{roundToInt((getTooth(teeth, anchors_[1], -1).getCentroid() + getTooth(teeth, anchors_[2], -1).getCentroid()) / 2)});
 	computeSmoothCurve(distalCurve, distalCurve);
 	for (auto ordinal = anchors_[0].position.ordinal; ordinal <= anchors_[1].position.ordinal; ++ordinal) {
+		if (ordinal == anchors_[0].position.ordinal && anchors_[0].direction == RpdWithDirection::DISTAL) {
+			curve.push_back(getPoint(teeth, anchors_[0]));
+			continue;
+		}
+		if (ordinal == anchors_[1].position.ordinal && anchors_[1].direction == RpdWithDirection::MESIAL) {
+			curve.push_back(getPoint(teeth, anchors_[1]));
+			continue;
+		}
 		auto thisCurve = teeth[anchors_[0].position.zone][ordinal].getCurve(180, 0);
 		curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
 	}
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	for (auto ordinal = anchors_[2].position.ordinal; ordinal >= anchors_[3].position.ordinal; --ordinal) {
+		if (ordinal == anchors_[2].position.ordinal && anchors_[2].direction == RpdWithDirection::MESIAL) {
+			curve.push_back(getPoint(teeth, anchors_[2]));
+			continue;
+		}
+		if (ordinal == anchors_[3].position.ordinal && anchors_[3].direction == RpdWithDirection::DISTAL) {
+			curve.push_back(getPoint(teeth, anchors_[3]));
+			continue;
+		}
 		auto thisCurve = teeth[anchors_[2].position.zone][ordinal].getCurve(180, 0);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 	}

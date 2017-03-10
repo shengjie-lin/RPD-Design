@@ -23,9 +23,6 @@ template <typename T>
 Point2f normalize(const Point_<T>& point) { return static_cast<Point2f>(point) / norm(point); }
 
 template <typename T>
-int roundToInt(const T& num) { return round(num); }
-
-template <typename T>
 Point roundToInt(const Point_<T>& point) { return Point(round(point.x), round(point.y)); }
 
 template <typename T>
@@ -35,7 +32,9 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr);
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position, const bool& shouldMirror = false);
+const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position);
+
+const Tooth& getTooth(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
 const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 

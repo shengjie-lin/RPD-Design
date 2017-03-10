@@ -57,23 +57,23 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr) { return 'L' + string(clsStr) + ';'; }
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position, const bool& shouldMirror) {
+const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position) { return getTooth(teeth, RpdAsMajorConnector::Anchor(position)); }
+
+const Tooth& getTooth(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
+	auto& position = anchor.position;
 	auto zone = position.zone;
 	if (shouldMirror)
 		zone += 1 - zone % 2 * 2;
-	return teeth[zone][position.ordinal];
+	auto ordinal = position.ordinal;
+	auto& direction = anchor.direction;
+	if (shift > 0 && direction == RpdWithDirection::DISTAL)
+		++ordinal;
+	else if (shift < 0 && direction == RpdWithDirection::MESIAL)
+		--ordinal;
+	return teeth[zone][ordinal];
 }
 
-const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
-	auto& direction = anchor.direction;
-	auto deltaOrdinal = 0;
-	if (shift > 0 && direction == RpdWithDirection::DISTAL)
-		deltaOrdinal = 1;
-	else if (shift < 0 && direction == RpdWithDirection::MESIAL)
-		deltaOrdinal = -1;
-	auto& position = anchor.position;
-	return getTooth(teeth, Rpd::Position(position.zone, position.ordinal + deltaOrdinal), shouldMirror).getAnglePoint(shift > 0 || shift == 0 && direction == RpdWithDirection::DISTAL ? 180 : 0);
-}
+const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
 
 void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
 	Point lastPoint;
