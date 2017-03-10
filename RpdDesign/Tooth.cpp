@@ -17,9 +17,9 @@ vector<Point> Tooth::getCurve(const int& startAngle, const int& endAngle, const 
 	auto midAngle = (startAngle + endAngle) / 2;
 	if (startAngle > endAngle)
 		midAngle = (midAngle + 180) % 360;
-	const auto& startIdx = anglePointIndices_[startAngle];
-	const auto& midIdx = anglePointIndices_[midAngle];
-	const auto& endIdx = anglePointIndices_[endAngle];
+	auto& startIdx = anglePointIndices_[startAngle];
+	auto& midIdx = anglePointIndices_[midAngle];
+	auto& endIdx = anglePointIndices_[endAngle];
 	vector<Point> curve;
 	if ((midIdx - startIdx) * (endIdx - midIdx) >= 0)
 		if (startIdx < endIdx)
@@ -88,8 +88,8 @@ void Tooth::findAnglePoints(const int& zoneNo) {
 		auto isFound = false;
 		auto d = rotate(normalDirection_, targetAngle);
 		while (!isFound) {
-			const auto& p1 = contour_[j];
-			const auto& p2 = contour_[(j + 1) % nPoints];
+			auto& p1 = contour_[j];
+			auto& p2 = contour_[(j + 1) % nPoints];
 			auto t = d.cross(centroid_ - static_cast<Point2f>(p1)) / d.cross(p2 - p1);
 			if (t >= 0 && t < 1) {
 				auto point = p1 + t * (p2 - p1);

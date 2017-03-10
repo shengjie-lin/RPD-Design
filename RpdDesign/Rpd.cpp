@@ -151,7 +151,7 @@ void AkersClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) cons
 Clasp::Clasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction) {}
 
 void Clasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	auto tooth = teeth[position_.zone][position_.ordinal];
+	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	if (direction_ == MESIAL)
 		curve = tooth.getCurve(60, 300);
@@ -216,17 +216,16 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[4]) con
 	bool haslingualBlockage;
 	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius, &haslingualBlockage);
 	auto isCoveringTail = false;
-	const auto& startZone = startPosition_.zone;
-	if (startPosition_.ordinal == teeth[startZone].size() - 1) {
+	if (startPosition_.ordinal == teeth[startPosition_.zone].size() - 1) {
 		isCoveringTail = true;
-		Point2f tmp = teeth[startZone].back().getAnglePoint(180);
-		curve[0] = roundToInt(tmp + rotate(computeNormalDirection(tmp), -CV_PI / 2) * avgRadius);
+		Point2f distalPoint = getTooth(teeth, startPosition_).getAnglePoint(180);
+		curve[0] = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius);
 	}
-	const auto& endZone = endPosition_.zone;
-	if (endPosition_.ordinal == teeth[endZone].size() - 1) {
+	auto& zone = endPosition_.zone;
+	if (endPosition_.ordinal == teeth[zone].size() - 1) {
 		isCoveringTail = true;
-		Point2f tmp = teeth[endZone].back().getAnglePoint(180);
-		curve.back() = roundToInt(tmp + rotate(computeNormalDirection(tmp), CV_PI * (endZone % 2 - 0.5)) * avgRadius);
+		Point2f distalPoint = getTooth(teeth, endPosition_).getAnglePoint(180);
+		curve.back() = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), CV_PI * (zone % 2 - 0.5)) * avgRadius);
 	}
 	if (isCoveringTail || !haslingualBlockage) {
 		vector<Point> tmpCurve(curve.size());
@@ -276,9 +275,9 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[4])
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
 
 void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = getTooth(teeth, position_);
-	Point centroid = tooth.getCentroid();
-	auto point = centroid + (tooth.getAnglePoint(180) - centroid) * 1.1;
+	auto& tooth = getTooth(teeth, position_);
+	auto& centroid = tooth.getCentroid();
+	auto point = roundToInt(centroid + (static_cast<Point2f>(tooth.getAnglePoint(180)) - centroid) * 1.1);
 	auto direction = roundToInt(computeNormalDirection(point) * tooth.getRadius() * 2 / 3);
 	line(designImage, point, point + direction, 0, lineThicknessOfLevel[2], LINE_AA);
 	line(designImage, point, point - direction, 0, lineThicknessOfLevel[2], LINE_AA);
@@ -287,7 +286,7 @@ void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 HalfClasp::HalfClasp(const Position& position, const Material& material, const Direction& direction, const Side& side): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), side_(side) {}
 
 void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = getTooth(teeth, position_);
+	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	switch (direction_ * 2 + side_) {
 		case 0b00:
@@ -313,7 +312,7 @@ void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const
 IBar::IBar(const Position& position): RpdWithSingleSlot(position) {}
 
 void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = getTooth(teeth, position_);
+	auto& tooth = getTooth(teeth, position_);
 	auto a = tooth.getRadius() * 1.5;
 	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
 	auto center = (point1 + point2) / 2;
@@ -341,7 +340,7 @@ LingualRest* LingualRest::createFromIndividual(JNIEnv*const& env, const jmethodI
 }
 
 void LingualRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	auto curve = teeth[position_.zone][position_.ordinal].getCurve(240, 300);
+	auto curve = getTooth(teeth, position_).getCurve(240, 300);
 	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
 }
@@ -357,7 +356,7 @@ OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv*const& env, const jmetho
 }
 
 void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	auto tooth = teeth[position_.zone][position_.ordinal];
+	auto& tooth = getTooth(teeth, position_);
 	Point2f point;
 	vector<Point> curve;
 	if (direction_ == MESIAL) {
@@ -368,7 +367,7 @@ void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 		point = tooth.getAnglePoint(180);
 		curve = tooth.getCurve(160, 200);
 	}
-	auto centroid = tooth.getCentroid();
+	auto& centroid = tooth.getCentroid();
 	curve.push_back(centroid + (point - centroid) / 2);
 	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
@@ -431,7 +430,7 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 Plating::Plating(const Position& position): RpdWithSingleSlot(position) {}
 
 void Plating::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	auto curve = teeth[position_.zone][position_.ordinal].getCurve(180, 0);
+	auto curve = getTooth(teeth, position_).getCurve(180, 0);
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
@@ -446,7 +445,7 @@ RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& m
 }
 
 void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
-	const auto& tooth = getTooth(teeth, position_);
+	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	if (position_.zone < 2)
 		curve = tooth.getCurve(60, 0);

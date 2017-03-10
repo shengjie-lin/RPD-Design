@@ -65,13 +65,13 @@ const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& positio
 }
 
 const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
-	const auto& direction = anchor.direction;
+	auto& direction = anchor.direction;
 	auto deltaOrdinal = 0;
 	if (shift > 0 && direction == RpdWithDirection::DISTAL)
 		deltaOrdinal = 1;
 	else if (shift < 0 && direction == RpdWithDirection::MESIAL)
 		deltaOrdinal = -1;
-	const auto& position = anchor.position;
+	auto& position = anchor.position;
 	return getTooth(teeth, Rpd::Position(position.zone, position.ordinal + deltaOrdinal), shouldMirror).getAnglePoint(shift > 0 || shift == 0 && direction == RpdWithDirection::DISTAL ? 180 : 0);
 }
 
@@ -82,10 +82,10 @@ void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& st
 	if (hasLingualBlockage)
 		*hasLingualBlockage = false;
 	if (startPosition.zone == endPosition.zone) {
-		const auto& zone = startPosition.zone;
+		auto& zone = startPosition.zone;
 		for (auto ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
 			++nTeeth;
-			auto tooth = teeth[zone][ordinal];
+			auto& tooth = teeth[zone][ordinal];
 			sumOfRadii += tooth.getRadius();
 			if (ordinal == startPosition.ordinal)
 				curve.push_back(tooth.getAnglePoint(0));
@@ -104,7 +104,7 @@ void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& st
 		auto step = -1;
 		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; zone == startPosition.zone || ordinal <= endPosition.ordinal; ordinal += step) {
 			++nTeeth;
-			auto tooth = teeth[zone][ordinal];
+			auto& tooth = teeth[zone][ordinal];
 			sumOfRadii += tooth.getRadius();
 			if (zone == startPosition.zone && ordinal == startPosition.ordinal)
 				curve.push_back(tooth.getAnglePoint(180));
@@ -180,7 +180,7 @@ void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position
 void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope) {
 	if (scope == RpdWithLingualBlockage::LINE)
 		if (positions[0].zone == positions[1].zone) {
-			const auto& zone = positions[0].zone;
+			auto& zone = positions[0].zone;
 			for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
 				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
 		}

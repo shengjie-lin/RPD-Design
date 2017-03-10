@@ -52,8 +52,8 @@ void RpdViewer::updateRpdDesign(const bool& shouldResetLingualBlockage) {
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage) {
-			auto lingualBlockage = rpdWithLingualBlockage->getLingualBlockage();
-			auto scope = rpdWithLingualBlockage->getScope();
+			auto& lingualBlockage = rpdWithLingualBlockage->getLingualBlockage();
+			auto& scope = rpdWithLingualBlockage->getScope();
 			if (scope == RpdWithLingualBlockage::POINT)
 				updateLingualBlockage(teeth_, dynamic_cast<RpdWithSingleSlot*>(*rpd)->getPosition(), lingualBlockage);
 			else {
