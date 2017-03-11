@@ -19,6 +19,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"ring_clasp", RING_CLASP},
 	{"RPA_clasps", RPA},
 	{"RPI_clasps", RPI},
+	{"tooth", TOOTH},
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
@@ -48,7 +49,6 @@ void RpdViewer::updateRpdDesign(const bool& shouldResetLingualBlockage) {
 		for (auto zone = 0; zone < 4; ++zone)
 			for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
 				teeth_[zone][ordinal].setLingualBlockage(RpdWithLingualBlockage::NONE);
-	bool hasEighthTooth[4] = {}; /*TODO: the eighth tooth*/
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage) {
@@ -63,6 +63,9 @@ void RpdViewer::updateRpdDesign(const bool& shouldResetLingualBlockage) {
 		}
 	}
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
+	for (auto zone = 0; zone < 4; ++zone)
+		if (isEtUsed_[zone])
+			polylines(designImages_[1], teeth_[zone].back().getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
 		(*rpd)->draw(designImages_[1], teeth_);
 }
@@ -123,7 +126,6 @@ void RpdViewer::loadBaseImage() {
 				auto no = idx[i];
 				for (auto j = 0; j < 4; ++j)
 					if (isInZone[j][no]) {
-						tmpTeeth[no].findAnglePoints(j);
 						if (j % 2)
 							teeth_[j].push_back(tmpTeeth[no]);
 						else
@@ -132,9 +134,28 @@ void RpdViewer::loadBaseImage() {
 					}
 			}
 			designImages_[0] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
-			for (auto zone = 0; zone < 4; ++zone)
-				for (auto ordinal = 0; ordinal < teeth_[zone].size(); ++ordinal)
-					polylines(designImages_[0], teeth_[zone][ordinal].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+			for (auto zone = 0; zone < 4; ++zone) {
+				nTeeth = teeth_[zone].size();
+				for (auto ordinal = 0; ordinal < nTeeth; ++ordinal) {
+					auto& tooth = teeth_[zone][ordinal];
+					if (ordinal == nTeeth - 1)
+						teeth_[zone].push_back(tooth);
+					tooth.findAnglePoints(zone);
+					polylines(designImages_[0], tooth.getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+				}
+				auto seventhTooth = teeth_[zone].end() - 2, eighthTooth = teeth_[zone].end() - 1;
+				auto contour = eighthTooth->getContour();
+				auto translation = roundToInt(rotate(computeNormalDirection(seventhTooth->getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth->getRadius() * 2.1);
+				for (auto point = contour.begin(); point < contour.end(); ++point)
+					*point += translation;
+				eighthTooth->setContour(contour);
+				auto eighthCentroid = eighthTooth->getCentroid();
+				auto theta = asin(computeNormalDirection(seventhTooth->getCentroid()).cross(computeNormalDirection(eighthCentroid)));
+				for (auto point = contour.begin(); point < contour.end(); ++point)
+					*point = roundToInt(eighthCentroid + rotate(static_cast<Point2f>(*point) - eighthCentroid, theta));
+				eighthTooth->setContour(contour);
+				eighthTooth->findAnglePoints(zone);
+			}
 			updateRpdDesign();
 			refreshDisplay();
 		}
@@ -171,6 +192,7 @@ void RpdViewer::loadRpdInfo() {
 		auto clsStatement = env_->FindClass(clsStrStatement);
 
 		auto midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
+		auto midGetBoolean = env_->GetMethodID(clsStatement, "getBoolean", "()Z");
 		auto midGetInt = env_->GetMethodID(clsStatement, "getInt", "()I");
 		auto midGetLocalName = env_->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
 		auto midGetOntClass = env_->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
@@ -204,6 +226,9 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "component_position").c_str());
 		auto opComponentPosition = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
+		tmpStr = env_->NewStringUTF((ontPrefix + "is_missing").c_str());
+		auto dpIsMissing = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_clasp_material").c_str());
 		auto dpLingualClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -223,52 +248,64 @@ void RpdViewer::loadRpdInfo() {
 		auto dpToothZone = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		vector<Rpd*> rpds;
+		bool isEtUsed[4] = {};
+		bool isEtMissing[4] = {};
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
 				case AKERS_CLASP:
-					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case COMBINATION_CLASP:
-					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case COMBINED_CLASP:
-					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case DENTURE_BASE:
-					rpds.push_back(DentureBase::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(DentureBase::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case EDENTULOUS_SPACE:
-					rpds.push_back(EdentulousSpace::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(EdentulousSpace::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case LINGUAL_REST:
-					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case OCCLUSAL_REST:
-					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case PALATAL_PLATE:
-					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual));
+					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, isEtUsed));
 					break;
 				case RING_CLASP:
-					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case RPA:
-					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				case RPI:
-					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
+					break;
+				case TOOTH:
+					if (env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == 8)
+						isEtMissing[env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = env_->CallBooleanMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing), midGetBoolean);
 					break;
 				case WW_CLASP:
-					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual));
+					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEtUsed));
 					break;
 				default: ;
 			}
 		}
 		if (rpds.size()) {
+			for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
+				auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
+				if (rpdAsMajorConnector)
+					rpdAsMajorConnector->updateEt(isEtMissing, isEtUsed);
+			}
 			rpds_ = rpds;
+			copy(begin(isEtUsed), end(isEtUsed), isEtUsed_);
 			if (baseImage_.data) {
 				updateRpdDesign(true);
 				refreshDisplay();

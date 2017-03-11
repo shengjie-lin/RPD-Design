@@ -6,6 +6,7 @@ class Tooth {
 public:
 	explicit Tooth(const vector<Point>& contour);
 	const vector<Point>& getContour() const;
+	void setContour(const vector<Point>& contour);
 	const Point& getAnglePoint(const int& angle) const;
 	vector<Point> getCurve(const int& startAngle, const int& endAngle, const bool& isConvex = true) const;
 	const Point2f& getCentroid() const;

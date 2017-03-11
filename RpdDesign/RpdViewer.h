@@ -28,6 +28,7 @@ private:
 		RING_CLASP,
 		RPA,
 		RPI,
+		TOOTH,
 		WW_CLASP
 	};
 
@@ -35,6 +36,7 @@ private:
 	Mat baseImage_, curImage_, designImages_[2];
 	QSize imageSize_;
 	bool showBaseImage_, showDesignImage_;
+	bool isEtUsed_[4] = {};
 	vector<Tooth> teeth_[4];
 	vector<Rpd*> rpds_;
 	JavaVM* vm_;

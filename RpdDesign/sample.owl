@@ -5204,7 +5204,6 @@ note : set for tooth now</rdfs:comment>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor361"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor471"/>
     </owl:NamedIndividual>
     
 
@@ -5565,7 +5564,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth48">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
+        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">8</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">4</tooth_zone>
     </owl:NamedIndividual>

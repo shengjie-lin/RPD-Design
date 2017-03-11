@@ -3,13 +3,16 @@
 #include "Tooth.h"
 #include "Utilities.h"
 
-Tooth::Tooth(const vector<Point>& contour): contour_(contour) {
-	auto moment = moments(contour_);
+Tooth::Tooth(const vector<Point>& contour) { setContour(contour); }
+
+const vector<Point>& Tooth::getContour() const { return contour_; }
+
+void Tooth::setContour(const vector<Point>& contour) {
+	contour_ = contour;
+	auto moment = moments(contour);
 	radius_ = sqrt(moment.m00 / CV_PI);
 	centroid_ = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 }
-
-const vector<Point>& Tooth::getContour() const { return contour_; }
 
 const Point& Tooth::getAnglePoint(const int& angle) const { return contour_[anglePointIndices_[angle]]; }
 
