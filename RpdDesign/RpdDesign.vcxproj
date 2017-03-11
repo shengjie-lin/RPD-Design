@@ -75,6 +75,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GlobalVariables.cpp" />
     <ClCompile Include="EllipticCurve.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_RpdDesign.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -126,6 +127,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GlobalVariables.h" />
     <ClInclude Include="EllipticCurve.h" />
     <ClInclude Include="GeneratedFiles\ui_RpdDesign.h" />
     <ClInclude Include="Rpd.h" />

@@ -14,6 +14,10 @@ public:
 	void setNormalDirection(const Point2f& normalDirection);
 	void findAnglePoints(const int& zoneNo);
 	const float& getRadius() const;
+	const bool& hasMesialOcclusalRest() const;
+	void setMesialOcclusalRest();
+	const bool& hasDistalOcclusalRest() const;
+	void setDistalOcclusalRest();
 	const RpdWithLingualBlockage::LingualBlockage& getLingualBlockage() const;
 	void setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
 
@@ -23,5 +27,7 @@ private:
 	Point2f normalDirection_;
 	vector<int> anglePointIndices_ = vector<int>(360);
 	float radius_;
+	bool hasMesialOcclusalRest_ = false;
+	bool hasDistalOcclusalRest_ = false;
 	RpdWithLingualBlockage::LingualBlockage lingualBlockage_ = RpdWithLingualBlockage::NONE;
 };

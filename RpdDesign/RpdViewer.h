@@ -4,8 +4,7 @@
 #include <opencv2/core/mat.hpp>
 #include <QLabel>
 
-using namespace std;
-using namespace cv;
+#include "GlobalVariables.h"
 
 class Rpd;
 class Tooth;
@@ -36,12 +35,12 @@ private:
 	Mat baseImage_, curImage_, designImages_[2];
 	QSize imageSize_;
 	bool showBaseImage_, showDesignImage_;
-	bool isEtUsed_[4] = {};
-	vector<Tooth> teeth_[4];
+	bool isEighthToothUsed_[nZones] = {};
+	vector<Tooth> teeth_[nZones];
 	vector<Rpd*> rpds_;
 	JavaVM* vm_;
 	JNIEnv* env_;
-	void updateRpdDesign(const bool& shouldResetLingualBlockage = false);
+	void updateRpdDesign(const bool& shouldResetTeeth = false);
 	void resizeEvent(QResizeEvent* event) override;
 	void refreshDisplay();
 

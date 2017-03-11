@@ -21,7 +21,7 @@ Add to PATH:
 - "%OPENCV_DIR%\bin"
 - "C:\Program Files\Java\jre1.8.0_121\bin\server" or alike
 
-In "%ROOT%\RpdDesign\Utilities.cpp", modify accordingly the following line:
+In "%ROOT%\RpdDesign\GlobalVariables.h", modify accordingly the following line:
 
 <code>const string jenaLibPath = "C:/Program Files/apache-jena-3.2.0/lib/";</code>
 

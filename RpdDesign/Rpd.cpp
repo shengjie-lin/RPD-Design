@@ -10,13 +10,13 @@ const Rpd::Position& RpdWithSingleSlot::getPosition() const { return position_; 
 
 RpdWithSingleSlot::RpdWithSingleSlot(const Position& position): position_(position) {}
 
-void RpdWithSingleSlot::queryPosition(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, Position& position, bool isEtUsed[4]) {
+void RpdWithSingleSlot::queryPosition(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, Position& position, bool isEighthToothUsed[nZones]) {
 	auto tooth = env->CallObjectMethod(individual, midResourceGetProperty, opComponentPosition);
 	auto zone = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1;
 	auto ordinal = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1;
 	position = Position(zone, ordinal);
-	if (ordinal == 7)
-		isEtUsed[zone] = true;
+	if (ordinal == nTeethPerZone)
+		isEighthToothUsed[zone] = true;
 }
 
 const Rpd::Position& RpdWithMultiSlots::getStartPosition() const { return startPosition_; }
@@ -25,7 +25,7 @@ const Rpd::Position& RpdWithMultiSlots::getEndPosition() const { return endPosit
 
 RpdWithMultiSlots::RpdWithMultiSlots(const Position& startPosition, const Position& endPosition): startPosition_(startPosition), endPosition_(endPosition) {}
 
-void RpdWithMultiSlots::queryPositions(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, Position& startPosition, Position& endPosition, bool isEtUsed[4]) {
+void RpdWithMultiSlots::queryPositions(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, Position& startPosition, Position& endPosition, bool isEighthToothUsed[nZones]) {
 	auto teeth = env->CallObjectMethod(individual, midListProperties, opComponentPosition);
 	vector<Position> positions;
 	auto count = 0;
@@ -34,8 +34,8 @@ void RpdWithMultiSlots::queryPositions(JNIEnv*const& env, const jmethodID& midGe
 		auto zone = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1;
 		auto ordinal = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1;
 		positions.push_back(Position(zone, ordinal));
-		if (ordinal == 7)
-			isEtUsed[zone] = true;
+		if (ordinal == nTeethPerZone)
+			isEighthToothUsed[zone] = true;
 		++count;
 	}
 	if (count == 1)
@@ -97,7 +97,7 @@ RpdAsMajorConnector::Anchor::Anchor(const Position& position, const RpdWithDirec
 
 RpdAsMajorConnector::RpdAsMajorConnector(const vector<Anchor>& anchors): anchors_(anchors) {}
 
-void RpdAsMajorConnector::queryAnchors(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, const Coverage& coverage, vector<Anchor>& anchors, bool isEtUsed[4]) {
+void RpdAsMajorConnector::queryAnchors(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, const Coverage& coverage, vector<Anchor>& anchors, bool isEighthToothUsed[nZones]) {
 	auto count = 0;
 	auto majorConnectorAnchors = env->CallObjectMethod(individual, midListProperties, opMajorConnectorAnchor);
 	while (env->CallBooleanMethod(majorConnectorAnchors, midHasNext)) {
@@ -106,8 +106,8 @@ void RpdAsMajorConnector::queryAnchors(JNIEnv*const& env, const jmethodID& midGe
 		auto zone = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1;
 		auto ordinal = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1;
 		anchors.push_back(Anchor(Position(zone, ordinal), static_cast<RpdWithDirection::Direction>(env->CallIntMethod(env->CallObjectMethod(anchor, midStatementGetProperty, dpAnchorMesialOrDistal), midGetInt))));
-		if (ordinal == 7)
-			isEtUsed[zone] = true;
+		if (ordinal == nTeethPerZone)
+			isEighthToothUsed[zone] = true;
 		++count;
 	}
 	for (auto i = 0; i < count - 1; ++i)
@@ -142,41 +142,41 @@ void RpdAsMajorConnector::queryAnchors(JNIEnv*const& env, const jmethodID& midGe
 	}
 }
 
-void RpdAsMajorConnector::updateEt(const bool isEtMissing[4], bool isEtUsed[4]) {
+void RpdAsMajorConnector::updateEighthToothInfo(const bool isEighthToothMissing[nZones], bool isEighthToothUsed[nZones]) {
 	for (auto i = 1; i < 3; ++i) {
 		auto& position = anchors_[i].position;
 		auto& zone = position.zone;
 		auto& ordinal = position.ordinal;
 		if (ordinal == -1)
-			if (isEtMissing[zone])
-				ordinal = 6;
+			if (isEighthToothMissing[zone])
+				ordinal = nTeethPerZone - 1;
 			else {
-				ordinal = 7;
-				isEtUsed[zone] = true;
+				ordinal = nTeethPerZone;
+				isEighthToothUsed[zone] = true;
 			}
 	}
 }
 
 AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), RpdWithLingualBlockage() {}
 
-AkersClasp* AkersClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+AkersClasp* AkersClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Direction claspTipDirection;
 	Material claspMaterial;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new AkersClasp(position, claspMaterial, claspTipDirection);
 }
 
-void AkersClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void AkersClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	Clasp(position_, material_, direction_).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
 }
 
 Clasp::Clasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction) {}
 
-void Clasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void Clasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	if (direction_ == MESIAL)
@@ -191,15 +191,15 @@ void Clasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
 
 CombinationClasp::CombinationClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
 
-CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Direction claspTipDirection;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	return new CombinationClasp(position, claspTipDirection);
 }
 
-void CombinationClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void CombinationClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	HalfClasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
 	HalfClasp(position_, RpdWithMaterial::CAST, direction_, HalfClasp::LINGUAL).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
@@ -207,15 +207,15 @@ void CombinationClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]
 
 CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material): RpdWithMultiSlots(startPosition, endPosition), RpdWithMaterial(material), RpdWithLingualBlockage(CLASP, LINE) {}
 
-CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position startPosition, endPosition;
 	Material claspMaterial;
-	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEtUsed);
+	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEighthToothUsed);
 	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new CombinedClasp(startPosition, endPosition, claspMaterial);
 }
 
-void CombinedClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void CombinedClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	Clasp(endPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
 	OcclusalRest(endPosition_, RpdWithDirection::MESIAL).draw(designImage, teeth);
 	if (startPosition_.zone == endPosition_.zone) {
@@ -230,30 +230,26 @@ void CombinedClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) c
 
 DentureBase::DentureBase(const Position& startPosition, const Position& endPosition): RpdWithMultiSlots(startPosition, endPosition) {}
 
-DentureBase* DentureBase::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+DentureBase* DentureBase::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position startPosition, endPosition;
-	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEtUsed);
+	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEighthToothUsed);
 	return new DentureBase(startPosition, endPosition);
 }
 
-void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve;
 	float avgRadius;
 	bool haslingualBlockage;
 	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius, &haslingualBlockage);
-	auto isCoveringTail = false;
-	if (startPosition_.ordinal == teeth[startPosition_.zone].size() - 1) {
-		isCoveringTail = true;
+	if (coversStartTail_) {
 		Point2f distalPoint = getTooth(teeth, startPosition_).getAnglePoint(180);
 		curve[0] = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius);
 	}
-	auto& zone = endPosition_.zone;
-	if (endPosition_.ordinal == teeth[zone].size() - 1) {
-		isCoveringTail = true;
+	if (coversEndTail_) {
 		Point2f distalPoint = getTooth(teeth, endPosition_).getAnglePoint(180);
-		curve.back() = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), CV_PI * (zone % 2 - 0.5)) * avgRadius);
+		curve.back() = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), CV_PI * (endPosition_.zone % 2 - 0.5)) * avgRadius);
 	}
-	if (isCoveringTail || !haslingualBlockage) {
+	if (coversStartTail_ || coversEndTail_ || !haslingualBlockage) {
 		vector<Point> tmpCurve(curve.size());
 		for (auto i = 0; i < curve.size(); ++i) {
 			auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.75);
@@ -274,15 +270,19 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[4]) con
 	}
 }
 
+void DentureBase::setCoversStartTail() { coversStartTail_ = true; }
+
+void DentureBase::setCoversEndTail() { coversEndTail_ = true; }
+
 EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithMultiSlots(startPosition, endPosition) {}
 
-EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position startPosition, endPosition;
-	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEtUsed);
+	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, startPosition, endPosition, isEighthToothUsed);
 	return new EdentulousSpace(startPosition, endPosition);
 }
 
-void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve;
 	float avgRadius;
 	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius);
@@ -300,7 +300,7 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[4])
 
 GuidingPlate::GuidingPlate(const Position& position): RpdWithSingleSlot(position) {}
 
-void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	auto& centroid = tooth.getCentroid();
 	auto point = roundToInt(centroid + (static_cast<Point2f>(tooth.getAnglePoint(180)) - centroid) * 1.1);
@@ -311,7 +311,7 @@ void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 
 HalfClasp::HalfClasp(const Position& position, const Material& material, const Direction& direction, const Side& side): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), side_(side) {}
 
-void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	switch (direction_ * 2 + side_) {
@@ -337,7 +337,7 @@ void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const
 
 IBar::IBar(const Position& position): RpdWithSingleSlot(position) {}
 
-void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	auto a = tooth.getRadius() * 1.5;
 	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
@@ -357,15 +357,15 @@ void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
 
 LingualRest::LingualRest(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
 
-LingualRest* LingualRest::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+LingualRest* LingualRest::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Direction restMesialOrDistal;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
 	return new LingualRest(position, restMesialOrDistal);
 }
 
-void LingualRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void LingualRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto curve = getTooth(teeth, position_).getCurve(240, 300);
 	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
@@ -373,15 +373,15 @@ void LingualRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) con
 
 OcclusalRest::OcclusalRest(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
 
-OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Direction restMesialOrDistal;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
 	return new OcclusalRest(position, restMesialOrDistal);
 }
 
-void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	Point2f point;
 	vector<Point> curve;
@@ -401,10 +401,10 @@ void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 
 PalatalPlate::PalatalPlate(const vector<Anchor>& anchors, const vector<Position>& lingualConfrontations): RpdAsMajorConnector(anchors), lingualConfrontations_(lingualConfrontations) {}
 
-PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, bool isEtUsed[4]) {
+PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Anchor> anchors;
 	vector<Position> lingualConfrontations;
-	queryAnchors(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, PLANAR, anchors, isEtUsed);
+	queryAnchors(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, PLANAR, anchors, isEighthToothUsed);
 	auto lcTeeth = env->CallObjectMethod(individual, midListProperties, dpLingualConfrontation);
 	while (env->CallBooleanMethod(lcTeeth, midHasNext)) {
 		auto tooth = env->CallObjectMethod(lcTeeth, midNext);
@@ -413,7 +413,7 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmetho
 	return new PalatalPlate(anchors, lingualConfrontations);
 }
 
-void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	/*TODO: consider lingual blockage; ugly!*/
 	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
 		Plating(*position).draw(designImage, teeth);
@@ -469,22 +469,22 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[4]) co
 
 Plating::Plating(const Position& position): RpdWithSingleSlot(position) {}
 
-void Plating::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void Plating::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto curve = getTooth(teeth, position_).getCurve(180, 0);
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 RingClasp::RingClasp(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithLingualBlockage() {}
 
-RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Material claspMaterial;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new RingClasp(position, claspMaterial);
 }
 
-void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, position_);
 	vector<Point> curve;
 	if (position_.zone < 2)
@@ -502,15 +502,15 @@ void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const
 
 Rpa::Rpa(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material) {}
 
-Rpa* Rpa::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+Rpa* Rpa::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Material claspMaterial;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
 	return new Rpa(position, claspMaterial);
 }
 
-void Rpa::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void Rpa::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
 	GuidingPlate(position_).draw(designImage, teeth);
 	HalfClasp(position_, material_, RpdWithDirection::MESIAL, HalfClasp::BUCCAL).draw(designImage, teeth);
@@ -518,13 +518,13 @@ void Rpa::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
 
 Rpi::Rpi(const Position& position): RpdWithSingleSlot(position) {}
 
-Rpi* Rpi::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+Rpi* Rpi::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	return new Rpi(position);
 }
 
-void Rpi::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void Rpi::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
 	GuidingPlate(position_).draw(designImage, teeth);
 	IBar(position_).draw(designImage, teeth);
@@ -532,15 +532,15 @@ void Rpi::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
 
 WwClasp::WwClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdWithLingualBlockage() {}
 
-WwClasp* WwClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEtUsed[4]) {
+WwClasp* WwClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
 	Direction claspTipDirection;
-	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEtUsed);
+	queryPosition(env, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, position, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	return new WwClasp(position, claspTipDirection);
 }
 
-void WwClasp::draw(const Mat& designImage, const vector<Tooth> teeth[4]) const {
+void WwClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	Clasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
 }

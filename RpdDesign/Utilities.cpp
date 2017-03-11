@@ -57,9 +57,9 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr) { return 'L' + string(clsStr) + ';'; }
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position) { return getTooth(teeth, RpdAsMajorConnector::Anchor(position)); }
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position) { return getTooth(teeth, RpdAsMajorConnector::Anchor(position)); }
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
 	auto& position = anchor.position;
 	auto zone = position.zone;
 	if (shouldMirror)
@@ -73,9 +73,9 @@ const Tooth& getTooth(const vector<Tooth> teeth[4], const RpdAsMajorConnector::A
 	return teeth[zone][ordinal];
 }
 
-const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
+const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
 
-void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
+void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
@@ -175,9 +175,9 @@ void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, c
 	}
 }
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
+void updateLingualBlockage(vector<Tooth> teeth[nZones], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope) {
+void updateLingualBlockage(vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope) {
 	if (scope == RpdWithLingualBlockage::LINE)
 		if (positions[0].zone == positions[1].zone) {
 			auto& zone = positions[0].zone;
@@ -204,9 +204,3 @@ void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& 
 			teeth[positions[1].zone][ordinal].setLingualBlockage(lingualBlockage);
 	}
 }
-
-const string jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";
-
-const int lineThicknessOfLevel[]{1, 4, 7};
-
-RotatedRect teethEllipse;

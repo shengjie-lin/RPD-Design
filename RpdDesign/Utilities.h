@@ -32,13 +32,13 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr);
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const Rpd::Position& position);
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
-const Tooth& getTooth(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-const Point& getPoint(const vector<Tooth> teeth[4], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
+const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-void computeStringingCurve(const vector<Tooth> teeth[4], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
+void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
 
 Point2f computeNormalDirection(const Point2f& point, float*const& angle = nullptr);
 
@@ -46,12 +46,6 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 
 void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& maxRadius = INFINITY);
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
+void updateLingualBlockage(vector<Tooth> teeth[nZones], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
 
-void updateLingualBlockage(vector<Tooth> teeth[4], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope);
-
-extern const string jenaLibPath;
-
-extern const int lineThicknessOfLevel[];
-
-extern RotatedRect teethEllipse;
+void updateLingualBlockage(vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope);

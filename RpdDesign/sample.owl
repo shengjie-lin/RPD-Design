@@ -5148,7 +5148,7 @@ note : set for tooth now</rdfs:comment>
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base"/>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth42"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth43"/>
     </owl:NamedIndividual>
     
 
