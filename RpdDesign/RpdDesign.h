@@ -4,12 +4,12 @@
 
 class RpdViewer;
 
-class RpdDesign: public QWidget {
+class RpdDesign : public QWidget {
 	Q_OBJECT
-public:
+public :
 	explicit RpdDesign(QWidget*const& parent = nullptr);
 	~RpdDesign();
-private:
-	Ui::RpdDesignClass ui;
+private :
 	RpdViewer* rpdViewer_;
+	Ui::RpdDesignClass ui_;
 };

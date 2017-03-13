@@ -9,12 +9,12 @@
 class Rpd;
 class Tooth;
 
-class RpdViewer: public QLabel {
+class RpdViewer : public QLabel {
 	Q_OBJECT
-public:
+public :
 	RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage);
 	~RpdViewer();
-private:
+private :
 	enum RpdClass {
 		AKER_CLASP = 1,
 		COMBINATION_CLASP,
@@ -31,19 +31,18 @@ private:
 		WW_CLASP
 	};
 
-	static map<string, RpdClass> rpdMapping_;
-	Mat baseImage_, curImage_, designImages_[2];
-	QSize imageSize_;
-	bool showBaseImage_, showDesignImage_, justLoadedRpd_ = false, justLoadedImage_ = false, isEighthToothUsed_[nZones] = {}, isEighthToothMissing_[nZones] = {};
-	vector<Tooth> teeth_[nZones];
-	vector<Rpd*> rpds_;
+	void refreshDisplay();
+	void resizeEvent(QResizeEvent* event) override;
+	void updateRpdDesign();
+	bool isEighthToothMissing_[nZones] = {}, isEighthToothUsed_[nZones] = {}, justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;
 	JNIEnv* env_;
-	void updateRpdDesign();
-	void resizeEvent(QResizeEvent* event) override;
-	void refreshDisplay();
-
-private slots:
+	Mat baseImage_, curImage_, designImages_[2];
+	QSize imageSize_;
+	static map<string, RpdClass> rpdMapping_;
+	vector<Rpd*> rpds_;
+	vector<Tooth> teeth_[nZones];
+private slots :
 	void loadBaseImage();
 	void loadRpdInfo();
 	void onShowBaseChanged(bool showBaseImage);

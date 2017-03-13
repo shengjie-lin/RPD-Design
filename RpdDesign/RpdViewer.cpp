@@ -23,7 +23,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
-RpdViewer::RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage): QLabel(parent), showBaseImage_(showBaseImage), showDesignImage_(showContoursImage) {
+RpdViewer::RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage) : QLabel(parent), showBaseImage_(showBaseImage), showDesignImage_(showContoursImage) {
 	setAlignment(Qt::AlignCenter);
 	setMinimumSize(128, 128);
 	JavaVMInitArgs vmInitArgs;
@@ -61,11 +61,10 @@ void RpdViewer::updateRpdDesign() {
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
 			if (dentureBase) {
-				auto& startPosition = dentureBase->getStartPosition();
-				if (startPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed_[startPosition.zone])
+				auto& positions = dentureBase->getPositions();
+				if (positions[0].ordinal == nTeethPerZone - 1 + isEighthToothUsed_[positions[0].zone])
 					dentureBase->setCoversStartTail();
-				auto& endPosition = dentureBase->getEndPosition();
-				if (endPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed_[endPosition.zone])
+				if (positions[1].ordinal == nTeethPerZone - 1 + isEighthToothUsed_[positions[1].zone])
 					dentureBase->setCoversEndTail();
 			}
 		}
@@ -244,9 +243,6 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "anchor_mesial_or_distal").c_str());
 		auto dpAnchorMesialOrDistal = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-		tmpStr = env_->NewStringUTF((ontPrefix + "buccal_clasp_material").c_str());
-		auto dpBuccalClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "clasp_material").c_str());
 		auto dpClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -258,9 +254,6 @@ void RpdViewer::loadRpdInfo() {
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "is_missing").c_str());
 		auto dpIsMissing = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_clasp_material").c_str());
-		auto dpLingualClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
@@ -286,10 +279,10 @@ void RpdViewer::loadRpdInfo() {
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
 				case AKER_CLASP:
-					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case COMBINATION_CLASP:
-					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case COMBINED_CLASP:
 					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
@@ -301,29 +294,29 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(EdentulousSpace::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case LINGUAL_REST:
-					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case OCCLUSAL_REST:
-					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case PALATAL_PLATE:
 					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, isEighthToothUsed));
 					break;
 				case RING_CLASP:
-					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case RPA:
-					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case RPI:
-					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case TOOTH:
 					if (env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone + 1)
 						isEighthToothMissing[env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = env_->CallBooleanMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing), midGetBoolean);
 					break;
 				case WW_CLASP:
-					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				default: ;
 			}

@@ -40,12 +40,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RpdDesign.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_RpdDesign.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -61,6 +55,21 @@
     <ClCompile Include="GeneratedFiles\Release\moc_RpdViewer.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="EllipticCurve.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalVariables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rpd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RpdDesign.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="RpdViewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,15 +77,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Rpd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EllipticCurve.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GlobalVariables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

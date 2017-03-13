@@ -3,7 +3,7 @@
 #include "Rpd.h"
 
 class Tooth {
-public:
+public :
 	explicit Tooth(const vector<Point>& contour);
 	const vector<Point>& getContour() const;
 	void setContour(const vector<Point>& contour);
@@ -20,14 +20,11 @@ public:
 	void unsetOcclusalRest();
 	const RpdWithLingualBlockage::LingualBlockage& getLingualBlockage() const;
 	void setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
-
-private:
-	vector<Point> contour_;
-	Point2f centroid_;
-	Point2f normalDirection_;
-	vector<int> anglePointIndices_ = vector<int>(360);
+private :
+	bool hasDistalOcclusalRest_ = false, hasMesialOcclusalRest_ = false;
 	float radius_;
-	bool hasMesialOcclusalRest_ = false;
-	bool hasDistalOcclusalRest_ = false;
+	Point2f centroid_, normalDirection_;
 	RpdWithLingualBlockage::LingualBlockage lingualBlockage_ = RpdWithLingualBlockage::NONE;
+	vector<int> anglePointIndices_ = vector<int>(360);
+	vector<Point> contour_;
 };

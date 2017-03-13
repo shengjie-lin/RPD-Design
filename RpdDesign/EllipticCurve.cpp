@@ -3,9 +3,9 @@
 #include "EllipticCurve.h"
 #include "Utilities.h"
 
-EllipticCurve::EllipticCurve(const Point2f& center, const Size& axes, const float& inclination, const float& endAngle, const bool& shouldReverse): EllipticCurve(center, axes, inclination, 0, endAngle, shouldReverse) {}
+EllipticCurve::EllipticCurve(const Point2f& center, const Size& axes, const float& inclination, const float& endAngle, const bool& shouldReverse) : EllipticCurve(center, axes, inclination, 0, endAngle, shouldReverse) {}
 
-EllipticCurve::EllipticCurve(const Point2f& center, const Size& axes, const float& inclination, const float& startAngle, const float& endAngle, const bool& shouldReverse): center_(center), axes_(axes), inclination_(inclination), startAngle_(startAngle), endAngle_(endAngle), shouldReverse_(shouldReverse) {}
+EllipticCurve::EllipticCurve(const Point2f& center, const Size& axes, const float& inclination, const float& startAngle, const float& endAngle, const bool& shouldReverse) : center_(center), axes_(axes), inclination_(inclination), startAngle_(startAngle), endAngle_(endAngle), shouldReverse_(shouldReverse) {}
 
 bool EllipticCurve::getCurve(vector<Point>& curve) const {
 	if (axes_.width < 0)

@@ -40,7 +40,7 @@ const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnect
 
 const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
 
 Point2f computeNormalDirection(const Point2f& point, float*const& angle = nullptr);
 

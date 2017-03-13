@@ -28,7 +28,7 @@ QImage matToQImage(const Mat& inputMat) {
 			return image;
 		}
 		default:
-			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled: " + to_string(inputMat.type())).data()));
+			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled :  " + to_string(inputMat.type())).data()));
 			return QImage();
 	}
 }
@@ -77,25 +77,25 @@ const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnect
 
 const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
 	if (hasLingualBlockage)
 		*hasLingualBlockage = false;
-	if (startPosition.zone == endPosition.zone) {
-		auto& zone = startPosition.zone;
-		for (auto ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
+	if (positions[0].zone == positions[1].zone) {
+		auto& zone = positions[0].zone;
+		for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal) {
 			++nTeeth;
 			auto& tooth = teeth[zone][ordinal];
 			sumOfRadii += tooth.getRadius();
-			if (ordinal == startPosition.ordinal)
+			if (ordinal == positions[0].ordinal)
 				curve.push_back(tooth.getAnglePoint(0));
 			else
 				curve.push_back((tooth.getAnglePoint(0) + lastPoint) / 2);
 			curve.push_back(tooth.getCentroid());
 			lastPoint = tooth.getAnglePoint(180);
-			if (ordinal == endPosition.ordinal)
+			if (ordinal == positions[1].ordinal)
 				curve.push_back(lastPoint);
 			if (hasLingualBlockage)
 				if (tooth.getLingualBlockage() == RpdWithLingualBlockage::MAJOR_CONNECTOR)
@@ -104,17 +104,17 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& 
 	}
 	else {
 		auto step = -1;
-		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; zone == startPosition.zone || ordinal <= endPosition.ordinal; ordinal += step) {
+		for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; zone == positions[0].zone || ordinal <= positions[1].ordinal; ordinal += step) {
 			++nTeeth;
 			auto& tooth = teeth[zone][ordinal];
 			sumOfRadii += tooth.getRadius();
-			if (zone == startPosition.zone && ordinal == startPosition.ordinal)
+			if (zone == positions[0].zone && ordinal == positions[0].ordinal)
 				curve.push_back(tooth.getAnglePoint(180));
 			else
 				curve.push_back((tooth.getAnglePoint(step ? 90 * (1 - step) : 0) + lastPoint) / 2);
 			curve.push_back(tooth.getCentroid());
 			lastPoint = tooth.getAnglePoint(step ? 90 * (1 + step) : 180);
-			if (zone == endPosition.zone && ordinal == endPosition.ordinal)
+			if (zone == positions[1].zone && ordinal == positions[1].ordinal)
 				curve.push_back(lastPoint);
 			if (ordinal == 0) {
 				if (step == -1)
