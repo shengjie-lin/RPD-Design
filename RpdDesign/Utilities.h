@@ -32,20 +32,18 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr);
 
+Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position);
+
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
 const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
 
 Point2f computeNormalDirection(const Point2f& point, float*const& angle = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& maxRadius, const bool& shouldAppend = true);
 
 void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& maxRadius = INFINITY);
-
-void updateLingualBlockage(vector<Tooth> teeth[nZones], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
-
-void updateLingualBlockage(vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope);

@@ -57,6 +57,8 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char*const& clsStr) { return 'L' + string(clsStr) + ';'; }
 
+Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position) { return teeth[position.zone][position.ordinal]; }
+
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position) { return getTooth(teeth, RpdAsMajorConnector::Anchor(position)); }
 
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) {
@@ -75,7 +77,7 @@ const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnect
 
 const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
 
-void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
+void computeStringCurve(const vector<Tooth> teeth[nZones], const Rpd::Position& startPosition, const Rpd::Position& endPosition, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
@@ -96,7 +98,7 @@ void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Positio
 			if (ordinal == endPosition.ordinal)
 				curve.push_back(lastPoint);
 			if (hasLingualBlockage)
-				if (tooth.getLingualBlockage())
+				if (tooth.getLingualBlockage() == RpdWithLingualBlockage::MAJOR_CONNECTOR)
 					*hasLingualBlockage = true;
 		}
 	}
@@ -120,7 +122,7 @@ void computeStringingCurve(const vector<Tooth> teeth[nZones], const Rpd::Positio
 				++step;
 			}
 			if (hasLingualBlockage)
-				if (tooth.getLingualBlockage())
+				if (tooth.getLingualBlockage() == RpdWithLingualBlockage::MAJOR_CONNECTOR)
 					*hasLingualBlockage = true;
 		}
 	}
@@ -172,35 +174,5 @@ void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, c
 				smoothCurve.insert(smoothCurve.end(), *point);
 		else
 			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, smoothCurve, maxRadius);
-	}
-}
-
-void updateLingualBlockage(vector<Tooth> teeth[nZones], const Rpd::Position& position, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { teeth[position.zone][position.ordinal].setLingualBlockage(lingualBlockage); }
-
-void updateLingualBlockage(vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const RpdWithLingualBlockage::LingualBlockage& lingualBlockage, const RpdWithLingualBlockage::Scope& scope) {
-	if (scope == RpdWithLingualBlockage::LINE)
-		if (positions[0].zone == positions[1].zone) {
-			auto& zone = positions[0].zone;
-			for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
-				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
-		}
-		else {
-			auto step = -1;
-			for (auto zone = positions[0].zone, ordinal = positions[0].ordinal; zone == positions[0].zone || ordinal <= positions[1].ordinal; ordinal += step) {
-				teeth[zone][ordinal].setLingualBlockage(lingualBlockage);
-				if (ordinal == 0)
-					if (step) {
-						step = 0;
-						++zone;
-					}
-					else
-						step = 1;
-			}
-		}
-	else {
-		for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal)
-			teeth[positions[0].zone][ordinal].setLingualBlockage(lingualBlockage);
-		for (auto ordinal = positions[1].ordinal; ordinal >= positions[0].ordinal; --ordinal)
-			teeth[positions[1].zone][ordinal].setLingualBlockage(lingualBlockage);
 	}
 }

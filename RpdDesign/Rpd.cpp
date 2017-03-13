@@ -4,7 +4,9 @@
 #include "Tooth.h"
 #include "Utilities.h"
 
-Rpd::Position::Position(const int& zone, const int& ordinal): zone(zone), ordinal(ordinal) {}
+/*TODO: merge single slot and multi slots*/
+
+Rpd::Position::Position(const int& zone, const int& ordinal) : zone(zone), ordinal(ordinal) {}
 
 const Rpd::Position& RpdWithSingleSlot::getPosition() const { return position_; }
 
@@ -85,13 +87,40 @@ RpdWithDirection::RpdWithDirection(const Direction& direction): direction_(direc
 
 void RpdWithDirection::queryDirection(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Direction& claspTipDirection) { claspTipDirection = static_cast<Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
 
-RpdWithLingualBlockage::RpdWithLingualBlockage(): lingualBlockage_(CLASP), scope_(POINT) {}
+void RpdWithLingualBlockage::registerLingualBlockage(vector<Tooth> teeth[nZones], const Position& position, const LingualBlockage& lingualBlockage) { getTooth(teeth, position).setLingualBlockage(lingualBlockage); }
 
-RpdWithLingualBlockage::RpdWithLingualBlockage(const LingualBlockage& lingualBlockage, const Scope& scope): lingualBlockage_(lingualBlockage), scope_(scope) {}
+void RpdWithLingualBlockage::registerLingualBlockage(vector<Tooth> teeth[nZones], const Position& startPosition, const Position& endPosition, const LingualBlockage& lingualBlockage) {
+	if (startPosition.zone == endPosition.zone)
+		for (auto ordinal = startPosition.ordinal; ordinal <= endPosition.ordinal; ++ordinal) {
+			auto& tooth = teeth[startPosition.zone][ordinal];
+			if (lingualBlockage != MAJOR_CONNECTOR || tooth.getLingualBlockage() == NONE)
+				tooth.setLingualBlockage(lingualBlockage);
+		}
+	else {
+		auto step = -1;
+		for (auto zone = startPosition.zone, ordinal = startPosition.ordinal; zone == startPosition.zone || ordinal <= endPosition.ordinal; ordinal += step) {
+			auto& tooth = teeth[startPosition.zone][ordinal];
+			if (lingualBlockage != MAJOR_CONNECTOR || tooth.getLingualBlockage() == NONE)
+				tooth.setLingualBlockage(lingualBlockage);
+			if (ordinal == 0)
+				if (step) {
+					step = 0;
+					++zone;
+				}
+				else
+					step = 1;
+		}
+	}
+}
 
-const RpdWithLingualBlockage::LingualBlockage& RpdWithLingualBlockage::getLingualBlockage() const { return lingualBlockage_; }
+RpdAsClasp::RpdAsClasp(const deque<bool>& hasLingualArms) : hasLingualArms_(hasLingualArms) {}
 
-const RpdWithLingualBlockage::Scope& RpdWithLingualBlockage::getScope() const { return scope_; }
+void RpdAsClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone], const Position& position, bool& hasLingualArm) { hasLingualArm = !hasLingualConfrontations[position.zone][position.ordinal]; }
+
+void RpdAsClasp::registerLingualBlockage(vector<Tooth> teeth[nZones], const Position& position, const bool& hasLingualArm) {
+	if (hasLingualArm)
+		RpdWithLingualBlockage::registerLingualBlockage(teeth, position, CLASP);
+}
 
 RpdAsMajorConnector::Anchor::Anchor(const Position& position, const RpdWithDirection::Direction& direction): position(position), direction(direction) {}
 
@@ -157,7 +186,35 @@ void RpdAsMajorConnector::updateEighthToothInfo(const bool isEighthToothMissing[
 	}
 }
 
-AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), RpdWithLingualBlockage() {}
+void RpdAsMajorConnector::registerLingualBlockage(vector<Tooth> teeth[nZones]) const {
+	RpdWithLingualBlockage::registerLingualBlockage(teeth, anchors_[0].position, anchors_[1].position, MAJOR_CONNECTOR);
+	if (anchors_.size() == 4)
+		RpdWithLingualBlockage::registerLingualBlockage(teeth, anchors_[3].position, anchors_[2].position, MAJOR_CONNECTOR);
+}
+
+void RpdWithOcclusalRest::registerOcclusalRest(vector<Tooth> teeth[nZones], const Position& position, const RpdWithDirection::Direction& direction) { getTooth(teeth, position).setOcclusalRest(direction); }
+
+RpdWithLingualConfrontations::RpdWithLingualConfrontations(const vector<Anchor>& anchors, const vector<Position>& lingualConfrontations) : RpdAsMajorConnector(anchors), lingualConfrontations_(lingualConfrontations) {}
+
+void RpdWithLingualConfrontations::registerLingualConfrontations(bool hasLingualConfrontations[nZones][nTeethPerZone]) const {
+	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
+		hasLingualConfrontations[position->zone][position->ordinal] = true;
+}
+
+void RpdWithLingualConfrontations::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
+	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
+		Plating(*position).draw(designImage, teeth);
+}
+
+void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, vector<Position>& lingualConfrontations) {
+	auto lcTeeth = env->CallObjectMethod(individual, midListProperties, dpLingualConfrontation);
+	while (env->CallBooleanMethod(lcTeeth, midHasNext)) {
+		auto tooth = env->CallObjectMethod(lcTeeth, midNext);
+		lingualConfrontations.push_back(Position(env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1, env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1));
+	}
+}
+
+AkersClasp::AkersClasp(const Position& position, const Material& material, const Direction& direction) : RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction), RpdAsClasp(deque<bool>(1)) {}
 
 AkersClasp* AkersClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
@@ -170,9 +227,18 @@ AkersClasp* AkersClasp::createFromIndividual(JNIEnv*const& env, const jmethodID&
 }
 
 void AkersClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	Clasp(position_, material_, direction_).draw(designImage, teeth);
+	if (hasLingualArms_[0])
+		Clasp(position_, material_, direction_).draw(designImage, teeth);
+	else
+		HalfClasp(position_, material_, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
 }
+
+void AkersClasp::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, static_cast<Direction>(1 - direction_)); }
+
+void AkersClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) { RpdAsClasp::setLingualArm(hasLingualConfrontations, position_, hasLingualArms_[0]); }
+
+void AkersClasp::registerLingualBlockage(vector<Tooth> teeth[nZones]) const { RpdAsClasp::registerLingualBlockage(teeth, position_, hasLingualArms_[0]); }
 
 Clasp::Clasp(const Position& position, const Material& material, const Direction& direction): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithDirection(direction) {}
 
@@ -189,7 +255,7 @@ void Clasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) cons
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
 }
 
-CombinationClasp::CombinationClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction) {}
+CombinationClasp::CombinationClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdAsClasp(deque<bool>(1)) {}
 
 CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
@@ -201,11 +267,18 @@ CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv*const& env, cons
 
 void CombinationClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	HalfClasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
-	HalfClasp(position_, RpdWithMaterial::CAST, direction_, HalfClasp::LINGUAL).draw(designImage, teeth);
+	if (hasLingualArms_[0])
+		HalfClasp(position_, RpdWithMaterial::CAST, direction_, HalfClasp::LINGUAL).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
 }
 
-CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material): RpdWithMultiSlots(startPosition, endPosition), RpdWithMaterial(material), RpdWithLingualBlockage(CLASP, LINE) {}
+void CombinationClasp::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, static_cast<Direction>(1 - direction_)); }
+
+void CombinationClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) { RpdAsClasp::setLingualArm(hasLingualConfrontations, position_, hasLingualArms_[0]); }
+
+void CombinationClasp::registerLingualBlockage(vector<Tooth> teeth[nZones]) const { RpdAsClasp::registerLingualBlockage(teeth, position_, hasLingualArms_[0]); }
+
+CombinedClasp::CombinedClasp(const Position& startPosition, const Position& endPosition, const Material& material) : RpdWithMultiSlots(startPosition, endPosition), RpdWithMaterial(material), RpdAsClasp(deque<bool>(2)) {}
 
 CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position startPosition, endPosition;
@@ -216,16 +289,32 @@ CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv*const& env, const jmet
 }
 
 void CombinedClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	Clasp(endPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
+	auto tipDirection = startPosition_.zone == endPosition_.zone ? RpdWithDirection::MESIAL : RpdWithDirection::DISTAL;
+	if (hasLingualArms_[0])
+		Clasp(startPosition_, material_, tipDirection).draw(designImage, teeth);
+	else
+		HalfClasp(startPosition_, material_, tipDirection, HalfClasp::BUCCAL).draw(designImage, teeth);
+	OcclusalRest(startPosition_, static_cast<RpdWithDirection::Direction>(1 - tipDirection)).draw(designImage, teeth);
+	if (hasLingualArms_[1])
+		Clasp(endPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
+	else
+		HalfClasp(endPosition_, material_, RpdWithDirection::DISTAL, HalfClasp::BUCCAL).draw(designImage, teeth);
 	OcclusalRest(endPosition_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-	if (startPosition_.zone == endPosition_.zone) {
-		Clasp(startPosition_, material_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-		OcclusalRest(startPosition_, RpdWithDirection::DISTAL).draw(designImage, teeth);
-	}
-	else {
-		Clasp(startPosition_, material_, RpdWithDirection::DISTAL).draw(designImage, teeth);
-		OcclusalRest(startPosition_, RpdWithDirection::MESIAL).draw(designImage, teeth);
-	}
+}
+
+void CombinedClasp::registerOcclusalRest(vector<Tooth> teeth[nZones]) const {
+	RpdWithOcclusalRest::registerOcclusalRest(teeth, startPosition_, startPosition_.zone == endPosition_.zone ? RpdWithDirection::DISTAL : RpdWithDirection::MESIAL);
+	RpdWithOcclusalRest::registerOcclusalRest(teeth, endPosition_, RpdWithDirection::MESIAL);
+}
+
+void CombinedClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
+	RpdAsClasp::setLingualArm(hasLingualConfrontations, startPosition_, hasLingualArms_[0]);
+	RpdAsClasp::setLingualArm(hasLingualConfrontations, endPosition_, hasLingualArms_[1]);
+}
+
+void CombinedClasp::registerLingualBlockage(vector<Tooth> teeth[nZones]) const {
+	RpdAsClasp::registerLingualBlockage(teeth, startPosition_, hasLingualArms_[0]);
+	RpdAsClasp::registerLingualBlockage(teeth, endPosition_, hasLingualArms_[1]);
 }
 
 DentureBase::DentureBase(const Position& startPosition, const Position& endPosition): RpdWithMultiSlots(startPosition, endPosition) {}
@@ -240,7 +329,7 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 	vector<Point> curve;
 	float avgRadius;
 	bool haslingualBlockage;
-	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius, &haslingualBlockage);
+	computeStringCurve(teeth, startPosition_, endPosition_, curve, avgRadius, &haslingualBlockage);
 	if (coversStartTail_) {
 		Point2f distalPoint = getTooth(teeth, startPosition_).getAnglePoint(180);
 		curve[0] = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius);
@@ -274,6 +363,11 @@ void DentureBase::setCoversStartTail() { coversStartTail_ = true; }
 
 void DentureBase::setCoversEndTail() { coversEndTail_ = true; }
 
+void DentureBase::registerLingualBlockage(vector<Tooth> teeth[nZones]) const {
+	if (coversStartTail_ || coversEndTail_)
+		RpdWithLingualBlockage::registerLingualBlockage(teeth, startPosition_, endPosition_, DENTURE_BASE);
+}
+
 EdentulousSpace::EdentulousSpace(const Position& startPosition, const Position& endPosition): RpdWithMultiSlots(startPosition, endPosition) {}
 
 EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
@@ -285,7 +379,7 @@ EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv*const& env, const 
 void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve;
 	float avgRadius;
-	computeStringingCurve(teeth, startPosition_, endPosition_, curve, avgRadius);
+	computeStringCurve(teeth, startPosition_, endPosition_, curve, avgRadius);
 	vector<Point> curve1(curve.size()), curve2(curve.size());
 	for (auto i = 0; i < curve.size(); ++i) {
 		auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius / 4);
@@ -399,24 +493,20 @@ void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
 }
 
-PalatalPlate::PalatalPlate(const vector<Anchor>& anchors, const vector<Position>& lingualConfrontations): RpdAsMajorConnector(anchors), lingualConfrontations_(lingualConfrontations) {}
+void OcclusalRest::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, direction_); }
+
+PalatalPlate::PalatalPlate(const vector<Anchor>& anchors, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(anchors, lingualConfrontations) {}
 
 PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Anchor> anchors;
 	vector<Position> lingualConfrontations;
 	queryAnchors(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, PLANAR, anchors, isEighthToothUsed);
-	auto lcTeeth = env->CallObjectMethod(individual, midListProperties, dpLingualConfrontation);
-	while (env->CallBooleanMethod(lcTeeth, midHasNext)) {
-		auto tooth = env->CallObjectMethod(lcTeeth, midNext);
-		lingualConfrontations.push_back(Position(env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1, env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1));
-	}
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
 	return new PalatalPlate(anchors, lingualConfrontations);
 }
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	/*TODO: consider lingual blockage; ugly!*/
-	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
-		Plating(*position).draw(designImage, teeth);
+	RpdWithLingualConfrontations::draw(designImage, teeth);
 	vector<Point> curve, mesialCurve = {getPoint(teeth, anchors_[3])}, distalCurve = {getPoint(teeth, anchors_[1])};
 	auto delta = anchors_[3].position.ordinal - anchors_[0].position.ordinal + (anchors_[3].direction - anchors_[0].direction) * 0.9;
 	if (delta < -0.5 || delta > 0)
@@ -474,7 +564,7 @@ void Plating::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) co
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
-RingClasp::RingClasp(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdWithLingualBlockage() {}
+RingClasp::RingClasp(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material), RpdAsClasp(deque<bool>(1)) {}
 
 RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
@@ -485,20 +575,26 @@ RingClasp* RingClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& m
 }
 
 void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	auto& tooth = getTooth(teeth, position_);
-	vector<Point> curve;
-	if (position_.zone < 2)
-		curve = tooth.getCurve(60, 0);
-	else
-		curve = tooth.getCurve(0, 300);
+	auto isUpper = position_.zone < nZones / 2;
+	auto curve = getTooth(teeth, position_).getCurve(isUpper ? 60 : 0, hasLingualArms_[0] ? (isUpper ? 0 : 300) : 180);
+	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
 	if (material_ == CAST) {
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 		OcclusalRest(position_, RpdWithDirection::DISTAL).draw(designImage, teeth);
 	}
 	else
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[1], LINE_AA);
-	OcclusalRest(position_, RpdWithDirection::MESIAL).draw(designImage, teeth);
 }
+
+void RingClasp::registerOcclusalRest(vector<Tooth> teeth[nZones]) const {
+	RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, RpdWithDirection::MESIAL);
+	if (material_ == CAST)
+		RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, RpdWithDirection::DISTAL);
+}
+
+void RingClasp::registerLingualBlockage(vector<Tooth> teeth[nZones]) const { RpdAsClasp::registerLingualBlockage(teeth, position_, hasLingualArms_[0]); }
+
+void RingClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) { RpdAsClasp::setLingualArm(hasLingualConfrontations, position_, hasLingualArms_[0]); }
 
 Rpa::Rpa(const Position& position, const Material& material): RpdWithSingleSlot(position), RpdWithMaterial(material) {}
 
@@ -516,6 +612,8 @@ void Rpa::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const 
 	HalfClasp(position_, material_, RpdWithDirection::MESIAL, HalfClasp::BUCCAL).draw(designImage, teeth);
 }
 
+void Rpa::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, RpdWithDirection::MESIAL); }
+
 Rpi::Rpi(const Position& position): RpdWithSingleSlot(position) {}
 
 Rpi* Rpi::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
@@ -530,7 +628,9 @@ void Rpi::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const 
 	IBar(position_).draw(designImage, teeth);
 }
 
-WwClasp::WwClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdWithLingualBlockage() {}
+void Rpi::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, RpdWithDirection::MESIAL); }
+
+WwClasp::WwClasp(const Position& position, const Direction& direction): RpdWithSingleSlot(position), RpdWithDirection(direction), RpdAsClasp(deque<bool>(1)) {}
 
 WwClasp* WwClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	Position position;
@@ -541,6 +641,15 @@ WwClasp* WwClasp::createFromIndividual(JNIEnv*const& env, const jmethodID& midGe
 }
 
 void WwClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	Clasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_).draw(designImage, teeth);
+	if (hasLingualArms_[0])
+		Clasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_).draw(designImage, teeth);
+	else
+		HalfClasp(position_, RpdWithMaterial::WROUGHT_WIRE, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
 	OcclusalRest(position_, static_cast<Direction>(1 - direction_)).draw(designImage, teeth);
 }
+
+void WwClasp::registerOcclusalRest(vector<Tooth> teeth[nZones]) const { RpdWithOcclusalRest::registerOcclusalRest(teeth, position_, static_cast<Direction>(1 - direction_)); }
+
+void WwClasp::setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) { RpdAsClasp::setLingualArm(hasLingualConfrontations, position_, hasLingualArms_[0]); }
+
+void WwClasp::registerLingualBlockage(vector<Tooth> teeth[nZones]) const { RpdAsClasp::registerLingualBlockage(teeth, position_, hasLingualArms_[0]); }

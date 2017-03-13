@@ -15,9 +15,9 @@ public:
 	void findAnglePoints(const int& zoneNo);
 	const float& getRadius() const;
 	const bool& hasMesialOcclusalRest() const;
-	void setMesialOcclusalRest();
 	const bool& hasDistalOcclusalRest() const;
-	void setDistalOcclusalRest();
+	void setOcclusalRest(const RpdWithDirection::Direction& direction);
+	void unsetOcclusalRest();
 	const RpdWithLingualBlockage::LingualBlockage& getLingualBlockage() const;
 	void setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
 

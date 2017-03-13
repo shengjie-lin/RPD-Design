@@ -8,7 +8,7 @@
 #include "Utilities.h"
 
 map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
-	{"Akers_clasp", AKERS_CLASP},
+	{"Aker_clasp", AKER_CLASP},
 	{"combination_clasp", COMBINATION_CLASP},
 	{"combined_clasp", COMBINED_CLASP},
 	{"denture_base", DENTURE_BASE},
@@ -44,23 +44,52 @@ RpdViewer::~RpdViewer() {
 	vm_->DestroyJavaVM();
 }
 
-void RpdViewer::updateRpdDesign(const bool& shouldResetTeeth) {
-	if (shouldResetTeeth)
+void RpdViewer::updateRpdDesign() {
+	if (!justLoadedImage_)
 		for (auto zone = 0; zone < nZones; ++zone)
-			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal)
-				teeth_[zone][ordinal].setLingualBlockage(RpdWithLingualBlockage::NONE);
-	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
-		if (rpdWithLingualBlockage) {
-			auto& lingualBlockage = rpdWithLingualBlockage->getLingualBlockage();
-			auto& scope = rpdWithLingualBlockage->getScope();
-			if (scope == RpdWithLingualBlockage::POINT)
-				updateLingualBlockage(teeth_, dynamic_cast<RpdWithSingleSlot*>(*rpd)->getPosition(), lingualBlockage);
-			else {
-				auto rpdWithMultiSlots = dynamic_cast<RpdWithMultiSlots*>(*rpd);
-				updateLingualBlockage(teeth_, {rpdWithMultiSlots->getStartPosition(),rpdWithMultiSlots->getEndPosition()}, lingualBlockage, scope);
+			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal) {
+				auto& tooth = teeth_[zone][ordinal];
+				tooth.setLingualBlockage(RpdWithLingualBlockage::NONE);
+				tooth.unsetOcclusalRest();
+			}
+	if (justLoadedRpd_) {
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
+			if (rpdAsMajorConnector)
+				rpdAsMajorConnector->updateEighthToothInfo(isEighthToothMissing_, isEighthToothUsed_);
+		}
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+			if (dentureBase) {
+				auto& startPosition = dentureBase->getStartPosition();
+				if (startPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed_[startPosition.zone])
+					dentureBase->setCoversStartTail();
+				auto& endPosition = dentureBase->getEndPosition();
+				if (endPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed_[endPosition.zone])
+					dentureBase->setCoversEndTail();
 			}
 		}
+		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			auto rpdWithLingualConfrontation = dynamic_cast<RpdWithLingualConfrontations*>(*rpd);
+			if (rpdWithLingualConfrontation)
+				rpdWithLingualConfrontation->registerLingualConfrontations(hasLingualConfrontations);
+		}
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			auto rpdAsClasp = dynamic_cast<RpdAsClasp*>(*rpd);
+			if (rpdAsClasp)
+				rpdAsClasp->setLingualArm(hasLingualConfrontations);
+		}
+	}
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+		auto rpdWithOcclusalRest = dynamic_cast<RpdWithOcclusalRest*>(*rpd);
+		if (rpdWithOcclusalRest)
+			rpdWithOcclusalRest->registerOcclusalRest(teeth_);
+	}
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
+		if (rpdWithLingualBlockage)
+			rpdWithLingualBlockage->registerLingualBlockage(teeth_);
 	}
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto zone = 0; zone < nZones; ++zone) {
@@ -96,6 +125,7 @@ void RpdViewer::loadBaseImage() {
 		if (image.empty())
 			QMessageBox::information(this, u8"错误", u8"无效的图像文件！");
 		else {
+			justLoadedImage_ = true;
 			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
 			imageSize_ = sizeToQSize(baseImage_.size());
 			Mat tmpImage;
@@ -120,7 +150,7 @@ void RpdViewer::loadBaseImage() {
 			sortIdx(angles, idx, SORT_ASCENDING);
 			vector<vector<uint8_t>> isInZone(nZones);
 			for (auto i = 0; i < nZones; ++i) {
-				inRange(angles, CV_PI / 2 * (i - 2), CV_PI / 2 * (i - 1), isInZone[i]);
+				inRange(angles, CV_2PI / nZones * (i - 2), CV_2PI / nZones * (i - 1), isInZone[i]);
 				teeth_[i].clear();
 			}
 			for (auto i = 0; i < nTeeth; ++i) {
@@ -255,7 +285,7 @@ void RpdViewer::loadRpdInfo() {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
-				case AKERS_CLASP:
+				case AKER_CLASP:
 					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetInt, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case COMBINATION_CLASP:
@@ -299,28 +329,12 @@ void RpdViewer::loadRpdInfo() {
 			}
 		}
 		if (rpds.size()) {
-			for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
-				auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
-				if (rpdAsMajorConnector)
-					rpdAsMajorConnector->updateEighthToothInfo(isEighthToothMissing, isEighthToothUsed);
-			}
-			for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
-				auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-				if (dentureBase) {
-					auto& startPosition = dentureBase->getStartPosition();
-					auto& startZone = startPosition.zone;
-					if (startPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed[startZone])
-						dentureBase->setCoversStartTail();
-					auto& endPosition = dentureBase->getEndPosition();
-					auto& endZone = endPosition.zone;
-					if (endPosition.ordinal == nTeethPerZone - 1 + isEighthToothUsed[endZone])
-						dentureBase->setCoversEndTail();
-				}
-			}
-			rpds_ = rpds;
+			justLoadedRpd_ = true;
 			copy(begin(isEighthToothUsed), end(isEighthToothUsed), isEighthToothUsed_);
+			copy(begin(isEighthToothMissing), end(isEighthToothMissing), isEighthToothMissing_);
+			rpds_ = rpds;
 			if (baseImage_.data) {
-				updateRpdDesign(true);
+				updateRpdDesign();
 				refreshDisplay();
 			}
 		}
