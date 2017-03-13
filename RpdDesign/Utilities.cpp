@@ -28,7 +28,7 @@ QImage matToQImage(const Mat& inputMat) {
 			return image;
 		}
 		default:
-			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled :  " + to_string(inputMat.type())).data()));
+			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled: " + to_string(inputMat.type())).data()));
 			return QImage();
 	}
 }

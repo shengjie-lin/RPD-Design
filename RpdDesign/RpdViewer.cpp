@@ -56,17 +56,12 @@ void RpdViewer::updateRpdDesign() {
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
 			if (rpdAsMajorConnector)
-				rpdAsMajorConnector->updateEighthToothInfo(isEighthToothMissing_, isEighthToothUsed_);
+				rpdAsMajorConnector->handleEighthTooth(isEighthToothMissing_, isEighthToothUsed_);
 		}
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-			if (dentureBase) {
-				auto& positions = dentureBase->getPositions();
-				if (positions[0].ordinal == nTeethPerZone - 1 + isEighthToothUsed_[positions[0].zone])
-					dentureBase->setCoversStartTail();
-				if (positions[1].ordinal == nTeethPerZone - 1 + isEighthToothUsed_[positions[1].zone])
-					dentureBase->setCoversEndTail();
-			}
+			if (dentureBase)
+				dentureBase->determineTailsCoverage(isEighthToothUsed_);
 		}
 		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
