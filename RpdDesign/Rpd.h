@@ -115,11 +115,11 @@ private :
 	vector<Position> lingualConfrontations_;
 };
 
-class AkersClasp : public RpdWithPositions, public RpdWithMaterial, public RpdWithDirection, public RpdWithOcclusalRest, public RpdAsClasp {
+class AkerClasp : public RpdWithPositions, public RpdWithMaterial, public RpdWithDirection, public RpdWithOcclusalRest, public RpdAsClasp {
 public :
-	static AkersClasp* createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+	static AkerClasp* createFromIndividual(JNIEnv*const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private :
-	AkersClasp(const vector<Position>& positions, const Material& material, const Direction& direction);
+	AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void registerOcclusalRest(vector<Tooth> teeth[nZones]) const override;
 	void setLingualArm(bool hasLingualConfrontations[nZones][nTeethPerZone]) override;
@@ -224,7 +224,7 @@ private :
 };
 
 class Clasp : public RpdWithPositions, public RpdWithMaterial, public RpdWithDirection {
-	friend class AkersClasp;
+	friend class AkerClasp;
 	friend class CombinedClasp;
 	friend class WwClasp;
 	Clasp(const vector<Position>& positions, const Material& material, const Direction& direction);
@@ -239,7 +239,7 @@ class GuidingPlate : public RpdWithPositions {
 };
 
 class HalfClasp : public RpdWithPositions, public RpdWithMaterial, public RpdWithDirection {
-	friend class AkersClasp;
+	friend class AkerClasp;
 	friend class CombinationClasp;
 	friend class CombinedClasp;
 	friend class Rpa;
@@ -262,7 +262,7 @@ class IBar : public RpdWithPositions {
 };
 
 class OcclusalRest : public RpdWithPositions, public RpdWithDirection, public RpdWithOcclusalRest {
-	friend class AkersClasp;
+	friend class AkerClasp;
 	friend class CombinationClasp;
 	friend class CombinedClasp;
 	friend class RingClasp;
