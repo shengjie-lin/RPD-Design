@@ -16,15 +16,15 @@ public :
 	const float& getRadius() const;
 	const bool& hasMesialOcclusalRest() const;
 	const bool& hasDistalOcclusalRest() const;
-	void setOcclusalRest(const RpdWithDirection::Direction& direction);
+	void setOcclusalRest(const Rpd::Direction& direction);
 	void unsetOcclusalRest();
-	const RpdWithLingualBlockage::LingualBlockage& getLingualBlockage() const;
-	void setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage);
+	const RpdAsLingualBlockage::LingualBlockage& getLingualBlockage() const;
+	void setLingualBlockage(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage);
 private :
 	bool hasDistalOcclusalRest_ = false, hasMesialOcclusalRest_ = false;
 	float radius_;
 	Point2f centroid_, normalDirection_;
-	RpdWithLingualBlockage::LingualBlockage lingualBlockage_ = RpdWithLingualBlockage::NONE;
+	RpdAsLingualBlockage::LingualBlockage lingualBlockage_ = RpdAsLingualBlockage::NONE;
 	vector<int> anglePointIndices_ = vector<int>(360);
 	vector<Point> contour_;
 };

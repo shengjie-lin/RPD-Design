@@ -47,10 +47,9 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 	auto searchPattern = searchDirectory + extension;
 	WIN32_FIND_DATA findData;
 	auto hFind = FindFirstFile(searchPattern.c_str(), &findData);
-	do {
+	do
 		if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 			path.append(searchDirectory + findData.cFileName + ';');
-	}
 	while (FindNextFile(hFind, &findData));
 	FindClose(hFind);
 }
@@ -68,21 +67,21 @@ const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnect
 		zone += 1 - zone % 2 * 2;
 	auto ordinal = position.ordinal;
 	auto& direction = anchor.direction;
-	if (shift > 0 && direction == RpdWithDirection::DISTAL)
+	if (shift > 0 && direction == Rpd::DISTAL)
 		++ordinal;
-	else if (shift < 0 && direction == RpdWithDirection::MESIAL)
+	else if (shift < 0 && direction == Rpd::MESIAL)
 		--ordinal;
 	return teeth[zone][ordinal];
 }
 
-const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == RpdWithDirection::DISTAL ? 180 : 0); }
+const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == Rpd::DISTAL ? 180 : 0); }
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage) {
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool*const& isBlockedByMajorConnector) {
 	Point lastPoint;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
-	if (hasLingualBlockage)
-		*hasLingualBlockage = false;
+	if (isBlockedByMajorConnector)
+		*isBlockedByMajorConnector = false;
 	if (positions[0].zone == positions[1].zone) {
 		auto& zone = positions[0].zone;
 		for (auto ordinal = positions[0].ordinal; ordinal <= positions[1].ordinal; ++ordinal) {
@@ -97,9 +96,9 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 			lastPoint = tooth.getAnglePoint(180);
 			if (ordinal == positions[1].ordinal)
 				curve.push_back(lastPoint);
-			if (hasLingualBlockage)
-				if (tooth.getLingualBlockage() == RpdWithLingualBlockage::MAJOR_CONNECTOR)
-					*hasLingualBlockage = true;
+			if (isBlockedByMajorConnector)
+				if (tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR)
+					*isBlockedByMajorConnector = true;
 		}
 	}
 	else {
@@ -121,9 +120,9 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 					++zone;
 				++step;
 			}
-			if (hasLingualBlockage)
-				if (tooth.getLingualBlockage() == RpdWithLingualBlockage::MAJOR_CONNECTOR)
-					*hasLingualBlockage = true;
+			if (isBlockedByMajorConnector)
+				if (tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR)
+					*isBlockedByMajorConnector = true;
 		}
 	}
 	avgRadius = sumOfRadii / nTeeth;

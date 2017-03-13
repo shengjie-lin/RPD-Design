@@ -49,7 +49,7 @@ void RpdViewer::updateRpdDesign() {
 		for (auto zone = 0; zone < nZones; ++zone)
 			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal) {
 				auto& tooth = teeth_[zone][ordinal];
-				tooth.setLingualBlockage(RpdWithLingualBlockage::NONE);
+				tooth.setLingualBlockage(RpdAsLingualBlockage::NONE);
 				tooth.unsetOcclusalRest();
 			}
 	if (justLoadedRpd_) {
@@ -70,18 +70,18 @@ void RpdViewer::updateRpdDesign() {
 				rpdWithLingualConfrontation->registerLingualConfrontations(hasLingualConfrontations);
 		}
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdAsClasp = dynamic_cast<RpdAsClasp*>(*rpd);
+			auto rpdAsClasp = dynamic_cast<RpdWithClasps*>(*rpd);
 			if (rpdAsClasp)
-				rpdAsClasp->setLingualArm(hasLingualConfrontations);
+				rpdAsClasp->setLingualArms(hasLingualConfrontations);
 		}
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithOcclusalRest = dynamic_cast<RpdWithOcclusalRest*>(*rpd);
+		auto rpdWithOcclusalRest = dynamic_cast<RpdWithOcclusalRests*>(*rpd);
 		if (rpdWithOcclusalRest)
-			rpdWithOcclusalRest->registerOcclusalRest(teeth_);
+			rpdWithOcclusalRest->registerOcclusalRests(teeth_);
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithLingualBlockage = dynamic_cast<RpdWithLingualBlockage*>(*rpd);
+		auto rpdWithLingualBlockage = dynamic_cast<RpdAsLingualBlockage*>(*rpd);
 		if (rpdWithLingualBlockage)
 			rpdWithLingualBlockage->registerLingualBlockage(teeth_);
 	}
@@ -304,7 +304,7 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(Rpa::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case RPI:
-					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case TOOTH:
 					if (env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone + 1)

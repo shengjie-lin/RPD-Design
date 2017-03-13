@@ -122,7 +122,7 @@ void Tooth::findAnglePoints(const int& zoneNo) {
 
 const float& Tooth::getRadius() const { return radius_; }
 
-void Tooth::setOcclusalRest(const RpdWithDirection::Direction& direction) { (direction == RpdWithDirection::MESIAL ? hasMesialOcclusalRest_ : hasDistalOcclusalRest_) = true; }
+void Tooth::setOcclusalRest(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? hasMesialOcclusalRest_ : hasDistalOcclusalRest_) = true; }
 
 void Tooth::unsetOcclusalRest() { hasMesialOcclusalRest_ = hasDistalOcclusalRest_ = false; }
 
@@ -130,6 +130,6 @@ const bool& Tooth::hasMesialOcclusalRest() const { return hasMesialOcclusalRest_
 
 const bool& Tooth::hasDistalOcclusalRest() const { return hasMesialOcclusalRest_; }
 
-const RpdWithLingualBlockage::LingualBlockage& Tooth::getLingualBlockage() const { return lingualBlockage_; }
+const RpdAsLingualBlockage::LingualBlockage& Tooth::getLingualBlockage() const { return lingualBlockage_; }
 
-void Tooth::setLingualBlockage(const RpdWithLingualBlockage::LingualBlockage& lingualBlockage) { lingualBlockage_ = lingualBlockage; }
+void Tooth::setLingualBlockage(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage) { lingualBlockage_ = lingualBlockage; }
