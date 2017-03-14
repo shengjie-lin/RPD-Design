@@ -1,7 +1,7 @@
 #include "RpdDesign.h"
 #include "RpdViewer.h"
 
-RpdDesign::RpdDesign(QWidget*const& parent) : QWidget(parent) {
+RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	ui_.setupUi(this);
 	this->showMaximized();
 	rpdViewer_ = new RpdViewer(this, ui_.baseCheckBox->isChecked(), ui_.designCheckBox->isChecked());

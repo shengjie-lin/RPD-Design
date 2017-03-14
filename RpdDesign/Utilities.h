@@ -30,20 +30,26 @@ Size roundToInt(const Size_<T>& size) { return Size(round(size.width), round(siz
 
 void catPath(string& path, const string& searchDirectory, const string& extension);
 
-string getClsSig(const char*const& clsStr);
+string getClsSig(const char* const& clsStr);
 
 Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
-const Tooth& getTooth(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-const Point& getPoint(const vector<Tooth> teeth[nZones], const RpdAsMajorConnector::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
+const Point& getPoint(const vector<Tooth> teeth[nZones], const Rpd::Anchor& anchor, const int& shift = 0, const bool& shouldMirror = false);
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool*const& hasLingualBlockage = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector = nullptr);
 
-Point2f computeNormalDirection(const Point2f& point, float*const& angle = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector = nullptr);
 
-void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& maxRadius, const bool& shouldAppend = true);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, float& sumOfRadii, int& nTeeth, bool* const& isBlockedByMajorConnector);
 
-void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& maxRadius = INFINITY);
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, vector<vector<Point>>& curves);
+
+Point2f computeNormalDirection(const Point2f& point, float* const& angle = nullptr);
+
+void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness, const bool& shouldAppend = true);
+
+void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& smoothness = 0.5f);

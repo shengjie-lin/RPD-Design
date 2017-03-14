@@ -23,7 +23,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
-RpdViewer::RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage) : QLabel(parent), showBaseImage_(showBaseImage), showDesignImage_(showContoursImage) {
+RpdViewer::RpdViewer(QWidget* const& parent, const bool& showBaseImage, const bool& showContoursImage) : QLabel(parent), showBaseImage_(showBaseImage), showDesignImage_(showContoursImage) {
 	setAlignment(Qt::AlignCenter);
 	setMinimumSize(128, 128);
 	JavaVMInitArgs vmInitArgs;
@@ -53,38 +53,34 @@ void RpdViewer::updateRpdDesign() {
 				tooth.unsetOcclusalRest();
 			}
 	if (justLoadedRpd_) {
+		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			/*TODO: maybe two-anchored major connectors can also have defaults*/
 			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
 			if (rpdAsMajorConnector)
 				rpdAsMajorConnector->handleEighthTooth(isEighthToothMissing_, isEighthToothUsed_);
+			auto rpdWithLingualConfrontations = dynamic_cast<RpdWithLingualConfrontations*>(*rpd);
+			if (rpdWithLingualConfrontations)
+				rpdWithLingualConfrontations->registerLingualConfrontations(hasLingualConfrontations);
 		}
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
 			if (dentureBase)
 				dentureBase->determineTailsCoverage(isEighthToothUsed_);
-		}
-		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdWithLingualConfrontation = dynamic_cast<RpdWithLingualConfrontations*>(*rpd);
-			if (rpdWithLingualConfrontation)
-				rpdWithLingualConfrontation->registerLingualConfrontations(hasLingualConfrontations);
-		}
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdAsClasp = dynamic_cast<RpdWithClasps*>(*rpd);
-			if (rpdAsClasp)
-				rpdAsClasp->setLingualArms(hasLingualConfrontations);
+			auto rpdWithClasps = dynamic_cast<RpdWithClasps*>(*rpd);
+			if (rpdWithClasps)
+				rpdWithClasps->setLingualArms(hasLingualConfrontations);
 		}
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithOcclusalRest = dynamic_cast<RpdWithOcclusalRests*>(*rpd);
-		if (rpdWithOcclusalRest)
-			rpdWithOcclusalRest->registerOcclusalRests(teeth_);
+		auto rpdWithOcclusalRests = dynamic_cast<RpdWithOcclusalRests*>(*rpd);
+		if (rpdWithOcclusalRests)
+			rpdWithOcclusalRests->registerOcclusalRests(teeth_);
+		auto rpdAsLingualBlockage = dynamic_cast<RpdAsLingualBlockage*>(*rpd);
+		if (rpdAsLingualBlockage)
+			rpdAsLingualBlockage->registerLingualBlockage(teeth_);
 	}
-	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithLingualBlockage = dynamic_cast<RpdAsLingualBlockage*>(*rpd);
-		if (rpdWithLingualBlockage)
-			rpdWithLingualBlockage->registerLingualBlockage(teeth_);
-	}
+	justLoadedRpd_ = justLoadedImage_ = false;
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto zone = 0; zone < nZones; ++zone) {
 		if (isEighthToothUsed_[zone])

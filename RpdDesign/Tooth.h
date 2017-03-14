@@ -14,8 +14,7 @@ public :
 	void setNormalDirection(const Point2f& normalDirection);
 	void findAnglePoints(const int& zoneNo);
 	const float& getRadius() const;
-	const bool& hasMesialOcclusalRest() const;
-	const bool& hasDistalOcclusalRest() const;
+	const bool& hasOcclusalRest(const Rpd::Direction& direction) const;
 	void setOcclusalRest(const Rpd::Direction& direction);
 	void unsetOcclusalRest();
 	const RpdAsLingualBlockage::LingualBlockage& getLingualBlockage() const;

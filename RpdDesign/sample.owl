@@ -5050,7 +5050,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#Akers_clasp_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#Aker_clasp"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth22"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth35"/>
         <buccal_clasp_material rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</buccal_clasp_material>
         <clasp_tip_direction rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</clasp_tip_direction>
         <lingual_clasp_material rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</lingual_clasp_material>
@@ -5215,10 +5215,9 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#palatal_plate_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#palatal_plate"/>
-        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth35"/>
         <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor361"/>
+        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor371"/>
         <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441"/>
     </owl:NamedIndividual>
     

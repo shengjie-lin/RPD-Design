@@ -12,7 +12,7 @@ class Tooth;
 class RpdViewer : public QLabel {
 	Q_OBJECT
 public :
-	RpdViewer(QWidget*const& parent, const bool& showBaseImage, const bool& showContoursImage);
+	RpdViewer(QWidget* const& parent, const bool& showBaseImage, const bool& showContoursImage);
 	~RpdViewer();
 private :
 	enum RpdClass {
