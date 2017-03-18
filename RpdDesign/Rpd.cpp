@@ -313,16 +313,15 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, const jmeth
 PalatalPlate::PalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations) : RpdWithLingualConfrontations(positions, lingualConfrontations) {}
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	/*TODO :  consider denture base*/
+	/*TODO: consider denture base*/
 	RpdWithLingualConfrontations::draw(designImage, teeth);
 	auto ordinal = max(positions_[2].ordinal, positions_[0].ordinal);
-	auto position1 = Position(positions_[2].zone, ordinal), position2 = Position(positions_[0].zone, ordinal);
 	vector<Point> mesialCurve, distalCurve, curve1, curve2;
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
-	computeStringCurve(teeth, {positions_[2], position1}, curve1, sumOfRadii, nTeeth);
+	computeStringCurve(teeth, {positions_[2], Position(positions_[2].zone, ordinal)}, curve1, sumOfRadii, nTeeth);
 	curve1.insert(curve1.begin(), curve1[0]);
-	computeStringCurve(teeth, {positions_[0], position2}, curve2, sumOfRadii, nTeeth);
+	computeStringCurve(teeth, {positions_[0], Position(positions_[0].zone, ordinal)}, curve2, sumOfRadii, nTeeth);
 	curve2.insert(curve2.begin(), curve2[0]);
 	auto avgRadius = sumOfRadii / nTeeth;
 	for (auto point = curve1.begin() + 1; point < curve1.end(); ++point)
@@ -334,11 +333,10 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	mesialCurve.insert(mesialCurve.end(), curve2.rbegin() + 1, curve2.rend());
 	computeSmoothCurve(mesialCurve, mesialCurve);
 	ordinal = min(positions_[1].ordinal, positions_[3].ordinal);
-	position1 = Position(positions_[1].zone, ordinal) , position2 = Position(positions_[3].zone, ordinal);
 	sumOfRadii = nTeeth = 0;
-	computeStringCurve(teeth, {position1, positions_[1]}, curve1, sumOfRadii, nTeeth);
+	computeStringCurve(teeth, {Position(positions_[1].zone, ordinal), positions_[1]}, curve1, sumOfRadii, nTeeth);
 	curve1.push_back(curve1.back());
-	computeStringCurve(teeth, {position2, positions_[3]}, curve2, sumOfRadii, nTeeth);
+	computeStringCurve(teeth, {Position(positions_[3].zone, ordinal), positions_[3]}, curve2, sumOfRadii, nTeeth);
 	curve2.push_back(curve2.back());
 	avgRadius = sumOfRadii / nTeeth;
 	for (auto point = curve1.begin(); point < curve1.end() - 1; ++point)
@@ -381,7 +379,7 @@ void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 	if (material_ == CAST)
 		OcclusalRest(positions_, DISTAL).draw(designImage, teeth);
 	auto isUpper = positions_[0].zone < nZones / 2;
-	polylines(designImage, getTooth(teeth, positions_[0]).getCurve(isUpper ? 60 : 0, isUpper ? 0 : 300), false, 0, lineThicknessOfLevel[1 + (material_ == CAST) ? 1 : 0], LINE_AA);
+	polylines(designImage, getTooth(teeth, positions_[0]).getCurve(isUpper ? 60 : 0, isUpper ? 0 : 300), false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
 }
 
 Rpa::Rpa(const vector<Position>& positions, const Material& material) : Rpd(positions), RpdWithMaterial(material) {}
@@ -463,7 +461,7 @@ void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 			break;
 		default: ;
 	}
-	polylines(designImage, curve, false, 0, lineThicknessOfLevel[1 + (material_ == CAST) ? 1 : 0], LINE_AA);
+	polylines(designImage, curve, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
 }
 
 IBar::IBar(const vector<Position>& positions) : Rpd(positions) {}

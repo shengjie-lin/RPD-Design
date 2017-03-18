@@ -112,7 +112,14 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			thisCurve.push_back(thisCurve.back());
 			for (auto i = 1; i < thisCurve.size() - 1; ++i)
 				thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.5);
-			computeSmoothCurve(thisCurve, thisCurve, false, 1);
+			vector<Point> tmpCurve;
+			computeSmoothCurve(vector<Point>(thisCurve.begin(), thisCurve.begin() + 3), tmpCurve, false, 1);
+			thisCurve.erase(thisCurve.begin(), thisCurve.begin() + 3);
+			thisCurve.insert(thisCurve.begin(), tmpCurve.begin(), tmpCurve.end());
+			computeSmoothCurve(vector<Point>(thisCurve.end() - 3, thisCurve.end()), tmpCurve, false, 1);
+			thisCurve.erase(thisCurve.end() - 3, thisCurve.end());
+			thisCurve.insert(thisCurve.end(), tmpCurve.begin(), tmpCurve.end());
+			computeSmoothCurve(thisCurve, thisCurve);
 		}
 		curves.push_back(thisCurve);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());

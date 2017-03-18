@@ -5050,8 +5050,8 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth44"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth46"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth45"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
     </owl:NamedIndividual>
     
 
@@ -5106,7 +5106,7 @@ note : set for tooth now</rdfs:comment>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth38"/>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth44"/>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
-        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth37"/>
+        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth34"/>
     </owl:NamedIndividual>
     
 
