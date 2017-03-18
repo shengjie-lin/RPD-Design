@@ -28,7 +28,7 @@ QImage matToQImage(const Mat& inputMat) {
 			return image;
 		}
 		default:
-			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled: " + to_string(inputMat.type())).data()));
+			QMessageBox::information(nullptr, "", QString(("matToQImage() - Mat type not handled :  " + to_string(inputMat.type())).data()));
 			return QImage();
 	}
 }
@@ -56,126 +56,71 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* const& clsStr) { return 'L' + string(clsStr) + ';'; }
 
-Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position) { return teeth[position.zone][position.ordinal]; }
+const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position) { return teeth[position.zone][position.ordinal]; }
 
-const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position) { return getTooth(teeth, Rpd::Anchor(position)); }
+Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position) { return const_cast<Tooth&>(getTooth(const_cast<const vector<Tooth>*>(teeth), position)); }
 
-const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Anchor& anchor, const int& shift, const bool& shouldMirror) {
-	auto zone = anchor.position.zone;
-	if (shouldMirror)
-		zone += 1 - zone % 2 * 2;
-	auto tmp = Rpd::Anchor(anchor);
-	shift > 0 ? ++tmp : shift < 0 ? --tmp : tmp;
-	return teeth[zone][tmp.position.ordinal];
-}
-
-const Point& getPoint(const vector<Tooth> teeth[nZones], const Rpd::Anchor& anchor, const int& shift, const bool& shouldMirror) { return getTooth(teeth, anchor, shift, shouldMirror).getAnglePoint(shift > 0 || shift == 0 && anchor.direction == Rpd::DISTAL ? 180 : 0); }
-
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector) { computeStringCurve(teeth, {Rpd::Anchor(positions[0], positions[0].zone == positions[1].zone ? Rpd::MESIAL : Rpd::DISTAL), Rpd::Anchor(positions[1])}, curve, avgRadius, isBlockedByMajorConnector); }
-
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector) {
-	curve.clear();
-	if (isBlockedByMajorConnector)
-		*isBlockedByMajorConnector = false;
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector) {
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
-	if (anchors[0].position.zone == anchors[1].position.zone)
-		computeStringCurve(teeth, anchors, curve, sumOfRadii, nTeeth, isBlockedByMajorConnector);
-	else {
-		vector<Point> curve1;
-		vector<Point> curve2;
-		computeStringCurve(teeth, {Rpd::Anchor(Rpd::Position(anchors[0].position.zone, 0), Rpd::MESIAL), anchors[0]}, curve1, sumOfRadii, nTeeth, isBlockedByMajorConnector);
-		computeStringCurve(teeth, {Rpd::Anchor(Rpd::Position(anchors[1].position.zone, 0), Rpd::MESIAL), anchors[1]}, curve2, sumOfRadii, nTeeth, isBlockedByMajorConnector);
-		switch ((curve2.size() == 1) * 2 + (curve1.size() == 1)) {
-			case 0b00:
-				curve1[0] = (curve1[0] + curve2[0]) / 2;
-				curve2.erase(curve2.begin());
-				curve.insert(curve.end(), curve1.rbegin(), curve1.rend());
-				curve.insert(curve.end(), curve2.begin(), curve2.end());
-			case 0b01:
-				curve2.erase(curve2.begin());
-				curve.push_back(curve1[0]);
-				curve.insert(curve.end(), curve2.begin(), curve2.end());
-			case 0b10:
-				curve1.erase(curve1.begin());
-				curve.insert(curve.end(), curve1.rbegin(), curve1.rend());
-				curve.push_back(curve2[0]);
-			case 0b11:
-				curve.push_back(curve1[0]);
-				curve.push_back(curve2[0]);
-			default: ;
-		}
-	}
+	computeStringCurve(teeth, positions, curve, sumOfRadii, nTeeth, isBlockedByMajorConnector);
 	avgRadius = sumOfRadii / nTeeth;
 }
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, float& sumOfRadii, int& nTeeth, bool* const& isBlockedByMajorConnector) {
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& sumOfRadii, int& nTeeth, bool* const& isBlockedByMajorConnector) {
 	curve.clear();
-	Point lastPoint;
-	for (auto anchor = anchors[0]; anchor <= anchors[1]; ++anchor) {
-		++nTeeth;
-		auto& tooth = getTooth(teeth, anchor.position);
-		sumOfRadii += tooth.getRadius();
-		if (anchor.direction == Rpd::MESIAL) {
-			if (anchor == anchors[0] || anchor == anchors[1])
-				curve.push_back(tooth.getAnglePoint(0));
-			else if (lastPoint != Point())
-				curve.push_back((tooth.getAnglePoint(0) + lastPoint) / 2);
+	if (isBlockedByMajorConnector)
+		*isBlockedByMajorConnector = false;
+	if (positions[0].zone == positions[1].zone) {
+		Point lastPoint;
+		for (auto position = positions[0]; position <= positions[1]; ++position) {
+			++nTeeth;
+			auto& tooth = getTooth(teeth, position);
+			sumOfRadii += tooth.getRadius();
+			auto& thisPoint = tooth.getAnglePoint(0);
+			curve.push_back(position == positions[0] ? thisPoint : (thisPoint + lastPoint) / 2);
+			curve.push_back(tooth.getCentroid());
+			lastPoint = tooth.getAnglePoint(180);
+			if (position == positions[1])
+				curve.push_back(lastPoint);
+			if (isBlockedByMajorConnector && !*isBlockedByMajorConnector)
+				*isBlockedByMajorConnector = tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR;
 		}
-		else {
-			if (anchor == anchors[0])
-				curve.push_back(tooth.getAnglePoint(180));
-			else {
-				curve.push_back(tooth.getCentroid());
-				lastPoint = tooth.getAnglePoint(180);
-				if (anchor == anchors[1])
-					curve.push_back(lastPoint);
-			}
-		}
-		if (isBlockedByMajorConnector && !*isBlockedByMajorConnector)
-			if (tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR)
-				*isBlockedByMajorConnector = true;
+	}
+	else {
+		vector<Point> curve1, curve2;
+		computeStringCurve(teeth, {Rpd::Position(positions[0].zone, 0), positions[0]}, curve1, sumOfRadii, nTeeth, isBlockedByMajorConnector);
+		computeStringCurve(teeth, {Rpd::Position(positions[1].zone, 0), positions[1]}, curve2, sumOfRadii, nTeeth, isBlockedByMajorConnector && !*isBlockedByMajorConnector ? isBlockedByMajorConnector : nullptr);
+		curve1[0] = (curve1[0] + curve2[0]) / 2;
+		curve2.erase(curve2.begin());
+		curve.insert(curve.end(), curve1.rbegin(), curve1.rend());
+		curve.insert(curve.end(), curve2.begin(), curve2.end());
 	}
 }
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Anchor>& anchors, vector<Point>& curve, vector<vector<Point>>& curves) {
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves) {
 	curve.clear();
-	auto hasLingualClaspArm = false;
-	auto lastAnchor = anchors[0], curAnchor = anchors[0];
-	while (curAnchor < anchors[1]) {
-		if (!hasLingualClaspArm && curAnchor.direction == Rpd::MESIAL && getTooth(teeth, curAnchor.position).getLingualBlockage() == RpdAsLingualBlockage::CLASP)
-			hasLingualClaspArm = true;
-		++curAnchor;
-		if (getTooth(teeth, curAnchor.position).hasOcclusalRest(curAnchor.direction) || curAnchor == anchors[1]) {
-			vector<Point> thisCurve;
-			if (hasLingualClaspArm) {
-				float avgRadius;
-				computeStringCurve(teeth, {lastAnchor, curAnchor}, thisCurve, avgRadius);
-				thisCurve.insert(thisCurve.begin(), thisCurve[0]);
-				thisCurve.push_back(thisCurve.back());
-				for (auto i = 1; i < thisCurve.size() - 1; ++i)
-					thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.75);
-				computeSmoothCurve(thisCurve, thisCurve, false, 1);
-				curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-				curves.push_back(thisCurve);
-			}
-			else {
-				for (auto ordinal = lastAnchor.position.ordinal; ordinal <= curAnchor.position.ordinal; ++ordinal) {
-					if (ordinal == lastAnchor.position.ordinal && lastAnchor.direction == Rpd::DISTAL) {
-						curve.push_back(getPoint(teeth, lastAnchor));
-						continue;
-					}
-					if (ordinal == curAnchor.position.ordinal && curAnchor.direction == Rpd::MESIAL) {
-						curve.push_back(getPoint(teeth, curAnchor));
-						continue;
-					}
-					thisCurve = teeth[lastAnchor.position.zone][ordinal].getCurve(180, 0);
-					curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
-				}
-			}
-			lastAnchor = curAnchor;
-			hasLingualClaspArm = false;
+	auto shouldConsiderLast = false;
+	for (auto position = positions[0]; position <= positions[1]; ++position) {
+		auto& tooth = getTooth(teeth, position);
+		vector<Point> thisCurve;
+		if (shouldConsiderLast || tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST) {
+			auto lastPosition = --Rpd::Position(position);
+			float avgRadius;
+			computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST ? position : lastPosition}, thisCurve, avgRadius);
+			thisCurve.insert(thisCurve.begin(), thisCurve[0]);
+			thisCurve.push_back(thisCurve.back());
+			for (auto i = 1; i < thisCurve.size() - 1; ++i)
+				thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.5);
+			computeSmoothCurve(thisCurve, thisCurve, false, 1);
 		}
+		curves.push_back(thisCurve);
+		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+		if (tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR) {
+			thisCurve = tooth.getCurve(180, 0);
+			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+		}
+		shouldConsiderLast = tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_MESIAL_REST;
 	}
 }
 
@@ -225,4 +170,11 @@ void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, c
 		else
 			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, smoothCurve, smoothness);
 	}
+}
+
+vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction> tipDirections) {
+	vector<RpdAsLingualBlockage::LingualBlockage> lingualBlockages;
+	for (auto tipDirection = tipDirections.begin(); tipDirection < tipDirections.end(); ++tipDirection)
+		lingualBlockages.push_back(*tipDirection == Rpd::MESIAL ? RpdAsLingualBlockage::CLASP_DISTAL_REST : RpdAsLingualBlockage::CLASP_MESIAL_REST);
+	return lingualBlockages;
 }

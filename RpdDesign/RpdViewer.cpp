@@ -47,38 +47,28 @@ RpdViewer::~RpdViewer() {
 void RpdViewer::updateRpdDesign() {
 	if (!justLoadedImage_)
 		for (auto zone = 0; zone < nZones; ++zone)
-			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal) {
-				auto& tooth = teeth_[zone][ordinal];
-				tooth.setLingualBlockage(RpdAsLingualBlockage::NONE);
-				tooth.unsetOcclusalRest();
-			}
+			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal)
+				teeth_[zone][ordinal].setLingualBlockage(RpdAsLingualBlockage::NONE);
 	if (justLoadedRpd_) {
 		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			/*TODO: maybe two-anchored major connectors can also have defaults*/
-			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
-			if (rpdAsMajorConnector)
-				rpdAsMajorConnector->handleEighthTooth(isEighthToothMissing_, isEighthToothUsed_);
+			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+			if (dentureBase)
+				dentureBase->determineTailsCoverage(isEighthToothUsed_);
 			auto rpdWithLingualConfrontations = dynamic_cast<RpdWithLingualConfrontations*>(*rpd);
 			if (rpdWithLingualConfrontations)
 				rpdWithLingualConfrontations->registerLingualConfrontations(hasLingualConfrontations);
 		}
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-			if (dentureBase)
-				dentureBase->determineTailsCoverage(isEighthToothUsed_);
-			auto rpdWithClasps = dynamic_cast<RpdWithClasps*>(*rpd);
-			if (rpdWithClasps)
-				rpdWithClasps->setLingualArms(hasLingualConfrontations);
+			auto rpdWithLingualClaspArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
+			if (rpdWithLingualClaspArms)
+				rpdWithLingualClaspArms->setLingualArms(hasLingualConfrontations);
 		}
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithOcclusalRests = dynamic_cast<RpdWithOcclusalRests*>(*rpd);
-		if (rpdWithOcclusalRests)
-			rpdWithOcclusalRests->registerOcclusalRests(teeth_);
 		auto rpdAsLingualBlockage = dynamic_cast<RpdAsLingualBlockage*>(*rpd);
 		if (rpdAsLingualBlockage)
-			rpdAsLingualBlockage->registerLingualBlockage(teeth_);
+			rpdAsLingualBlockage->registerLingualBlockages(teeth_);
 	}
 	justLoadedRpd_ = justLoadedImage_ = false;
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
@@ -212,7 +202,6 @@ void RpdViewer::loadRpdInfo() {
 		auto clsStatement = env_->FindClass(clsStrStatement);
 
 		auto midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
-		auto midGetBoolean = env_->GetMethodID(clsStatement, "getBoolean", "()Z");
 		auto midGetInt = env_->GetMethodID(clsStatement, "getInt", "()I");
 		auto midGetLocalName = env_->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
 		auto midGetOntClass = env_->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
@@ -243,9 +232,6 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "component_position").c_str());
 		auto opComponentPosition = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-		tmpStr = env_->NewStringUTF((ontPrefix + "is_missing").c_str());
-		auto dpIsMissing = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -263,7 +249,6 @@ void RpdViewer::loadRpdInfo() {
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		vector<Rpd*> rpds;
 		bool isEighthToothUsed[nZones] = {};
-		bool isEighthToothMissing[nZones] = {};
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
@@ -302,10 +287,6 @@ void RpdViewer::loadRpdInfo() {
 				case RPI:
 					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
-				case TOOTH:
-					if (env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone + 1)
-						isEighthToothMissing[env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = env_->CallBooleanMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing), midGetBoolean);
-					break;
 				case WW_CLASP:
 					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
@@ -315,7 +296,6 @@ void RpdViewer::loadRpdInfo() {
 		if (rpds.size()) {
 			justLoadedRpd_ = true;
 			copy(begin(isEighthToothUsed), end(isEighthToothUsed), isEighthToothUsed_);
-			copy(begin(isEighthToothMissing), end(isEighthToothMissing), isEighthToothMissing_);
 			rpds_ = rpds;
 			if (baseImage_.data) {
 				updateRpdDesign();

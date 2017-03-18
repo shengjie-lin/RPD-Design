@@ -34,7 +34,7 @@ private :
 	void refreshDisplay();
 	void resizeEvent(QResizeEvent* event) override;
 	void updateRpdDesign();
-	bool isEighthToothMissing_[nZones] = {}, isEighthToothUsed_[nZones] = {}, justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
+	bool isEighthToothUsed_[nZones] = {}, justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;
 	JNIEnv* env_;
 	Mat baseImage_, curImage_, designImages_[2];

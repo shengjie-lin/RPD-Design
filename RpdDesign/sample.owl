@@ -133,7 +133,6 @@
 
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#component_position">
         <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_object_property"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_component"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
     </owl:ObjectProperty>
@@ -316,16 +315,6 @@
         <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_object_property"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#major_connector"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-    </owl:ObjectProperty>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#major_connector_anchor -->
-
-    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#major_connector_anchor">
-        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_object_property"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#major_connector"/>
-        <rdfs:range rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
     </owl:ObjectProperty>
     
 
@@ -800,32 +789,6 @@
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anatomical_factors">
         <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth_data_property"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-    </owl:DatatypeProperty>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor_mesial_or_distal -->
-
-    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor_mesial_or_distal">
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <rdfs:range>
-            <rdfs:Datatype>
-                <owl:oneOf>
-                    <rdf:Description>
-                        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                        <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</rdf:first>
-                        <rdf:rest>
-                            <rdf:Description>
-                                <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#List"/>
-                                <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</rdf:first>
-                                <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
-                            </rdf:Description>
-                        </rdf:rest>
-                    </rdf:Description>
-                </owl:oneOf>
-            </rdfs:Datatype>
-        </rdfs:range>
-        <rdfs:comment xml:lang="en">list:0(mesial)/1(distal)</rdfs:comment>
     </owl:DatatypeProperty>
     
 
@@ -4569,12 +4532,6 @@ note : set for tooth now</rdfs:comment>
     
 
 
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor -->
-
-    <owl:Class rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-    
-
-
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anterior_posterior_palatal_bar -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anterior_posterior_palatal_bar">
@@ -5078,82 +5035,12 @@ note : set for tooth now</rdfs:comment>
     
 
 
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth34"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor360 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor360">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor361 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor361">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor371 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor371">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth37"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth44"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor470 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor470">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor471 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor471">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
-        <anchor_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</anchor_mesial_or_distal>
-    </owl:NamedIndividual>
-    
-
-
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combined_clasp_1 -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combined_clasp_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combined_clasp"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth31"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth41"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth37"/>
         <clasp_material rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</clasp_material>
     </owl:NamedIndividual>
     
@@ -5163,8 +5050,8 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth42"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth48"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth44"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth46"/>
     </owl:NamedIndividual>
     
 
@@ -5173,7 +5060,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#edentulous_space_down1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#edentulous_space"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth42"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth32"/>
         <bounded rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</bounded>
         <maxillary_mandibular rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</maxillary_mandibular>
     </owl:NamedIndividual>
@@ -5215,10 +5102,11 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#palatal_plate_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#palatal_plate"/>
-        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor340"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor371"/>
-        <major_connector_anchor rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anchor441"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth33"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth38"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth44"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47"/>
+        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth37"/>
     </owl:NamedIndividual>
     
 
