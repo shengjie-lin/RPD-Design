@@ -475,19 +475,19 @@ IBar::IBar(const vector<Position>& positions) : Rpd(positions) {}
 void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto a = tooth.getRadius() * 1.5F;
-	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
-	auto center = (point1 + point2) / 2;
-	auto direction = computeNormalDirection(center);
-	auto r = point1 - center;
+	Point2f p1 = tooth.getAnglePoint(75), p2 = tooth.getAnglePoint(165);
+	auto c = (p1 + p2) / 2;
+	auto d = computeNormalDirection(c);
+	auto r = p1 - c;
 	auto rou = norm(r);
-	auto sinTheta = direction.cross(r) / rou;
+	auto sinTheta = d.cross(r) / rou;
 	auto b = rou * abs(sinTheta) / sqrt(1 - pow(rou / a, 2) * (1 - pow(sinTheta, 2)));
-	auto inclination = atan2(direction.y, direction.x);
+	auto inclination = atan2(d.y, d.x);
 	auto t = radianToDegree(asin(rotate(r, -inclination).y / b));
 	inclination = radianToDegree(inclination);
 	if (t > 0)
 		t -= 180;
-	ellipse(designImage, center, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
+	ellipse(designImage, c, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 Plating::Plating(const vector<Position>& positions) : Rpd(positions) {}
