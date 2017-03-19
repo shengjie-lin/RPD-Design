@@ -139,7 +139,7 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 		vector<Point> dbCurve;
 		computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
 		distalPoint = getTooth(teeth, positions[1]).getAnglePoint(180);
-		dbCurve.push_back(distalPoint += roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius));
+		dbCurve.push_back(distalPoint += roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
 		dbCurve.erase(dbCurve.begin() + 1);
 		dbCurve.erase(dbCurve.end() - 2);
 		vector<Point> tmpCurve(dbCurve.size());

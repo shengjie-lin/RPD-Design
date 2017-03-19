@@ -201,11 +201,11 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 	computeStringCurve(teeth, positions_, curve, avgRadius, &isBlockedByMajorConnector);
 	if (coversTails_[0]) {
 		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
-		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius));
+		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.8F));
 	}
 	if (coversTails_[1]) {
 		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
-		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius));
+		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
 	}
 	if (coversTails_[0] || coversTails_[1] || !isBlockedByMajorConnector) {
 		curve.erase(curve.begin() + 1);
