@@ -98,36 +98,67 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 	}
 }
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves) {
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point& distalPoint) {
 	curve.clear();
+	auto dbStartPosition = positions[0];
+	while (dbStartPosition <= positions[1] && getTooth(teeth, dbStartPosition).getLingualBlockage() != RpdAsLingualBlockage::DENTURE_BASE)
+		++dbStartPosition;
 	auto shouldConsiderLast = false;
-	for (auto position = positions[0]; position <= positions[1]; ++position) {
-		auto& tooth = getTooth(teeth, position);
+	float avgRadius;
+	for (auto position = positions[0]; position <= dbStartPosition; ++position) {
 		vector<Point> thisCurve;
-		if (shouldConsiderLast || tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST) {
+		auto isValidPosition = position < dbStartPosition;
+		auto lingualBlockage = isValidPosition ? getTooth(teeth, position).getLingualBlockage() : RpdAsLingualBlockage::NONE;
+		auto flag = isValidPosition && lingualBlockage == RpdAsLingualBlockage::CLASP_DISTAL_REST;
+		if (shouldConsiderLast || flag) {
 			auto lastPosition = --Rpd::Position(position);
-			float avgRadius;
-			computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST ? position : lastPosition}, thisCurve, avgRadius);
+			computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, flag ? position : lastPosition}, thisCurve, avgRadius);
 			thisCurve.insert(thisCurve.begin(), thisCurve[0]);
 			thisCurve.push_back(thisCurve.back());
 			for (auto i = 1; i < thisCurve.size() - 1; ++i)
-				thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.5);
+				thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.6F);
 			vector<Point> tmpCurve;
-			computeSmoothCurve(vector<Point>(thisCurve.begin(), thisCurve.begin() + 3), tmpCurve, false, 1);
-			thisCurve.erase(thisCurve.begin(), thisCurve.begin() + 3);
-			thisCurve.insert(thisCurve.begin(), tmpCurve.begin(), tmpCurve.end());
-			computeSmoothCurve(vector<Point>(thisCurve.end() - 3, thisCurve.end()), tmpCurve, false, 1);
-			thisCurve.erase(thisCurve.end() - 3, thisCurve.end());
-			thisCurve.insert(thisCurve.end(), tmpCurve.begin(), tmpCurve.end());
+			computeInscribedCurve(vector<Point>{thisCurve.begin(), thisCurve.begin() + 3}, tmpCurve, 1);
+			thisCurve.erase(thisCurve.begin() + 1);
+			thisCurve.insert(thisCurve.begin() + 1, tmpCurve.begin(), tmpCurve.end());
+			computeInscribedCurve(vector<Point>{thisCurve.end() - 3, thisCurve.end()}, tmpCurve, 1, false);
+			thisCurve.erase(thisCurve.end() - 2);
+			thisCurve.insert(thisCurve.end() - 1, tmpCurve.begin(), tmpCurve.end());
 			computeSmoothCurve(thisCurve, thisCurve);
+			curves.push_back(thisCurve);
+			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 		}
-		curves.push_back(thisCurve);
-		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-		if (tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR) {
-			thisCurve = tooth.getCurve(180, 0);
+		if (lingualBlockage == RpdAsLingualBlockage::MAJOR_CONNECTOR) {
+			thisCurve = getTooth(teeth, position).getCurve(180, 0);
 			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
 		}
-		shouldConsiderLast = tooth.getLingualBlockage() == RpdAsLingualBlockage::CLASP_MESIAL_REST;
+		shouldConsiderLast = lingualBlockage == RpdAsLingualBlockage::CLASP_MESIAL_REST;
+	}
+	if (dbStartPosition <= positions[1]) {
+		curve.push_back(getTooth(teeth, dbStartPosition).getAnglePoint(0));
+		vector<Point> dbCurve;
+		computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
+		distalPoint = getTooth(teeth, positions[1]).getAnglePoint(180);
+		dbCurve.push_back(distalPoint += roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius));
+		dbCurve.erase(dbCurve.begin() + 1);
+		dbCurve.erase(dbCurve.end() - 2);
+		vector<Point> tmpCurve(dbCurve.size());
+		for (auto i = 0; i < dbCurve.size(); ++i) {
+			auto delta = roundToInt(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
+			tmpCurve[i] = dbCurve[i] + delta;
+			dbCurve[i] -= delta;
+		}
+		dbCurve.insert(dbCurve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+		computeSmoothCurve(dbCurve, dbCurve, true);
+		vector<float> distances(dbCurve.size());
+		for (auto i = 0; i < distances.size(); ++i)
+			distances[i] = norm((dbCurve[i] + dbCurve[(i + 1) % distances.size()]) / 2 - distalPoint);
+		vector<int> minIdx(2);
+		minMaxIdx(distances, nullptr, nullptr, &minIdx[0], nullptr);
+		curve.insert(curve.end(), dbCurve.begin(), dbCurve.begin() + minIdx[1] + 1);
+		auto p = dbCurve[minIdx[1]];
+		auto d = normalize(dbCurve[(minIdx[1] + 1) % dbCurve.size()] - p);
+		curve.push_back(distalPoint = p + roundToInt(d.dot(distalPoint - p) * d));
 	}
 }
 
@@ -161,25 +192,19 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 		curve.push_back(cornerPoints[1]);
 }
 
-void computeSmoothCurve(const vector<Point> curve, vector<Point>& smoothCurve, const bool& isClosed, const float& smoothness) {
-	smoothCurve.clear();
+void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed) {
+	vector<Point> tmpCurve;
 	for (auto point = curve.begin(); point < curve.end(); ++point) {
-		if (point == curve.begin())
-			if (isClosed)
-				computeInscribedCurve({curve.back(),*point, *(point + 1)}, smoothCurve, smoothness);
-			else
-				smoothCurve.insert(smoothCurve.end(), *point);
-		else if (point == curve.end() - 1)
-			if (isClosed)
-				computeInscribedCurve({smoothCurve.back(), *point, curve[0]}, smoothCurve, smoothness);
-			else
-				smoothCurve.insert(smoothCurve.end(), *point);
+		auto isFirst = point == curve.begin(), isLast = point == curve.end() - 1;
+		if (isClosed || !(isFirst || isLast))
+			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve);
 		else
-			computeInscribedCurve({smoothCurve.back(),*point, *(point + 1)}, smoothCurve, smoothness);
+			tmpCurve.insert(tmpCurve.end(), *point);
 	}
+	smoothCurve = tmpCurve;
 }
 
-vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction> tipDirections) {
+vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction>& tipDirections) {
 	vector<RpdAsLingualBlockage::LingualBlockage> lingualBlockages;
 	for (auto tipDirection = tipDirections.begin(); tipDirection < tipDirections.end(); ++tipDirection)
 		lingualBlockages.push_back(*tipDirection == Rpd::MESIAL ? RpdAsLingualBlockage::CLASP_DISTAL_REST : RpdAsLingualBlockage::CLASP_MESIAL_REST);

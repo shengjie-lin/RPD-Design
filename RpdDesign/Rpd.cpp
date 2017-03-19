@@ -200,17 +200,19 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 	bool isBlockedByMajorConnector;
 	computeStringCurve(teeth, positions_, curve, avgRadius, &isBlockedByMajorConnector);
 	if (coversTails_[0]) {
-		Point2f distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
-		curve[0] = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius);
+		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
+		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius));
 	}
 	if (coversTails_[1]) {
-		Point2f distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
-		curve.back() = roundToInt(distalPoint + rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius);
+		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
+		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius));
 	}
 	if (coversTails_[0] || coversTails_[1] || !isBlockedByMajorConnector) {
+		curve.erase(curve.begin() + 1);
+		curve.erase(curve.end() - 2);
 		vector<Point> tmpCurve(curve.size());
 		for (auto i = 0; i < curve.size(); ++i) {
-			auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.75);
+			auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 			tmpCurve[i] = curve[i] + delta;
 			curve[i] -= delta;
 		}
@@ -222,7 +224,7 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 		curve.insert(curve.begin(), curve[0]);
 		curve.push_back(curve.back());
 		for (auto i = 1; i < curve.size() - 1; ++i)
-			curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.75);
+			curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 		computeSmoothCurve(curve, curve);
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
@@ -313,8 +315,12 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, const jmeth
 PalatalPlate::PalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations) : RpdWithLingualConfrontations(positions, lingualConfrontations) {}
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	/*TODO: consider denture base*/
 	RpdWithLingualConfrontations::draw(designImage, teeth);
+	vector<Point> curve, tmpCurve;
+	vector<vector<Point>> curves;
+	Point distalPoint1, distalPoint2;
+	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, distalPoint2);
+	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	auto ordinal = max(positions_[2].ordinal, positions_[0].ordinal);
 	vector<Point> mesialCurve, distalCurve, curve1, curve2;
 	float sumOfRadii = 0;
@@ -325,36 +331,36 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	curve2.insert(curve2.begin(), curve2[0]);
 	auto avgRadius = sumOfRadii / nTeeth;
 	for (auto point = curve1.begin() + 1; point < curve1.end(); ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 1.75);
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	for (auto point = curve2.begin() + 1; point < curve2.end(); ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 1.75);
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	mesialCurve.insert(mesialCurve.end(), curve1.begin(), curve1.end() - 1);
 	mesialCurve.push_back((curve1.back() + curve2.back()) / 2);
 	mesialCurve.insert(mesialCurve.end(), curve2.rbegin() + 1, curve2.rend());
 	computeSmoothCurve(mesialCurve, mesialCurve);
+	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
+	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, distalPoint1);
+	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	ordinal = min(positions_[1].ordinal, positions_[3].ordinal);
 	sumOfRadii = nTeeth = 0;
 	computeStringCurve(teeth, {Position(positions_[1].zone, ordinal), positions_[1]}, curve1, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions_[1]).getLingualBlockage() == DENTURE_BASE)
+		curve1.push_back(distalPoint1);
 	curve1.push_back(curve1.back());
 	computeStringCurve(teeth, {Position(positions_[3].zone, ordinal), positions_[3]}, curve2, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions_[3]).getLingualBlockage() == DENTURE_BASE)
+		curve2.push_back(distalPoint2);
 	curve2.push_back(curve2.back());
 	avgRadius = sumOfRadii / nTeeth;
 	for (auto point = curve1.begin(); point < curve1.end() - 1; ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 1.75);
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	for (auto point = curve2.begin(); point < curve2.end() - 1; ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 1.75);
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	distalCurve.insert(distalCurve.end(), curve1.rbegin(), curve1.rend() - 1);
 	distalCurve.push_back((curve1[0] + curve2[0]) / 2);
 	distalCurve.insert(distalCurve.end(), curve2.begin() + 1, curve2.end());
 	computeSmoothCurve(distalCurve, distalCurve);
-	vector<Point> curve, tmpCurve;
-	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves);
-	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
-	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves);
-	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
 	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
@@ -468,7 +474,7 @@ IBar::IBar(const vector<Position>& positions) : Rpd(positions) {}
 
 void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
-	auto a = tooth.getRadius() * 1.5;
+	auto a = tooth.getRadius() * 1.5F;
 	Point2f point1 = tooth.getAnglePoint(75), point2 = tooth.getAnglePoint(165);
 	auto center = (point1 + point2) / 2;
 	auto direction = computeNormalDirection(center);
