@@ -88,7 +88,7 @@ void RpdAsLingualBlockage::registerLingualBlockages(vector<Tooth> teeth[nZones],
 			getTooth(teeth, positions_[i]).setLingualBlockage(lingualBlockages_[i]);
 }
 
-void RpdWithLingualClaspArms::setLingualArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
+void RpdWithLingualClaspArms::setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
 	for (auto i = 0; i < positions_.size(); ++i) {
 		auto& position = positions_[i];
 		hasLingualClaspArms_[i] = !hasLingualConfrontations[position.zone][position.ordinal];
@@ -104,8 +104,6 @@ void RpdWithLingualClaspArms::draw(const Mat& designImage, const vector<Tooth> t
 		if (hasLingualClaspArms_[i])
 			HalfClasp(positions_[i], material_, tipDirections_[i], HalfClasp::LINGUAL).draw(designImage, teeth);
 }
-
-const deque<bool>& RpdWithLingualClaspArms::getLingualClaspArms() const { return hasLingualClaspArms_; }
 
 void RpdWithLingualClaspArms::registerLingualBlockages(vector<Tooth> teeth[nZones]) const { RpdAsLingualBlockage::registerLingualBlockages(teeth, hasLingualClaspArms_); }
 
@@ -190,15 +188,20 @@ ContinuousClasp* ContinuousClasp::createFromIndividual(JNIEnv* const& env, const
 	return new ContinuousClasp(positions, claspMaterial);
 }
 
+void ContinuousClasp::setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
+	RpdWithLingualClaspArms::setLingualClaspArms(hasLingualConfrontations);
+	hasLingualClaspArms_[0] = hasLingualClaspArms_[1] = hasLingualClaspArms_[0] && hasLingualClaspArms_[1];
+}
+
 ContinuousClasp::ContinuousClasp(const vector<Position>& positions, const Material& material) : RpdWithLingualClaspArms(positions, material, {positions[0].zone == positions[1].zone ? DISTAL : MESIAL, MESIAL}) {}
 
 void ContinuousClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto isInSameZone = positions_[0].zone == positions_[1].zone;
 	OcclusalRest(positions_[0], isInSameZone ? MESIAL : DISTAL).draw(designImage, teeth);
 	OcclusalRest(positions_[1], DISTAL).draw(designImage, teeth);
-	auto& hasLingualClaspArms = getLingualClaspArms();
-	auto curve1 = getTooth(teeth, positions_[0]).getCurve(isInSameZone ? hasLingualClaspArms[0] ? 180 : 0 : 60, isInSameZone ? 120 : hasLingualClaspArms[0] ? 0 : 180), curve2 = getTooth(teeth, positions_[1]).getCurve(60, hasLingualClaspArms[1] ? 0 : 180);
-	if (hasLingualClaspArms[0] && hasLingualClaspArms[1])
+	auto& hasLingualClaspArm = hasLingualClaspArms_[0];
+	auto curve1 = getTooth(teeth, positions_[0]).getCurve(isInSameZone ? hasLingualClaspArm ? 180 : 0 : 60, isInSameZone ? 120 : hasLingualClaspArm ? 0 : 180), curve2 = getTooth(teeth, positions_[1]).getCurve(60, hasLingualClaspArm ? 0 : 180);
+	if (hasLingualClaspArm)
 		if (isInSameZone)
 			curve2.insert(curve2.end(), curve1.begin(), curve1.end());
 		else

@@ -74,13 +74,13 @@ private:
 };
 
 class RpdWithLingualClaspArms : public RpdWithMaterial, public RpdAsLingualBlockage {
+	friend class ContinuousClasp;
 public:
-	void setLingualArms(bool hasLingualConfrontations[nZones][nTeethPerZone]);
+	virtual void setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]);
 protected:
 	RpdWithLingualClaspArms(const vector<Position>& positions, const Material& material, const vector<Direction>& tipDirections);
 	RpdWithLingualClaspArms(const vector<Position>& positions, const Material& material, const Direction& tipDirection);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
-	const deque<bool>& getLingualClaspArms() const;
 private:
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
 	vector<Direction> tipDirections_;
@@ -128,6 +128,7 @@ public:
 private:
 	ContinuousClasp(const vector<Position>& positions, const Material& material);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+	void setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) override;
 };
 
 class DentureBase : public RpdAsLingualBlockage {

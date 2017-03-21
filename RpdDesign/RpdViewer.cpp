@@ -63,7 +63,7 @@ void RpdViewer::updateRpdDesign() {
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 			auto rpdWithLingualClaspArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
 			if (rpdWithLingualClaspArms)
-				rpdWithLingualClaspArms->setLingualArms(hasLingualConfrontations);
+				rpdWithLingualClaspArms->setLingualClaspArms(hasLingualConfrontations);
 		}
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
