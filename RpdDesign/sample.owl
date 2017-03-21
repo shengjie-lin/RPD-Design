@@ -5044,6 +5044,16 @@ note : set for tooth now</rdfs:comment>
     
 
 
+    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#continuous_clasp_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#continuous_clasp_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#continuous_clasp"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth33"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth34"/>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base_1 -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#denture_base_1">

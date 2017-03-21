@@ -6,10 +6,10 @@ class RpdViewer;
 
 class RpdDesign : public QWidget {
 	Q_OBJECT
-public :
+public:
 	explicit RpdDesign(QWidget* const& parent = nullptr);
 	~RpdDesign();
-private :
+private:
 	RpdViewer* rpdViewer_;
 	Ui::RpdDesignClass ui_;
 };

@@ -11,6 +11,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"Aker_clasp", AKER_CLASP},
 	{"combination_clasp", COMBINATION_CLASP},
 	{"combined_clasp", COMBINED_CLASP},
+	{"continuous_clasp", CONTINUOUS_CLASP},
 	{"denture_base", DENTURE_BASE},
 	{"edentulous_space", EDENTULOUS_SPACE},
 	{"lingual_rest", LINGUAL_REST},
@@ -220,9 +221,6 @@ void RpdViewer::loadRpdInfo() {
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 
 		string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
-		tmpStr = env_->NewStringUTF((ontPrefix + "anchor_mesial_or_distal").c_str());
-		auto dpAnchorMesialOrDistal = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "clasp_material").c_str());
 		auto dpClaspMaterial = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -234,9 +232,6 @@ void RpdViewer::loadRpdInfo() {
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
-		tmpStr = env_->NewStringUTF((ontPrefix + "major_connector_anchor").c_str());
-		auto opMajorConnectorAnchor = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "rest_mesial_or_distal").c_str());
 		auto dpRestMesialOrDistal = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
@@ -263,6 +258,9 @@ void RpdViewer::loadRpdInfo() {
 				case COMBINED_CLASP:
 					rpds.push_back(CombinedClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
+				case CONTINUOUS_CLASP:
+					rpds.push_back(ContinuousClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
 				case DENTURE_BASE:
 					rpds.push_back(DentureBase::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
@@ -276,7 +274,7 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(OcclusalRest::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case PALATAL_PLATE:
-					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpAnchorMesialOrDistal, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, opMajorConnectorAnchor, individual, isEighthToothUsed));
+					rpds.push_back(PalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case RING_CLASP:
 					rpds.push_back(RingClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));

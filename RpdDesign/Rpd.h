@@ -10,7 +10,7 @@ using namespace rel_ops;
 class Tooth;
 
 class Rpd {
-public :
+public:
 	enum Direction {
 		MESIAL,
 		DISTAL
@@ -27,34 +27,34 @@ public :
 
 	virtual ~Rpd() = default;
 	virtual void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const = 0;
-protected :
+protected:
 	explicit Rpd(const vector<Position>& positions);
 	static void queryPositions(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, vector<Position>& positions, bool isEighthToothUsed[nZones], const bool& autoComplete = false);
 	vector<Position> positions_;
 };
 
 class RpdWithMaterial {
-public :
+public:
 	enum Material {
 		CAST,
 		WROUGHT_WIRE
 	};
 
-protected :
+protected:
 	explicit RpdWithMaterial(const Material& material);
 	static void queryMaterial(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial);
 	Material material_;
 };
 
 class RpdWithDirection {
-protected :
+protected:
 	explicit RpdWithDirection(const Rpd::Direction& direction);
 	static void queryDirection(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipDirection, const jobject& individual, Rpd::Direction& claspTipDirection);
 	Rpd::Direction direction_;
 };
 
 class RpdAsLingualBlockage : public Rpd {
-public :
+public:
 	enum LingualBlockage {
 		NONE,
 		CLASP_MESIAL_REST,
@@ -64,68 +64,77 @@ public :
 	};
 
 	virtual void registerLingualBlockages(vector<Tooth> teeth[nZones]) const;
-protected :
+protected:
 	RpdAsLingualBlockage(const vector<Position>& positions, const vector<LingualBlockage>& lingualBlockages);
 	RpdAsLingualBlockage(const vector<Position>& positions, const LingualBlockage& lingualBlockage);
 	void registerLingualBlockages(vector<Tooth> teeth[nZones], const deque<bool>& flags) const;
-private :
+private:
 	void registerLingualBlockages(vector<Tooth> teeth[nZones], const vector<Position>& positions) const;
 	vector<LingualBlockage> lingualBlockages_;
 };
 
 class RpdWithLingualClaspArms : public RpdWithMaterial, public RpdAsLingualBlockage {
-public :
+public:
 	void setLingualArms(bool hasLingualConfrontations[nZones][nTeethPerZone]);
-protected :
+protected:
 	RpdWithLingualClaspArms(const vector<Position>& positions, const Material& material, const vector<Direction>& tipDirections);
 	RpdWithLingualClaspArms(const vector<Position>& positions, const Material& material, const Direction& tipDirection);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
-private :
+	const deque<bool>& getLingualClaspArms() const;
+private:
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
 	vector<Direction> tipDirections_;
 	deque<bool> hasLingualClaspArms_;
 };
 
 class RpdWithLingualConfrontations : public RpdAsLingualBlockage {
-public :
+public:
 	void registerLingualConfrontations(bool hasLingualConfrontations[nZones][nTeethPerZone]) const;
-protected :
+protected:
 	RpdWithLingualConfrontations(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	static void queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, vector<Position>& lingualConfrontations);
-private :
+private:
 	vector<Position> lingualConfrontations_;
 };
 
 class AkerClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
-public :
+public:
 	static AkerClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class CombinationClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
-public :
+public:
 	static CombinationClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	CombinationClasp(const vector<Position>& positions, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class CombinedClasp : public RpdWithLingualClaspArms {
-public :
+public:
 	static CombinedClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	CombinedClasp(const vector<Position>& positions, const Material& material);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
+class ContinuousClasp : public RpdWithLingualClaspArms {
+public:
+	static ContinuousClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
+	ContinuousClasp(const vector<Position>& positions, const Material& material);
+	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+};
+
 class DentureBase : public RpdAsLingualBlockage {
-public :
+public:
 	static DentureBase* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 	void determineTailsCoverage(const bool isEighthToothUsed[nZones]);
-private :
+private:
 	explicit DentureBase(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
@@ -133,17 +142,17 @@ private :
 };
 
 class EdentulousSpace : public Rpd {
-public :
+public:
 	static EdentulousSpace* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	explicit EdentulousSpace(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class LingualRest : public Rpd, public RpdWithDirection {
-public :
+public:
 	static LingualRest* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	LingualRest(const vector<Position>& positions, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
@@ -152,54 +161,55 @@ class OcclusalRest : public Rpd, public RpdWithDirection {
 	friend class AkerClasp;
 	friend class CombinationClasp;
 	friend class CombinedClasp;
+	friend class ContinuousClasp;
 	friend class RingClasp;
 	friend class Rpa;
 	friend class Rpi;
 	friend class WwClasp;
-public :
+public:
 	static OcclusalRest* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	OcclusalRest(const vector<Position>& positions, const Direction& direction);
 	OcclusalRest(const Position& position, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class PalatalPlate : public RpdWithLingualConfrontations {
-public :
-	static PalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+public:
+	static PalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
 	PalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class RingClasp : public Rpd, public RpdWithMaterial {
-public :
+public:
 	static RingClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	RingClasp(const vector<Position>& positions, const Material& material);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class Rpa : public Rpd, public RpdWithMaterial {
-public :
+public:
 	static Rpa* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	Rpa(const vector<Position>& positions, const Material& material);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class Rpi : public Rpd {
-public :
+public:
 	static Rpi* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	explicit Rpi(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
 class WwClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
-public :
+public:
 	static WwClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
-private :
+private:
 	WwClasp(const vector<Position>& positions, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
@@ -221,6 +231,7 @@ class HalfClasp : public Rpd, public RpdWithMaterial, public RpdWithDirection {
 	friend class AkerClasp;
 	friend class CombinationClasp;
 	friend class CombinedClasp;
+	friend class ContinuousClasp;
 	friend class Rpa;
 	friend class WwClasp;
 	HalfClasp(const vector<Position>& positions, const Material& material, const Direction& direction, const Side& side);

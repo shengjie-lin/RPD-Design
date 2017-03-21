@@ -11,14 +11,15 @@ class Tooth;
 
 class RpdViewer : public QLabel {
 	Q_OBJECT
-public :
+public:
 	RpdViewer(QWidget* const& parent, const bool& showBaseImage, const bool& showContoursImage);
 	~RpdViewer();
-private :
+private:
 	enum RpdClass {
 		AKER_CLASP = 1,
 		COMBINATION_CLASP,
 		COMBINED_CLASP,
+		CONTINUOUS_CLASP,
 		DENTURE_BASE,
 		EDENTULOUS_SPACE,
 		LINGUAL_REST,

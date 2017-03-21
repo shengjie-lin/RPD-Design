@@ -105,6 +105,8 @@ void RpdWithLingualClaspArms::draw(const Mat& designImage, const vector<Tooth> t
 			HalfClasp(positions_[i], material_, tipDirections_[i], HalfClasp::LINGUAL).draw(designImage, teeth);
 }
 
+const deque<bool>& RpdWithLingualClaspArms::getLingualClaspArms() const { return hasLingualClaspArms_; }
+
 void RpdWithLingualClaspArms::registerLingualBlockages(vector<Tooth> teeth[nZones]) const { RpdAsLingualBlockage::registerLingualBlockages(teeth, hasLingualClaspArms_); }
 
 RpdWithLingualConfrontations::RpdWithLingualConfrontations(const vector<Position>& positions, const vector<Position>& lingualConfrontations) : RpdAsLingualBlockage(positions, MAJOR_CONNECTOR), lingualConfrontations_(lingualConfrontations) {}
@@ -178,6 +180,32 @@ void CombinedClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZone
 	OcclusalRest(positions_[1], MESIAL).draw(designImage, teeth);
 	HalfClasp(positions_[0], material_, isInSameZone ? MESIAL : DISTAL, HalfClasp::BUCCAL).draw(designImage, teeth);
 	HalfClasp(positions_[1], material_, DISTAL, HalfClasp::BUCCAL).draw(designImage, teeth);
+}
+
+ContinuousClasp* ContinuousClasp::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
+	vector<Position> positions;
+	Material claspMaterial;
+	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
+	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
+	return new ContinuousClasp(positions, claspMaterial);
+}
+
+ContinuousClasp::ContinuousClasp(const vector<Position>& positions, const Material& material) : RpdWithLingualClaspArms(positions, material, {positions[0].zone == positions[1].zone ? DISTAL : MESIAL, MESIAL}) {}
+
+void ContinuousClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
+	auto isInSameZone = positions_[0].zone == positions_[1].zone;
+	OcclusalRest(positions_[0], isInSameZone ? MESIAL : DISTAL).draw(designImage, teeth);
+	OcclusalRest(positions_[1], DISTAL).draw(designImage, teeth);
+	auto& hasLingualClaspArms = getLingualClaspArms();
+	auto curve1 = getTooth(teeth, positions_[0]).getCurve(isInSameZone ? hasLingualClaspArms[0] ? 180 : 0 : 60, isInSameZone ? 120 : hasLingualClaspArms[0] ? 0 : 180), curve2 = getTooth(teeth, positions_[1]).getCurve(60, hasLingualClaspArms[1] ? 0 : 180);
+	if (hasLingualClaspArms[0] && hasLingualClaspArms[1])
+		if (isInSameZone)
+			curve2.insert(curve2.end(), curve1.begin(), curve1.end());
+		else
+			curve2.insert(curve2.end(), curve1.rbegin(), curve1.rend());
+	else
+		polylines(designImage, curve1, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
+	polylines(designImage, curve2, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
 }
 
 DentureBase::DentureBase(const vector<Position>& positions) : RpdAsLingualBlockage(positions, DENTURE_BASE) {}
@@ -305,7 +333,7 @@ void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
 }
 
-PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpAnchorMesialOrDistal, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& opMajorConnectorAnchor, const jobject& individual, bool isEighthToothUsed[nZones]) {
+PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Position> positions, lingualConfrontations;
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
 	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
