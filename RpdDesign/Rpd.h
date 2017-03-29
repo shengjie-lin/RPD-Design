@@ -106,6 +106,14 @@ private:
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
+class CombinationAnteriorPosteriorPalatalStrap : public RpdWithLingualConfrontations {
+public:
+	static CombinationAnteriorPosteriorPalatalStrap* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
+	CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+};
+
 class CombinationClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
 public:
 	static CombinationClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
@@ -135,10 +143,12 @@ class DentureBase : public RpdAsLingualBlockage {
 public:
 	static DentureBase* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 	void determineTailsCoverage(const bool isEighthToothUsed[nZones]);
+	void registerDentureBases(vector<Tooth> teeth[nZones]) const;
 private:
 	explicit DentureBase(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
+	static void registerDentureBases(vector<Tooth> teeth[nZones], vector<Position> positions);
 	deque<bool> coversTails_ = {false, false};
 };
 
@@ -155,6 +165,22 @@ public:
 	static FullPalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
 	FullPalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+};
+
+class LingualBar : public RpdWithLingualConfrontations {
+public:
+	static LingualBar* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
+	LingualBar(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+};
+
+class LingualPlate : public RpdWithLingualConfrontations {
+public:
+	static LingualPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
+	LingualPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 

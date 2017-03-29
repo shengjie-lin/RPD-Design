@@ -5051,6 +5051,18 @@ note : set for tooth now</rdfs:comment>
     
 
 
+    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#capps_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#capps_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combination_anterior_posterior_palatal_strap"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth13"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth17"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth22"/>
+        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth26"/>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combined_clasp_1 -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combined_clasp_1">
@@ -5112,17 +5124,6 @@ note : set for tooth now</rdfs:comment>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth16"/>
         <bounded rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</bounded>
         <maxillary_mandibular rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</maxillary_mandibular>
-    </owl:NamedIndividual>
-    
-
-
-    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#full_palatal_plate_1 -->
-
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#full_palatal_plate_1">
-        <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#full_palatal_plate"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth17"/>
-        <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth27"/>
-        <lingual_confrontation rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth24"/>
     </owl:NamedIndividual>
     
 

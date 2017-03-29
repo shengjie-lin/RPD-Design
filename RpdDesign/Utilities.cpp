@@ -184,7 +184,7 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 		computeSmoothCurve(thisCurve, thisCurve);
 		curves.push_back(thisCurve);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-		computeLingualCurve(teeth, {Rpd::Position(positions[1].zone, 1),positions[1]}, thisCurve, curves, distalPoints[1]);
+		computeLingualCurve(teeth, {Rpd::Position(positions[1].zone, 1), positions[1]}, thisCurve, curves, distalPoints[1]);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 	}
 	else {
@@ -193,6 +193,74 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 		computeLingualCurve(teeth, {startPositions[1], positions[1]}, thisCurve, curves, distalPoints[1]);
 		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 	}
+}
+
+void computeMesialCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<Point>* const& innerCurve) {
+	auto ordinal = max(positions[0].ordinal, positions[1].ordinal);
+	vector<Point> curve1, curve2;
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	computeStringCurve(teeth, {positions[0], Rpd::Position(positions[0].zone, ordinal)}, curve1, sumOfRadii, nTeeth);
+	curve1.insert(curve1.begin(), curve1[0]);
+	computeStringCurve(teeth, {positions[1], Rpd::Position(positions[1].zone, ordinal)}, curve2, sumOfRadii, nTeeth);
+	curve2.insert(curve2.begin(), curve2[0]);
+	auto avgRadius = sumOfRadii / nTeeth;
+	for (auto point = curve1.begin() + 1; point < curve1.end(); ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	for (auto point = curve2.begin() + 1; point < curve2.end(); ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	if (innerCurve) {
+		innerCurve->clear();
+		innerCurve->push_back(curve1.back());
+		auto tmpPoint1 = getTooth(teeth, ++Rpd::Position(positions[0].zone, ordinal)).getCentroid();
+		tmpPoint1 -= computeNormalDirection(tmpPoint1) * avgRadius * 2.4F;
+		auto tmpPoint2 = getTooth(teeth, ++Rpd::Position(positions[1].zone, ordinal)).getCentroid();
+		tmpPoint2 -= computeNormalDirection(tmpPoint2) * avgRadius * 2.4F;
+		innerCurve->push_back((tmpPoint1 + tmpPoint2) / 2);
+		innerCurve->push_back(curve2.back());
+	}
+	curve.clear();
+	curve.insert(curve.end(), curve1.begin(), curve1.end() - 1);
+	curve.push_back((curve1.back() + curve2.back()) / 2);
+	curve.insert(curve.end(), curve2.rbegin() + 1, curve2.rend());
+	computeSmoothCurve(curve, curve);
+}
+
+void computeDistalCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<Point>& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve) {
+	auto ordinal = min(positions[0].ordinal, positions[1].ordinal);
+	vector<Point> curve1, curve2;
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	computeStringCurve(teeth, {Rpd::Position(positions[0].zone, ordinal), positions[0]}, curve1, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions[0]).getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE)
+		curve1.push_back(distalPoints[0]);
+	curve1.push_back(curve1.back());
+	computeStringCurve(teeth, {Rpd::Position(positions[1].zone, ordinal), positions[1]}, curve2, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions[1]).getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE)
+		curve2.push_back(distalPoints[1]);
+	curve2.push_back(curve2.back());
+	auto avgRadius = sumOfRadii / nTeeth;
+	for (auto point = curve1.begin(); point < curve1.end() - 1; ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	for (auto point = curve2.begin(); point < curve2.end() - 1; ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	if (innerCurve) {
+		innerCurve->push_back((innerCurve->back() + curve1[0]) / 2);
+		innerCurve->push_back(curve1[0]);
+		auto tmpPoint1 = getTooth(teeth, --Rpd::Position(positions[0].zone, ordinal)).getCentroid();
+		tmpPoint1 -= computeNormalDirection(tmpPoint1) * avgRadius * 2.4F;
+		auto tmpPoint2 = getTooth(teeth, --Rpd::Position(positions[1].zone, ordinal)).getCentroid();
+		tmpPoint2 -= computeNormalDirection(tmpPoint2) * avgRadius * 2.4F;
+		innerCurve->push_back((tmpPoint1 + tmpPoint2) / 2);
+		innerCurve->push_back(curve2[0]);
+		innerCurve->push_back((curve2[0] + (*innerCurve)[0]) / 2);
+		computeSmoothCurve(*innerCurve, *innerCurve, true);
+	}
+	curve.clear();
+	curve.insert(curve.end(), curve1.rbegin(), curve1.rend() - 1);
+	curve.push_back((curve1[0] + curve2[0]) / 2);
+	curve.insert(curve.end(), curve2.begin() + 1, curve2.end());
+	computeSmoothCurve(curve, curve);
 }
 
 Point2f computeNormalDirection(const Point2f& point, float* const& angle) {
@@ -225,12 +293,12 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 		curve.push_back(cornerPoints[1]);
 }
 
-void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed) {
+void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed, const float& smoothness) {
 	vector<Point> tmpCurve;
 	for (auto point = curve.begin(); point < curve.end(); ++point) {
 		auto isFirst = point == curve.begin(), isLast = point == curve.end() - 1;
 		if (isClosed || !(isFirst || isLast))
-			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve);
+			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve, smoothness);
 		else
 			tmpCurve.insert(tmpCurve.end(), *point);
 	}

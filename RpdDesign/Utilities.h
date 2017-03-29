@@ -44,10 +44,14 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 
 void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>& distalPoints);
 
+void computeMesialCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<Point>* const& innerCurve = nullptr);
+
+void computeDistalCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<Point>& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve = nullptr);
+
 Point2f computeNormalDirection(const Point2f& point, float* const& angle = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness = 0.5F, const bool& shouldAppend = true);
 
-void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed = false);
+void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& smoothness = 0.5F);
 
 vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction>& tipDirections);

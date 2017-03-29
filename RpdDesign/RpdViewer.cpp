@@ -9,19 +9,23 @@
 
 map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"Aker_clasp", AKER_CLASP},
+	{"combination_anterior_posterior_palatal_strap", COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP},
 	{"combination_clasp", COMBINATION_CLASP},
 	{"combined_clasp", COMBINED_CLASP},
 	{"continuous_clasp", CONTINUOUS_CLASP},
 	{"denture_base", DENTURE_BASE},
 	{"edentulous_space", EDENTULOUS_SPACE},
 	{"full_palatal_plate", FULL_PALATAL_PLATE},
+	{"lingual_bar", LINGUAL_BAR},
+	{"lingual_plate", LINGUAL_PLATE},
 	{"lingual_rest", LINGUAL_REST},
+	{"modified_palatal_plate", PALATAL_PLATE},
 	{"occlusal_rest", OCCLUSAL_REST},
 	{"palatal_plate", PALATAL_PLATE},
 	{"ring_clasp", RING_CLASP},
 	{"RPA_clasps", RPA},
 	{"RPI_clasps", RPI},
-	{"tooth", TOOTH},
+	{"single_palatal_strap", PALATAL_PLATE},
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
@@ -71,6 +75,11 @@ void RpdViewer::updateRpdDesign() {
 		auto rpdAsLingualBlockage = dynamic_cast<RpdAsLingualBlockage*>(*rpd);
 		if (rpdAsLingualBlockage)
 			rpdAsLingualBlockage->registerLingualBlockages(teeth_);
+	}
+	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+		if (dentureBase)
+			dentureBase->registerDentureBases(teeth_);
 	}
 	justLoadedRpd_ = justLoadedImage_ = false;
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
@@ -253,6 +262,9 @@ void RpdViewer::loadRpdInfo() {
 				case AKER_CLASP:
 					rpds.push_back(AkerClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
+				case COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP:
+					rpds.push_back(CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
 				case COMBINATION_CLASP:
 					rpds.push_back(CombinationClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
@@ -270,6 +282,12 @@ void RpdViewer::loadRpdInfo() {
 					break;
 				case FULL_PALATAL_PLATE:
 					rpds.push_back(FullPalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
+				case LINGUAL_BAR:
+					rpds.push_back(LingualBar::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
+				case LINGUAL_PLATE:
+					rpds.push_back(LingualPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case LINGUAL_REST:
 					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
