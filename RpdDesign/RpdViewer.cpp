@@ -14,6 +14,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"continuous_clasp", CONTINUOUS_CLASP},
 	{"denture_base", DENTURE_BASE},
 	{"edentulous_space", EDENTULOUS_SPACE},
+	{"full_palatal_plate", FULL_PALATAL_PLATE},
 	{"lingual_rest", LINGUAL_REST},
 	{"occlusal_rest", OCCLUSAL_REST},
 	{"palatal_plate", PALATAL_PLATE},
@@ -163,7 +164,7 @@ void RpdViewer::loadBaseImage() {
 				auto eighthCentroid = eighthTooth.getCentroid();
 				auto theta = asin(computeNormalDirection(seventhTooth.getCentroid()).cross(computeNormalDirection(eighthCentroid)));
 				for (auto point = contour.begin(); point < contour.end(); ++point)
-					*point = roundToInt(eighthCentroid + rotate(static_cast<Point2f>(*point) - eighthCentroid, theta));
+					*point = eighthCentroid + rotate(static_cast<Point2f>(*point) - eighthCentroid, theta);
 				eighthTooth.setContour(contour);
 				eighthTooth.findAnglePoints(zone);
 			}
@@ -266,6 +267,9 @@ void RpdViewer::loadRpdInfo() {
 					break;
 				case EDENTULOUS_SPACE:
 					rpds.push_back(EdentulousSpace::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
+				case FULL_PALATAL_PLATE:
+					rpds.push_back(FullPalatalPlate::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case LINGUAL_REST:
 					rpds.push_back(LingualRest::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));

@@ -42,6 +42,8 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 
 void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point& distalPoint);
 
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>& distalPoints);
+
 Point2f computeNormalDirection(const Point2f& point, float* const& angle = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness = 0.5F, const bool& shouldAppend = true);

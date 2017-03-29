@@ -72,8 +72,8 @@ const Point2f& Tooth::getNormalDirection() const { return normalDirection_; }
 
 void Tooth::setNormalDirection(const Point2f& normalDirection) { normalDirection_ = normalDirection; }
 
-void Tooth::findAnglePoints(const int& zoneNo) {
-	auto signVal = 1 - zoneNo % 2 * 2;
+void Tooth::findAnglePoints(const int& zone) {
+	auto signVal = 1 - zone % 2 * 2;
 	auto deltaAngle = degreeToRadian(1);
 	int angle;
 	float targetAngle;

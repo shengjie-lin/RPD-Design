@@ -12,7 +12,7 @@ public:
 	const Point2f& getCentroid() const;
 	const Point2f& getNormalDirection() const;
 	void setNormalDirection(const Point2f& normalDirection);
-	void findAnglePoints(const int& zoneNo);
+	void findAnglePoints(const int& zone);
 	const float& getRadius() const;
 	const RpdAsLingualBlockage::LingualBlockage& getLingualBlockage() const;
 	void setLingualBlockage(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage);

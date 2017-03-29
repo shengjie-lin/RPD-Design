@@ -290,6 +290,51 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZo
 	polylines(designImage, curve2, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
+FullPalatalPlate* FullPalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
+	vector<Position> positions, lingualConfrontations;
+	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
+	return new FullPalatalPlate(positions, lingualConfrontations);
+}
+
+FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+
+void FullPalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
+	RpdWithLingualConfrontations::draw(designImage, teeth);
+	vector<Point> curve, tmpCurve, distalPoints;
+	vector<vector<Point>> curves;
+	computeLingualCurve(teeth, positions_, tmpCurve, curves, distalPoints);
+	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+	auto ordinal = min(positions_[0].ordinal, positions_[1].ordinal);
+	vector<Point> distalCurve, curve1, curve2;
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	computeStringCurve(teeth, {Position(positions_[0].zone, ordinal), positions_[0]}, curve1, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions_[0]).getLingualBlockage() == DENTURE_BASE)
+		curve1.push_back(distalPoints[0]);
+	curve1.push_back(curve1.back());
+	computeStringCurve(teeth, {Position(positions_[1].zone, ordinal), positions_[1]}, curve2, sumOfRadii, nTeeth);
+	if (getTooth(teeth, positions_[1]).getLingualBlockage() == DENTURE_BASE)
+		curve2.push_back(distalPoints[1]);
+	curve2.push_back(curve2.back());
+	auto avgRadius = sumOfRadii / nTeeth;
+	for (auto point = curve1.begin(); point < curve1.end() - 1; ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	for (auto point = curve2.begin(); point < curve2.end() - 1; ++point)
+		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	distalCurve.insert(distalCurve.end(), curve1.rbegin(), curve1.rend() - 1);
+	distalCurve.push_back((curve1[0] + curve2[0]) / 2);
+	distalCurve.insert(distalCurve.end(), curve2.begin() + 1, curve2.end());
+	computeSmoothCurve(distalCurve, distalCurve);
+	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
+	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
+	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
+	bitwise_and(thisDesign, designImage, designImage);
+	for (auto i = 0; i < curves.size(); ++i)
+		polylines(designImage, curves[i], false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+}
+
 LingualRest::LingualRest(const vector<Position>& positions, const Direction& direction) : Rpd(positions), RpdWithDirection(direction) {}
 
 LingualRest* LingualRest::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
@@ -470,8 +515,8 @@ GuidingPlate::GuidingPlate(const vector<Position>& positions) : Rpd(positions) {
 void GuidingPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto& centroid = tooth.getCentroid();
-	auto point = roundToInt(centroid + (static_cast<Point2f>(tooth.getAnglePoint(180)) - centroid) * 1.1);
-	auto direction = roundToInt(computeNormalDirection(point) * tooth.getRadius() * 2 / 3);
+	auto point = centroid + (static_cast<Point2f>(tooth.getAnglePoint(180)) - centroid) * 1.1F;
+	auto direction = computeNormalDirection(point) * tooth.getRadius() * 2 / 3;
 	line(designImage, point, point + direction, 0, lineThicknessOfLevel[2], LINE_AA);
 	line(designImage, point, point - direction, 0, lineThicknessOfLevel[2], LINE_AA);
 }
@@ -506,7 +551,7 @@ IBar::IBar(const vector<Position>& positions) : Rpd(positions) {}
 void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto a = tooth.getRadius() * 1.5F;
-	Point2f p1 = tooth.getAnglePoint(75), p2 = tooth.getAnglePoint(165);
+	auto &p1 = tooth.getAnglePoint(75), &p2 = tooth.getAnglePoint(165);
 	auto c = (p1 + p2) / 2;
 	auto d = computeNormalDirection(c);
 	auto r = p1 - c;

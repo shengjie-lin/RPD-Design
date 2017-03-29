@@ -150,6 +150,14 @@ private:
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
+class FullPalatalPlate : public RpdWithLingualConfrontations {
+public:
+	static FullPalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+private:
+	FullPalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+};
+
 class LingualRest : public Rpd, public RpdWithDirection {
 public:
 	static LingualRest* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
