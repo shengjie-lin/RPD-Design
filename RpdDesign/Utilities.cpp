@@ -60,17 +60,18 @@ const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& po
 
 Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position) { return const_cast<Tooth&>(getTooth(const_cast<const vector<Tooth>*>(teeth), position)); }
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius, bool* const& isBlockedByMajorConnector) {
-	float sumOfRadii = 0;
-	auto nTeeth = 0;
-	computeStringCurve(teeth, positions, curve, sumOfRadii, nTeeth, isBlockedByMajorConnector);
-	avgRadius = sumOfRadii / nTeeth;
+bool findLingualBlockage(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions) {
+	if (positions[0].zone == positions[1].zone) {
+		for (auto position = positions[0]; position <= positions[1]; ++position)
+			if (getTooth(teeth, position).getLingualBlockage())
+				return true;
+		return false;
+	}
+	return findLingualBlockage(teeth, {Rpd::Position(positions[0].zone, 0), positions[0]}) || findLingualBlockage(teeth, {Rpd::Position(positions[1].zone, 0), positions[1]});
 }
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& sumOfRadii, int& nTeeth, bool* const& isBlockedByMajorConnector) {
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& sumOfRadii, int& nTeeth) {
 	curve.clear();
-	if (isBlockedByMajorConnector)
-		*isBlockedByMajorConnector = false;
 	if (positions[0].zone == positions[1].zone) {
 		Point lastPoint;
 		for (auto position = positions[0]; position <= positions[1]; ++position) {
@@ -83,14 +84,12 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 			lastPoint = tooth.getAnglePoint(180);
 			if (position == positions[1])
 				curve.push_back(lastPoint);
-			if (isBlockedByMajorConnector && !*isBlockedByMajorConnector)
-				*isBlockedByMajorConnector = tooth.getLingualBlockage() == RpdAsLingualBlockage::MAJOR_CONNECTOR;
 		}
 	}
 	else {
 		vector<Point> curve1, curve2;
-		computeStringCurve(teeth, {Rpd::Position(positions[0].zone, 0), positions[0]}, curve1, sumOfRadii, nTeeth, isBlockedByMajorConnector);
-		computeStringCurve(teeth, {Rpd::Position(positions[1].zone, 0), positions[1]}, curve2, sumOfRadii, nTeeth, isBlockedByMajorConnector && !*isBlockedByMajorConnector ? isBlockedByMajorConnector : nullptr);
+		computeStringCurve(teeth, {Rpd::Position(positions[0].zone, 0), positions[0]}, curve1, sumOfRadii, nTeeth);
+		computeStringCurve(teeth, {Rpd::Position(positions[1].zone, 0), positions[1]}, curve2, sumOfRadii, nTeeth);
 		curve1[0] = (curve1[0] + curve2[0]) / 2;
 		curve2.erase(curve2.begin());
 		curve.insert(curve.end(), curve1.rbegin(), curve1.rend());
@@ -98,169 +97,299 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 	}
 }
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point& distalPoint) {
-	curve.clear();
-	auto dbStartPosition = positions[0];
-	while (dbStartPosition <= positions[1] && getTooth(teeth, dbStartPosition).getLingualBlockage() != RpdAsLingualBlockage::DENTURE_BASE)
-		++dbStartPosition;
-	auto shouldConsiderLast = false;
-	float avgRadius;
-	for (auto position = positions[0]; position <= dbStartPosition; ++position) {
-		vector<Point> thisCurve;
-		auto lingualBlockage = position < dbStartPosition ? getTooth(teeth, position).getLingualBlockage() : RpdAsLingualBlockage::NONE;
-		auto hasClaspDistalRest = lingualBlockage == RpdAsLingualBlockage::CLASP_DISTAL_REST;
-		if (shouldConsiderLast || hasClaspDistalRest) {
-			auto lastPosition = --Rpd::Position(position);
-			computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, hasClaspDistalRest ? position : lastPosition}, thisCurve, avgRadius);
-			thisCurve.insert(thisCurve.begin(), thisCurve[0]);
-			thisCurve.push_back(thisCurve.back());
-			for (auto i = 1; i < thisCurve.size() - 1; ++i)
-				thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.6F);
-			vector<Point> tmpCurve;
-			computeInscribedCurve(vector<Point>{thisCurve.begin(), thisCurve.begin() + 3}, tmpCurve, 1);
-			thisCurve.erase(thisCurve.begin() + 1);
-			thisCurve.insert(thisCurve.begin() + 1, tmpCurve.begin(), tmpCurve.end());
-			computeInscribedCurve(vector<Point>{thisCurve.end() - 3, thisCurve.end()}, tmpCurve, 1, false);
-			thisCurve.erase(thisCurve.end() - 2);
-			thisCurve.insert(thisCurve.end() - 1, tmpCurve.begin(), tmpCurve.end());
-			computeSmoothCurve(thisCurve, thisCurve);
-			curves.push_back(thisCurve);
-			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-		}
-		if (lingualBlockage == RpdAsLingualBlockage::MAJOR_CONNECTOR) {
-			thisCurve = getTooth(teeth, position).getCurve(180, 0);
-			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
-		}
-		shouldConsiderLast = lingualBlockage == RpdAsLingualBlockage::CLASP_MESIAL_REST;
-	}
-	if (dbStartPosition <= positions[1]) {
-		curve.push_back(getTooth(teeth, dbStartPosition).getAnglePoint(0));
-		vector<Point> dbCurve;
-		computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
-		distalPoint = getTooth(teeth, positions[1]).getAnglePoint(180);
-		dbCurve.push_back(distalPoint += roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
-		dbCurve.erase(dbCurve.begin() + 1);
-		dbCurve.erase(dbCurve.end() - 2);
-		vector<Point> tmpCurve(dbCurve.size());
-		for (auto i = 0; i < dbCurve.size(); ++i) {
-			auto delta = roundToInt(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
-			tmpCurve[i] = dbCurve[i] + delta;
-			dbCurve[i] -= delta;
-		}
-		dbCurve.insert(dbCurve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-		computeSmoothCurve(dbCurve, dbCurve, true);
-		vector<float> distances(dbCurve.size());
-		for (auto i = 0; i < distances.size(); ++i)
-			distances[i] = norm((dbCurve[i] + dbCurve[(i + 1) % distances.size()]) / 2 - distalPoint);
-		vector<int> minIdx(2);
-		minMaxIdx(distances, nullptr, nullptr, &minIdx[0], nullptr);
-		curve.insert(curve.end(), dbCurve.begin(), dbCurve.begin() + minIdx[1] + 1);
-		auto p = dbCurve[minIdx[1]];
-		auto d = normalize(dbCurve[(minIdx[1] + 1) % dbCurve.size()] - p);
-		curve.push_back(distalPoint = p + roundToInt(d.dot(distalPoint - p) * d));
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius) {
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	computeStringCurve(teeth, positions, curve, sumOfRadii, nTeeth);
+	avgRadius = sumOfRadii / nTeeth;
+}
+
+void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<float>& distanceScales, const bool& keepStartEndPoints, vector<vector<Point>>& curves, float* const& avgRadius) {
+	vector<Point> curve;
+	float thisAvgRadius;
+	computeStringCurve(teeth, positions, curve, thisAvgRadius);
+	if (avgRadius)
+		*avgRadius = thisAvgRadius;
+	curves.clear();
+	for (auto i = 0; i < distanceScales.size(); ++i)
+		curves.push_back(curve);
+	for (auto i = 0; i < curve.size(); ++i) {
+		auto delta = computeNormalDirection(curve[i]) * thisAvgRadius;
+		for (auto j = 0; j < distanceScales.size(); ++j)
+			curves[j][i] += roundToInt(delta * distanceScales[j]);
+		if (keepStartEndPoints)
+			if (i == 0) {
+				for (auto j = 0; j < distanceScales.size(); ++j)
+					curves[j].insert(curves[j].begin(), curve[0]);
+				curve.insert(curve.begin(), curve[0]);
+				++i;
+			}
+			else if (i == curve.size() - 1) {
+				for (auto j = 0; j < distanceScales.size(); ++j)
+					curves[j].push_back(curve.back());
+				curve.push_back(curve.back());
+				++i;
+			}
 	}
 }
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>& distalPoints) {
-	distalPoints = vector<Point>(2);
-	vector<Point> thisCurve;
-	vector<Rpd::Position> startPositions = {Rpd::Position(positions[0].zone, 0), Rpd::Position(positions[1].zone, 0)};
-	if (getTooth(teeth, startPositions[0]).getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST && getTooth(teeth, startPositions[1]).getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST) {
-		computeLingualCurve(teeth, {Rpd::Position(positions[0].zone, 1), positions[0]}, thisCurve, curves, distalPoints[0]);
-		curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
-		float avgRadius;
-		computeStringCurve(teeth, {startPositions[0], startPositions[1]}, thisCurve, avgRadius);
-		thisCurve.insert(thisCurve.begin(), thisCurve[0]);
-		thisCurve.push_back(thisCurve.back());
-		for (auto i = 1; i < thisCurve.size() - 1; ++i)
-			thisCurve[i] -= roundToInt(computeNormalDirection(thisCurve[i]) * avgRadius * 1.6F);
-		vector<Point> tmpCurve;
-		computeInscribedCurve(vector<Point>{thisCurve.begin(), thisCurve.begin() + 3}, tmpCurve, 1);
-		thisCurve.erase(thisCurve.begin() + 1);
-		thisCurve.insert(thisCurve.begin() + 1, tmpCurve.begin(), tmpCurve.end());
-		computeInscribedCurve(vector<Point>{thisCurve.end() - 3, thisCurve.end()}, tmpCurve, 1, false);
-		thisCurve.erase(thisCurve.end() - 2);
-		thisCurve.insert(thisCurve.end() - 1, tmpCurve.begin(), tmpCurve.end());
-		computeSmoothCurve(thisCurve, thisCurve);
-		curves.push_back(thisCurve);
-		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-		computeLingualCurve(teeth, {Rpd::Position(positions[1].zone, 1), positions[1]}, thisCurve, curves, distalPoints[1]);
-		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& distanceScale, const bool& keepStartEndPoints, vector<Point>& curve, float* const& avgRadius) {
+	vector<vector<Point>> tmpCurves;
+	computeStringCurves(teeth, positions, {distanceScale}, keepStartEndPoints, tmpCurves, avgRadius);
+	curve = tmpCurves[0];
+}
+
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints) {
+	curve.clear();
+	if (positions[0].zone == positions[1].zone) {
+		auto dbStartPosition = positions[0];
+		while (dbStartPosition <= positions[1] && getTooth(teeth, dbStartPosition).getLingualBlockage() != RpdAsLingualBlockage::DENTURE_BASE)
+			++dbStartPosition;
+		auto shouldConsiderLast = false;
+		for (auto position = positions[0]; position <= dbStartPosition; ++position) {
+			vector<Point> thisCurve;
+			auto lingualBlockage = position < dbStartPosition ? getTooth(teeth, position).getLingualBlockage() : RpdAsLingualBlockage::NONE;
+			auto hasClaspDistalRest = lingualBlockage == RpdAsLingualBlockage::CLASP_DISTAL_REST;
+			if (shouldConsiderLast || hasClaspDistalRest) {
+				auto lastPosition = --Rpd::Position(position);
+				computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, hasClaspDistalRest ? position : lastPosition}, -1.6F, true, thisCurve);
+				vector<Point> tmpCurve;
+				computeInscribedCurve(vector<Point>{thisCurve.begin(), thisCurve.begin() + 3}, tmpCurve, 1);
+				thisCurve.erase(thisCurve.begin() + 1);
+				thisCurve.insert(thisCurve.begin() + 1, tmpCurve.begin(), tmpCurve.end());
+				computeInscribedCurve(vector<Point>{thisCurve.end() - 3, thisCurve.end()}, tmpCurve, 1, false);
+				thisCurve.erase(thisCurve.end() - 2);
+				thisCurve.insert(thisCurve.end() - 1, tmpCurve.begin(), tmpCurve.end());
+				computeSmoothCurve(thisCurve, thisCurve);
+				curves.push_back(thisCurve);
+				curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+			}
+			if (lingualBlockage == RpdAsLingualBlockage::MAJOR_CONNECTOR) {
+				thisCurve = getTooth(teeth, position).getCurve(180, 0);
+				curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+			}
+			shouldConsiderLast = lingualBlockage == RpdAsLingualBlockage::CLASP_MESIAL_REST;
+		}
+		if (distalPoints && dbStartPosition <= positions[1]) {
+			curve.push_back(getTooth(teeth, dbStartPosition).getAnglePoint(0));
+			float avgRadius;
+			vector<Point> dbCurve;
+			computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
+			*distalPoints = {getTooth(teeth, positions[1]).getAnglePoint(180)};
+			dbCurve.push_back((*distalPoints)[0] += roundToInt(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
+			dbCurve.erase(dbCurve.begin() + 1);
+			dbCurve.erase(dbCurve.end() - 2);
+			for (auto i = 0; i < dbCurve.size(); ++i) {
+				auto delta = roundToInt(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
+				if (i == 0)
+					dbCurve.insert(dbCurve.begin(), dbCurve[i++] + delta);
+				dbCurve[i] -= delta;
+				if (i == dbCurve.size() - 1)
+					dbCurve.push_back(dbCurve[i++] + delta * 2);
+			}
+			computeSmoothCurve(dbCurve, dbCurve);
+			curve.insert(curve.end(), dbCurve.begin() + 1, dbCurve.end() - 1);
+			curve.push_back((*distalPoints)[0]);
+		}
 	}
 	else {
-		computeLingualCurve(teeth, {startPositions[0], positions[0]}, thisCurve, curves, distalPoints[0]);
-		curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
-		computeLingualCurve(teeth, {startPositions[1], positions[1]}, thisCurve, curves, distalPoints[1]);
-		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+		vector<Point> thisCurve;
+		vector<Rpd::Position> startPositions = {Rpd::Position(positions[0].zone, 0), Rpd::Position(positions[1].zone, 0)};
+		vector<Point*> thisDistalPoints;
+		if (distalPoints) {
+			*distalPoints = vector<Point>(2);
+			for (auto i = 0; i < 2; ++i)
+				thisDistalPoints.push_back(&(*distalPoints)[i]);
+		}
+		else
+			thisDistalPoints = {nullptr, nullptr};
+		if (getTooth(teeth, startPositions[0]).getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST && getTooth(teeth, startPositions[1]).getLingualBlockage() == RpdAsLingualBlockage::CLASP_DISTAL_REST) {
+			computeLingualCurve(teeth, {Rpd::Position(positions[0].zone, 1), positions[0]}, thisCurve, curves, thisDistalPoints[0]);
+			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+			computeStringCurve(teeth, {startPositions[0], startPositions[1]}, -1.6F, true, thisCurve);
+			vector<vector<Point>> tmpCurves(3);
+			computeInscribedCurve(vector<Point>{thisCurve.begin(), thisCurve.begin() + 3}, tmpCurves[0], 1);
+			computeInscribedCurve(vector<Point>{thisCurve.end() - 3, thisCurve.end()}, tmpCurves[2], 1);
+			tmpCurves[1] = vector<Point>{thisCurve.begin() + 2, thisCurve.end() - 2};
+			tmpCurves[1].insert(tmpCurves[1].begin(), tmpCurves[0].back());
+			tmpCurves[1].push_back(tmpCurves[2][0]);
+			computeSmoothCurve(tmpCurves[1], tmpCurves[1]);
+			thisCurve.erase(thisCurve.begin() + 1, thisCurve.end() - 1);
+			for (auto i = 2; i >= 0; --i)
+				thisCurve.insert(thisCurve.begin() + 1, tmpCurves[i].begin(), tmpCurves[i].end());
+			curves.push_back(thisCurve);
+			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+			computeLingualCurve(teeth, {Rpd::Position(positions[1].zone, 1), positions[1]}, thisCurve, curves, thisDistalPoints[1]);
+			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+		}
+		else {
+			computeLingualCurve(teeth, {startPositions[0], positions[0]}, thisCurve, curves, thisDistalPoints[0]);
+			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+			computeLingualCurve(teeth, {startPositions[1], positions[1]}, thisCurve, curves, thisDistalPoints[1]);
+			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+		}
 	}
+}
+
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point* const& distalPoint) {
+	vector<Point> distalPoints;
+	computeLingualCurve(teeth, positions, curve, curves, &distalPoints);
+	if (distalPoints.size())
+		*distalPoint = distalPoints[0];
 }
 
 void computeMesialCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<Point>* const& innerCurve) {
-	auto ordinal = max(positions[0].ordinal, positions[1].ordinal);
-	vector<Point> curve1, curve2;
+	auto& ordinal = max(positions[0].ordinal, positions[1].ordinal);
+	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
-	computeStringCurve(teeth, {positions[0], Rpd::Position(positions[0].zone, ordinal)}, curve1, sumOfRadii, nTeeth);
-	curve1.insert(curve1.begin(), curve1[0]);
-	computeStringCurve(teeth, {positions[1], Rpd::Position(positions[1].zone, ordinal)}, curve2, sumOfRadii, nTeeth);
-	curve2.insert(curve2.begin(), curve2[0]);
+	for (auto i = 0; i < 2; ++i) {
+		computeStringCurve(teeth, {positions[i], Rpd::Position(positions[i].zone, ordinal)}, curves[i], sumOfRadii, nTeeth);
+		curves[i].insert(curves[i].begin(), curves[i][0]);
+	}
 	auto avgRadius = sumOfRadii / nTeeth;
-	for (auto point = curve1.begin() + 1; point < curve1.end(); ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
-	for (auto point = curve2.begin() + 1; point < curve2.end(); ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	for (auto i = 0; i < 2; ++i)
+		for (auto point = curves[i].begin() + 1; point < curves[i].end(); ++point)
+			*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	if (innerCurve) {
 		innerCurve->clear();
-		innerCurve->push_back(curve1.back());
-		auto tmpPoint1 = getTooth(teeth, ++Rpd::Position(positions[0].zone, ordinal)).getCentroid();
-		tmpPoint1 -= computeNormalDirection(tmpPoint1) * avgRadius * 2.4F;
-		auto tmpPoint2 = getTooth(teeth, ++Rpd::Position(positions[1].zone, ordinal)).getCentroid();
-		tmpPoint2 -= computeNormalDirection(tmpPoint2) * avgRadius * 2.4F;
-		innerCurve->push_back((tmpPoint1 + tmpPoint2) / 2);
-		innerCurve->push_back(curve2.back());
+		innerCurve->push_back(*(curves[0].end() - 2));
+		innerCurve->push_back((curves[0].back() + curves[1].back()) / 2);
+		innerCurve->push_back(*(curves[1].end() - 2));
 	}
-	curve.clear();
-	curve.insert(curve.end(), curve1.begin(), curve1.end() - 1);
-	curve.push_back((curve1.back() + curve2.back()) / 2);
-	curve.insert(curve.end(), curve2.rbegin() + 1, curve2.rend());
+	curve = vector<Point>{curves[0].begin(), curves[0].end() - 2};
+	curve.push_back((*(curves[0].end() - 2) + *(curves[1].end() - 2)) / 2);
+	curve.insert(curve.end(), curves[1].rbegin() + 2, curves[1].rend());
 	computeSmoothCurve(curve, curve);
 }
 
 void computeDistalCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<Point>& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve) {
-	auto ordinal = min(positions[0].ordinal, positions[1].ordinal);
-	vector<Point> curve1, curve2;
+	auto& ordinal = min(positions[0].ordinal, positions[1].ordinal);
+	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
-	computeStringCurve(teeth, {Rpd::Position(positions[0].zone, ordinal), positions[0]}, curve1, sumOfRadii, nTeeth);
-	if (getTooth(teeth, positions[0]).getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE)
-		curve1.push_back(distalPoints[0]);
-	curve1.push_back(curve1.back());
-	computeStringCurve(teeth, {Rpd::Position(positions[1].zone, ordinal), positions[1]}, curve2, sumOfRadii, nTeeth);
-	if (getTooth(teeth, positions[1]).getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE)
-		curve2.push_back(distalPoints[1]);
-	curve2.push_back(curve2.back());
+	for (auto i = 0; i < 2; ++i) {
+		computeStringCurve(teeth, {Rpd::Position(positions[i].zone, ordinal), positions[i]}, curves[i], sumOfRadii, nTeeth);
+		if (getTooth(teeth, positions[i]).getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE)
+			curves[i].push_back(distalPoints[i]);
+		curves[i].push_back(curves[i].back());
+	}
 	auto avgRadius = sumOfRadii / nTeeth;
-	for (auto point = curve1.begin(); point < curve1.end() - 1; ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
-	for (auto point = curve2.begin(); point < curve2.end() - 1; ++point)
-		*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+	for (auto i = 0; i < 2; ++i)
+		for (auto point = curves[i].begin(); point < curves[i].end() - 1; ++point)
+			*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
 	if (innerCurve) {
-		innerCurve->push_back((innerCurve->back() + curve1[0]) / 2);
-		innerCurve->push_back(curve1[0]);
-		auto tmpPoint1 = getTooth(teeth, --Rpd::Position(positions[0].zone, ordinal)).getCentroid();
-		tmpPoint1 -= computeNormalDirection(tmpPoint1) * avgRadius * 2.4F;
-		auto tmpPoint2 = getTooth(teeth, --Rpd::Position(positions[1].zone, ordinal)).getCentroid();
-		tmpPoint2 -= computeNormalDirection(tmpPoint2) * avgRadius * 2.4F;
-		innerCurve->push_back((tmpPoint1 + tmpPoint2) / 2);
-		innerCurve->push_back(curve2[0]);
-		innerCurve->push_back((curve2[0] + (*innerCurve)[0]) / 2);
+		innerCurve->push_back((innerCurve->back() + curves[0][1]) / 2);
+		innerCurve->push_back(curves[0][1]);
+		innerCurve->push_back((curves[0][0] + curves[1][0]) / 2);
+		innerCurve->push_back(curves[1][1]);
+		innerCurve->push_back((curves[1][1] + (*innerCurve)[0]) / 2);
 		computeSmoothCurve(*innerCurve, *innerCurve, true);
 	}
-	curve.clear();
-	curve.insert(curve.end(), curve1.rbegin(), curve1.rend() - 1);
-	curve.push_back((curve1[0] + curve2[0]) / 2);
-	curve.insert(curve.end(), curve2.begin() + 1, curve2.end());
+	curve = vector<Point>{curves[0].rbegin(), curves[0].rend() - 2};
+	curve.push_back((curves[0][1] + curves[1][1]) / 2);
+	curve.insert(curve.end(), curves[1].begin() + 2, curves[1].end());
 	computeSmoothCurve(curve, curve);
+}
+
+void computeInnerCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& avgRadius, const bool hasLingualConfrontations[nZones][nTeethPerZone], const deque<bool>& hasDbCurves, vector<Point>& curve) { /*TODO*/ }
+
+void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float* const& avgRadius, deque<bool>* const& hasDbCurves) {
+	vector<Point> outerCurve, dbCurve1, dbCurve2;
+	float thisAvgRadius;
+	computeStringCurve(teeth, positions, -2.25F, true, outerCurve, &thisAvgRadius);
+	if (avgRadius)
+		*avgRadius = thisAvgRadius;
+	auto dbPosition = positions[0];
+	auto isInSameZone = positions[0].zone == positions[1].zone;
+	if (!isInSameZone)
+		++dbPosition;
+	else if (positions[0].ordinal == 0)
+		dbPosition.zone += 1 - positions[0].zone % 2 * 2;
+	else
+		--dbPosition;
+	float sumOfRadii = 0;
+	auto nTeeth = 0;
+	auto position = dbPosition;
+	if (isInSameZone && positions[0].ordinal > 0)
+		while (position.ordinal >= 0) {
+			auto& tooth = getTooth(teeth, position);
+			if (tooth.getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE) {
+				sumOfRadii += tooth.getRadius();
+				++nTeeth;
+				--position;
+			}
+			else
+				break;
+		}
+	auto flag = position.ordinal < 0;
+	if (flag) {
+		position.zone += 1 - positions[0].zone % 2 * 2;
+		position.ordinal = 0;
+	}
+	if (!isInSameZone || positions[0].ordinal == 0 || flag)
+		while (position.ordinal <= nTeethPerZone) {
+			auto& tooth = getTooth(teeth, position);
+			if (tooth.getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE) {
+				sumOfRadii += tooth.getRadius();
+				++nTeeth;
+				++position;
+			}
+			else
+				break;
+		}
+	if (nTeeth > 0) {
+		thisAvgRadius = sumOfRadii / nTeeth;
+		auto& tooth = getTooth(teeth, dbPosition);
+		dbCurve1 = {tooth.getAnglePoint(0), tooth.getAnglePoint(180)};
+		if (isInSameZone && positions[0].ordinal > 0)
+			reverse(dbCurve1.begin(), dbCurve1.end());
+		auto tmpPoint = dbCurve1[0];
+		for (auto i = 0; i < 3; ++i) {
+			auto delta = roundToInt(computeNormalDirection(dbCurve1[i]) * thisAvgRadius * 1.6F);
+			if (i == 0)
+				dbCurve1.insert(dbCurve1.begin(), dbCurve1[i++] + delta);
+			dbCurve1[i] -= delta;
+		}
+		computeInscribedCurve(dbCurve1, dbCurve1, 0.5F, false);
+		dbCurve1.insert(dbCurve1.begin(), tmpPoint);
+		outerCurve[0] = dbCurve1.back();
+		outerCurve.erase(outerCurve.begin() + 1, outerCurve.begin() + 2);
+	}
+	dbPosition = ++Rpd::Position(positions[1]);
+	sumOfRadii = nTeeth = 0;
+	position = dbPosition;
+	while (position.ordinal <= nTeethPerZone) {
+		auto& tooth = getTooth(teeth, position);
+		if (tooth.getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE) {
+			sumOfRadii += tooth.getRadius();
+			++nTeeth;
+			++position;
+		}
+		else
+			break;
+	}
+	if (nTeeth > 0) {
+		thisAvgRadius = sumOfRadii / nTeeth;
+		auto& tooth = getTooth(teeth, dbPosition);
+		dbCurve2 = {tooth.getAnglePoint(180), tooth.getAnglePoint(0)};
+		for (auto i = 0; i < 2; ++i) {
+			auto delta = roundToInt(computeNormalDirection(dbCurve2[i]) * thisAvgRadius * 1.6F);
+			dbCurve2[i] -= delta;
+			if (i == 1)
+				dbCurve2.push_back(dbCurve2[1] + delta * 2);
+		}
+		computeInscribedCurve(dbCurve2, dbCurve2, 0.5F, false);
+		dbCurve2.push_back(tooth.getAnglePoint(0));
+		outerCurve.back() = dbCurve2[0];
+		outerCurve.erase(outerCurve.end() - 2, outerCurve.end() - 1);
+	}
+	computeSmoothCurve(outerCurve, outerCurve);
+	curve = dbCurve1;
+	curve.insert(curve.end(), outerCurve.begin(), outerCurve.end());
+	curve.insert(curve.end(), dbCurve2.begin(), dbCurve2.end());
+	if (hasDbCurves)
+		*hasDbCurves = {dbCurve1.size() > 0, dbCurve2.size() > 0};
 }
 
 Point2f computeNormalDirection(const Point2f& point, float* const& angle) {

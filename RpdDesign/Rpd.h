@@ -143,13 +143,14 @@ class DentureBase : public RpdAsLingualBlockage {
 public:
 	static DentureBase* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 	void determineTailsCoverage(const bool isEighthToothUsed[nZones]);
-	void registerDentureBases(vector<Tooth> teeth[nZones]) const;
+	void registerDentureBase(vector<Tooth> teeth[nZones]);
 private:
 	explicit DentureBase(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
-	static void registerDentureBases(vector<Tooth> teeth[nZones], vector<Position> positions);
+	static void registerDentureBase(vector<Tooth> teeth[nZones], vector<Position> positions);
 	deque<bool> coversTails_ = {false, false};
+	int isBlocked_ = -1;
 };
 
 class EdentulousSpace : public Rpd {

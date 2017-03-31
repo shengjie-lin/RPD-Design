@@ -77,7 +77,7 @@ RpdAsLingualBlockage::RpdAsLingualBlockage(const vector<Position>& positions, co
 void RpdAsLingualBlockage::registerLingualBlockages(vector<Tooth> teeth[nZones], const vector<Position>& positions) const {
 	for (auto position = positions[0]; position <= positions[1]; ++position) {
 		auto& tooth = getTooth(teeth, position);
-		if (lingualBlockages_[0] != MAJOR_CONNECTOR || tooth.getLingualBlockage() == NONE)
+		if (lingualBlockages_[0] != MAJOR_CONNECTOR || !tooth.getLingualBlockage())
 			tooth.setLingualBlockage(lingualBlockages_[0]);
 	}
 }
@@ -116,7 +116,7 @@ void RpdWithLingualConfrontations::registerLingualConfrontations(bool hasLingual
 
 void RpdWithLingualConfrontations::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
-		Plating({*position}).draw(designImage, teeth);
+		Plating({*position}).draw(designImage, teeth); /*TODO*/
 }
 
 void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, vector<Position>& lingualConfrontations) {
@@ -158,11 +158,11 @@ void CombinationAnteriorPosteriorPalatalStrap::draw(const Mat& designImage, cons
 	RpdWithLingualConfrontations::draw(designImage, teeth);
 	vector<Point> curve, innerCurve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, &distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, &innerCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, &distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &innerCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
@@ -171,8 +171,8 @@ void CombinationAnteriorPosteriorPalatalStrap::draw(const Mat& designImage, cons
 	fillPoly(thisDesign, vector<vector<Point>>{innerCurve}, 255, LINE_AA);
 	polylines(thisDesign, innerCurve, true, 0, lineThicknessOfLevel[2], LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto i = 0; i < curves.size(); ++i)
-		polylines(designImage, curves[i], false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
@@ -257,13 +257,17 @@ void DentureBase::determineTailsCoverage(const bool isEighthToothUsed[nZones]) {
 			coversTails_[i] = true;
 }
 
-void DentureBase::registerDentureBases(vector<Tooth> teeth[nZones]) const { registerDentureBases(teeth, positions_); }
+void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones]) {
+	if (isBlocked_ < 0)
+		isBlocked_ = findLingualBlockage(teeth, positions_);
+	if (!isBlocked_)
+		registerDentureBase(teeth, positions_);
+}
 
 void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve;
 	float avgRadius;
-	bool isBlockedByMajorConnector;
-	computeStringCurve(teeth, positions_, curve, avgRadius, &isBlockedByMajorConnector);
+	computeStringCurve(teeth, positions_, curve, avgRadius);
 	if (coversTails_[0]) {
 		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
 		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.8F));
@@ -272,7 +276,7 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
 		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
 	}
-	if (coversTails_[0] || coversTails_[1] || !isBlockedByMajorConnector) {
+	if (coversTails_[0] || coversTails_[1] || !isBlocked_) {
 		curve.erase(curve.begin() + 1);
 		curve.erase(curve.end() - 2);
 		vector<Point> tmpCurve(curve.size());
@@ -300,16 +304,13 @@ void DentureBase::registerLingualBlockages(vector<Tooth> teeth[nZones]) const {
 		RpdAsLingualBlockage::registerLingualBlockages(teeth);
 }
 
-void DentureBase::registerDentureBases(vector<Tooth> teeth[nZones], vector<Position> positions) {
+void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones], vector<Position> positions) {
 	if (positions[0].zone == positions[1].zone)
-		for (auto position = positions[0]; position <= positions[1]; ++position) {
-			auto& tooth = getTooth(teeth, position);
-			if (tooth.getLingualBlockage() == NONE)
-				tooth.setLingualBlockage(DENTURE_BASE);
-		}
+		for (auto position = positions[0]; position <= positions[1]; ++position)
+			getTooth(teeth, position).setLingualBlockage(DENTURE_BASE);
 	else {
-		registerDentureBases(teeth, {Position(positions[0].zone, 0), positions[0]});
-		registerDentureBases(teeth, {Position(positions[1].zone, 0), positions[1]});
+		registerDentureBase(teeth, {Position(positions[0].zone, 0), positions[0]});
+		registerDentureBase(teeth, {Position(positions[1].zone, 0), positions[1]});
 	}
 }
 
@@ -322,19 +323,12 @@ EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv* const& env, const
 }
 
 void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	vector<Point> curve;
-	float avgRadius;
-	computeStringCurve(teeth, positions_, curve, avgRadius);
-	vector<Point> curve1(curve.size()), curve2(curve.size());
-	for (auto i = 0; i < curve.size(); ++i) {
-		auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius / 4);
-		curve1[i] = curve[i] + delta;
-		curve2[i] = curve[i] - delta;
+	vector<vector<Point>> curves;
+	computeStringCurves(teeth, positions_, {0.25F, -0.25F}, false, curves);
+	for (auto curve = curves.begin(); curve < curves.end(); ++curve) {
+		computeSmoothCurve(*curve, *curve);
+		polylines(designImage, *curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
-	computeSmoothCurve(curve1, curve1);
-	computeSmoothCurve(curve2, curve2);
-	polylines(designImage, curve1, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, curve2, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 FullPalatalPlate* FullPalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
@@ -348,17 +342,17 @@ FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const vect
 
 void FullPalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualConfrontations::draw(designImage, teeth);
-	vector<Point> curve, distalCurve, tmpCurve, distalPoints;
+	vector<Point> curve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, positions_, tmpCurve, curves, distalPoints);
-	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+	computeLingualCurve(teeth, positions_, curve, curves, &distalPoints);
+	reverse(curve.begin(), curve.end());
 	computeDistalCurve(teeth, positions_, distalPoints, distalCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto i = 0; i < curves.size(); ++i)
-		polylines(designImage, curves[i], false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
@@ -371,7 +365,20 @@ LingualBar* LingualBar::createFromIndividual(JNIEnv* const& env, const jmethodID
 
 LingualBar::LingualBar(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
 
-void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const { }
+void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
+	vector<Point> curve, tmpCurve;
+	float avgRadius;
+	deque<bool> hasDbCurves;
+	computeOuterCurve(teeth, positions_, curve, &avgRadius, &hasDbCurves);
+	bool hasLingualConfrontations[nZones][nTeethPerZone];
+	registerLingualConfrontations(hasLingualConfrontations);
+	computeInnerCurve(teeth, positions_, avgRadius, hasLingualConfrontations, hasDbCurves, tmpCurve);
+	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
+	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
+	bitwise_and(thisDesign, designImage, designImage);
+	polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
+}
 
 LingualPlate* LingualPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Position> positions, lingualConfrontations;
@@ -382,7 +389,20 @@ LingualPlate* LingualPlate::createFromIndividual(JNIEnv* const& env, const jmeth
 
 LingualPlate::LingualPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
 
-void LingualPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {}
+void LingualPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
+	RpdWithLingualConfrontations::draw(designImage, teeth);
+	vector<Point> curve, tmpCurve;
+	computeOuterCurve(teeth, positions_, curve);
+	vector<vector<Point>> curves;
+	computeLingualCurve(teeth, positions_, tmpCurve, curves);
+	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
+	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
+	bitwise_and(thisDesign, designImage, designImage);
+}
 
 LingualRest::LingualRest(const vector<Position>& positions, const Direction& direction) : Rpd(positions), RpdWithDirection(direction) {}
 
@@ -443,19 +463,19 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	RpdWithLingualConfrontations::draw(designImage, teeth);
 	vector<Point> curve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, &distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, &distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto i = 0; i < curves.size(); ++i)
-		polylines(designImage, curves[i], false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }

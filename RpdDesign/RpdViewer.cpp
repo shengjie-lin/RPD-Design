@@ -79,7 +79,7 @@ void RpdViewer::updateRpdDesign() {
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
 		if (dentureBase)
-			dentureBase->registerDentureBases(teeth_);
+			dentureBase->registerDentureBase(teeth_);
 	}
 	justLoadedRpd_ = justLoadedImage_ = false;
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
