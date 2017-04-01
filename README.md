@@ -19,7 +19,7 @@ Set new environment variables:
 
 Add to PATH:
 * `"%OPENCV_DIR%\bin\"`
-* `"C:\Program Files\Java\jre1.8.0_121\bin\server\"` or alike
+* `"%JDK_DIR%\..\jre1.8.0_121\bin\server\"` or alike
 
 In "%ROOT%\RpdDesign\GlobalVariables.h", modify accordingly the following line:
 > `const string jenaLibPath = "C:/Program Files/apache-jena-3.2.0/lib/";`
