@@ -167,11 +167,11 @@ void CombinationAnteriorPosteriorPalatalStrap::draw(const Mat& designImage, cons
 	RpdWithLingualConfrontations::draw(designImage, teeth);
 	vector<Point> curve, innerCurve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, &distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, &distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, &innerCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, &distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, &distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &innerCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
@@ -379,9 +379,8 @@ LingualBar::LingualBar(const vector<Position>& positions, const bool hasLingualC
 void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve, tmpCurve;
 	float avgRadius;
-	deque<bool> hasDbCurves;
-	computeOuterCurve(teeth, positions_, curve, &avgRadius, &hasDbCurves);
-	computeInnerCurve(teeth, positions_, avgRadius, hasLingualConfrontations_, hasDbCurves, tmpCurve);
+	computeOuterCurve(teeth, positions_, curve, &avgRadius);
+	computeInnerCurve(teeth, positions_, avgRadius, hasLingualConfrontations_, tmpCurve);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
@@ -474,11 +473,11 @@ void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	RpdWithLingualConfrontations::draw(designImage, teeth);
 	vector<Point> curve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2] , positions_[3]}, tmpCurve, curves, &distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, &distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0] , positions_[1]}, tmpCurve, curves, &distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, &distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
