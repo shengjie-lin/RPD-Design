@@ -94,17 +94,20 @@ void RpdViewer::updateRpdDesign() {
 void RpdViewer::resizeEvent(QResizeEvent* event) {
 	QLabel::resizeEvent(event);
 	if (baseImage_.data)
-		refreshDisplay();
+		refreshDisplay(false);
 }
 
-void RpdViewer::refreshDisplay() {
-	auto curImage = showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize_), CV_8UC3, Scalar::all(255));
-	if (showDesignImage_) {
-		Mat designImage;
-		bitwise_and(designImages_[0], designImages_[1], designImage);
-		cvtColor(designImage, designImage, COLOR_GRAY2BGR);
-		bitwise_and(designImage, curImage, curImage);
+void RpdViewer::refreshDisplay(const bool& shouldUpdateCurImage) {
+	if (shouldUpdateCurImage) {
+		curImage_ = showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize_), CV_8UC3, Scalar::all(255));
+		if (showDesignImage_) {
+			Mat designImage;
+			bitwise_and(designImages_[0], designImages_[1], designImage);
+			cvtColor(designImage, designImage, COLOR_GRAY2BGR);
+			bitwise_and(designImage, curImage_, curImage_);
+		}
 	}
+	auto curImage = curImage_.clone();
 	cv::resize(curImage, curImage, qSizeToSize(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
 	setPixmap(matToQPixmap(curImage));
 }
@@ -325,6 +328,17 @@ void RpdViewer::loadRpdInfo() {
 		else
 			QMessageBox::information(this, u8"警告", u8"文件中不存在有效的RPD实例！");
 	}
+}
+
+void RpdViewer::printDesign() {
+	if (curImage_.data) {
+		QString selectedFilter = "Portable Network Graphics (*.png)";
+		auto fileName = QFileDialog::getSaveFileName(this, u8"选择设计图存储位置", "", "Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)", &selectedFilter);
+		if (!fileName.isEmpty())
+			imwrite(fileName.toLocal8Bit().data(), curImage_);
+	}
+	else
+		QMessageBox::information(this, u8"错误", u8"不存在有效的设计图！");
 }
 
 void RpdViewer::onShowBaseChanged(bool showBaseImage) {

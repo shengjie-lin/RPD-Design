@@ -15,6 +15,72 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="baseCheckBox">
+       <property name="text">
+        <string>底图</string>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="designCheckBox">
+       <property name="text">
+        <string>设计图</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer_4">
@@ -69,61 +135,15 @@
        </property>
       </spacer>
      </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="baseCheckBox">
+      <widget class="QPushButton" name="printPushButton">
        <property name="text">
-        <string>底图</string>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
+        <string>打印</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="designCheckBox">
-       <property name="text">
-        <string>设计图</string>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
+      <spacer name="horizontalSpacer_7">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>

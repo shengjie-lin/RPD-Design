@@ -35,7 +35,7 @@ private:
 		WW_CLASP
 	};
 
-	void refreshDisplay();
+	void refreshDisplay(const bool& shouldUpdateCurImage = true);
 	void resizeEvent(QResizeEvent* event) override;
 	void updateRpdDesign();
 	bool isEighthToothUsed_[nZones] = {}, justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
@@ -49,6 +49,7 @@ private:
 private slots :
 	void loadBaseImage();
 	void loadRpdInfo();
+	void printDesign();
 	void onShowBaseChanged(bool showBaseImage);
 	void onShowDesignChanged(bool showContoursImage);
 };
