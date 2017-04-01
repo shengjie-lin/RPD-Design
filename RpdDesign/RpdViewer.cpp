@@ -53,7 +53,7 @@ RpdViewer::~RpdViewer() {
 void RpdViewer::updateRpdDesign() {
 	if (!justLoadedImage_)
 		for (auto zone = 0; zone < nZones; ++zone)
-			for (auto ordinal = 0; ordinal < nTeethPerZone + 1; ++ordinal)
+			for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
 				teeth_[zone][ordinal].setLingualBlockage(RpdAsLingualBlockage::NONE);
 	if (justLoadedRpd_) {
 		bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
@@ -85,7 +85,7 @@ void RpdViewer::updateRpdDesign() {
 	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 	for (auto zone = 0; zone < nZones; ++zone) {
 		if (isEighthToothUsed_[zone])
-			polylines(designImages_[1], teeth_[zone][nTeethPerZone].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+			polylines(designImages_[1], teeth_[zone][nTeethPerZone - 1].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
 		(*rpd)->draw(designImages_[1], teeth_);
@@ -157,14 +157,14 @@ void RpdViewer::loadBaseImage() {
 			}
 			designImages_[0] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
 			for (auto zone = 0; zone < nZones; ++zone) {
-				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
+				for (auto ordinal = 0; ordinal < nTeethPerZone - 1; ++ordinal) {
 					auto& tooth = teeth_[zone][ordinal];
-					if (ordinal == nTeethPerZone - 1)
+					if (ordinal == nTeethPerZone - 2)
 						teeth_[zone].push_back(tooth);
 					tooth.findAnglePoints(zone);
 					polylines(designImages_[0], tooth.getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 				}
-				auto &seventhTooth = teeth_[zone][nTeethPerZone - 1], &eighthTooth = teeth_[zone][nTeethPerZone];
+				auto &seventhTooth = teeth_[zone][nTeethPerZone - 2], &eighthTooth = teeth_[zone][nTeethPerZone - 1];
 				auto contour = eighthTooth.getContour();
 				auto translation = roundToInt(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
 				for (auto point = contour.begin(); point < contour.end(); ++point)

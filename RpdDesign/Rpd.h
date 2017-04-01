@@ -88,14 +88,15 @@ private:
 };
 
 class RpdWithLingualConfrontations : public RpdAsLingualBlockage {
+	friend class LingualBar;
 public:
 	void registerLingualConfrontations(bool hasLingualConfrontations[nZones][nTeethPerZone]) const;
 protected:
-	RpdWithLingualConfrontations(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	RpdWithLingualConfrontations(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
-	static void queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, vector<Position>& lingualConfrontations);
+	static void queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, bool hasLingualConfrontations[nZones][nTeethPerZone]);
 private:
-	vector<Position> lingualConfrontations_;
+	bool hasLingualConfrontations_[nZones][nTeethPerZone];
 };
 
 class AkerClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
@@ -110,7 +111,7 @@ class CombinationAnteriorPosteriorPalatalStrap : public RpdWithLingualConfrontat
 public:
 	static CombinationAnteriorPosteriorPalatalStrap* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
@@ -165,7 +166,7 @@ class FullPalatalPlate : public RpdWithLingualConfrontations {
 public:
 	static FullPalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	FullPalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	FullPalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
@@ -173,7 +174,7 @@ class LingualBar : public RpdWithLingualConfrontations {
 public:
 	static LingualBar* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	LingualBar(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	LingualBar(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
@@ -181,7 +182,7 @@ class LingualPlate : public RpdWithLingualConfrontations {
 public:
 	static LingualPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	LingualPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	LingualPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
@@ -214,7 +215,7 @@ class PalatalPlate : public RpdWithLingualConfrontations {
 public:
 	static PalatalPlate* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	PalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations);
+	PalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 

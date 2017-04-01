@@ -36,7 +36,7 @@ void Rpd::queryPositions(JNIEnv* const& env, const jmethodID& midGetInt, const j
 		auto zone = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1;
 		auto ordinal = env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1;
 		positions.push_back(Position(zone, ordinal));
-		if (ordinal == nTeethPerZone)
+		if (ordinal == nTeethPerZone - 1)
 			isEighthToothUsed[zone] = true;
 		++count;
 	}
@@ -107,23 +107,31 @@ void RpdWithLingualClaspArms::draw(const Mat& designImage, const vector<Tooth> t
 
 void RpdWithLingualClaspArms::registerLingualBlockages(vector<Tooth> teeth[nZones]) const { RpdAsLingualBlockage::registerLingualBlockages(teeth, hasLingualClaspArms_); }
 
-RpdWithLingualConfrontations::RpdWithLingualConfrontations(const vector<Position>& positions, const vector<Position>& lingualConfrontations) : RpdAsLingualBlockage(positions, MAJOR_CONNECTOR), lingualConfrontations_(lingualConfrontations) {}
+RpdWithLingualConfrontations::RpdWithLingualConfrontations(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsLingualBlockage(positions, MAJOR_CONNECTOR) {
+	for (auto zone = 0; zone < nZones; ++zone)
+		copy(begin(hasLingualConfrontations[zone]), end(hasLingualConfrontations[zone]), hasLingualConfrontations_[zone]);
+}
 
 void RpdWithLingualConfrontations::registerLingualConfrontations(bool hasLingualConfrontations[nZones][nTeethPerZone]) const {
-	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
-		hasLingualConfrontations[position->zone][position->ordinal] = true;
+	for (auto zone = 0; zone < nZones; ++zone)
+		for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
+			if (hasLingualConfrontations_[zone][ordinal])
+				hasLingualConfrontations[zone][ordinal] = true;
 }
 
 void RpdWithLingualConfrontations::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	for (auto position = lingualConfrontations_.begin(); position < lingualConfrontations_.end(); ++position)
-		Plating({*position}).draw(designImage, teeth); /*TODO*/
+	vector<vector<Point>> curves;
+	computeLingualConfrontationCurves(teeth, positions_, hasLingualConfrontations_, curves);
+	for (auto curve = curves.begin(); curve < curves.end(); ++curve)
+		polylines(designImage, *curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+
 }
 
-void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, vector<Position>& lingualConfrontations) {
+void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& individual, bool hasLingualConfrontations[nZones][nTeethPerZone]) {
 	auto lcTeeth = env->CallObjectMethod(individual, midListProperties, dpLingualConfrontation);
 	while (env->CallBooleanMethod(lcTeeth, midHasNext)) {
 		auto tooth = env->CallObjectMethod(lcTeeth, midNext);
-		lingualConfrontations.push_back(Position(env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1, env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1));
+		hasLingualConfrontations[env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothZone), midGetInt) - 1][env->CallIntMethod(env->CallObjectMethod(tooth, midStatementGetProperty, dpToothOrdinal), midGetInt) - 1] = true;
 	}
 }
 
@@ -146,13 +154,14 @@ void AkerClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 }
 
 CombinationAnteriorPosteriorPalatalStrap* CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
-	vector<Position> positions, lingualConfrontations;
+	vector<Position> positions;
+	bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
-	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
-	return new CombinationAnteriorPosteriorPalatalStrap(positions, lingualConfrontations);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, hasLingualConfrontations);
+	return new CombinationAnteriorPosteriorPalatalStrap(positions, hasLingualConfrontations);
 }
 
-CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdWithLingualConfrontations(positions, hasLingualConfrontations) {}
 
 void CombinationAnteriorPosteriorPalatalStrap::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualConfrontations::draw(designImage, teeth);
@@ -253,7 +262,7 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* const& env, const jmethod
 
 void DentureBase::determineTailsCoverage(const bool isEighthToothUsed[nZones]) {
 	for (auto i = 0; i < 2; ++i)
-		if (positions_[i].ordinal == nTeethPerZone - 1 + isEighthToothUsed[positions_[i].zone])
+		if (positions_[i].ordinal == nTeethPerZone + isEighthToothUsed[positions_[i].zone] - 2)
 			coversTails_[i] = true;
 }
 
@@ -270,11 +279,11 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 	computeStringCurve(teeth, positions_, curve, avgRadius);
 	if (coversTails_[0]) {
 		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
-		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.8F));
+		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.6F));
 	}
 	if (coversTails_[1]) {
 		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
-		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
+		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.6));
 	}
 	if (coversTails_[0] || coversTails_[1] || !isBlocked_) {
 		curve.erase(curve.begin() + 1);
@@ -332,13 +341,14 @@ void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZo
 }
 
 FullPalatalPlate* FullPalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
-	vector<Position> positions, lingualConfrontations;
+	vector<Position> positions;
+	bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
-	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
-	return new FullPalatalPlate(positions, lingualConfrontations);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, hasLingualConfrontations);
+	return new FullPalatalPlate(positions, hasLingualConfrontations);
 }
 
-FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdWithLingualConfrontations(positions, hasLingualConfrontations) {}
 
 void FullPalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualConfrontations::draw(designImage, teeth);
@@ -357,22 +367,21 @@ void FullPalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZ
 }
 
 LingualBar* LingualBar::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
-	vector<Position> positions, lingualConfrontations;
+	vector<Position> positions;
+	bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
-	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
-	return new LingualBar(positions, lingualConfrontations);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, hasLingualConfrontations);
+	return new LingualBar(positions, hasLingualConfrontations);
 }
 
-LingualBar::LingualBar(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+LingualBar::LingualBar(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdWithLingualConfrontations(positions, hasLingualConfrontations) {}
 
 void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve, tmpCurve;
 	float avgRadius;
 	deque<bool> hasDbCurves;
 	computeOuterCurve(teeth, positions_, curve, &avgRadius, &hasDbCurves);
-	bool hasLingualConfrontations[nZones][nTeethPerZone];
-	registerLingualConfrontations(hasLingualConfrontations);
-	computeInnerCurve(teeth, positions_, avgRadius, hasLingualConfrontations, hasDbCurves, tmpCurve);
+	computeInnerCurve(teeth, positions_, avgRadius, hasLingualConfrontations_, hasDbCurves, tmpCurve);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	auto thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
@@ -381,13 +390,14 @@ void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones])
 }
 
 LingualPlate* LingualPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
-	vector<Position> positions, lingualConfrontations;
+	vector<Position> positions;
+	bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
-	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
-	return new LingualPlate(positions, lingualConfrontations);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, hasLingualConfrontations);
+	return new LingualPlate(positions, hasLingualConfrontations);
 }
 
-LingualPlate::LingualPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations): RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+LingualPlate::LingualPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdWithLingualConfrontations(positions, hasLingualConfrontations) {}
 
 void LingualPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualConfrontations::draw(designImage, teeth);
@@ -451,13 +461,14 @@ void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 }
 
 PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
-	vector<Position> positions, lingualConfrontations;
+	vector<Position> positions;
+	bool hasLingualConfrontations[nZones][nTeethPerZone] = {};
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
-	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, lingualConfrontations);
-	return new PalatalPlate(positions, lingualConfrontations);
+	queryLingualConfrontations(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, individual, hasLingualConfrontations);
+	return new PalatalPlate(positions, hasLingualConfrontations);
 }
 
-PalatalPlate::PalatalPlate(const vector<Position>& positions, const vector<Position>& lingualConfrontations) : RpdWithLingualConfrontations(positions, lingualConfrontations) {}
+PalatalPlate::PalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdWithLingualConfrontations(positions, hasLingualConfrontations) {}
 
 void PalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualConfrontations::draw(designImage, teeth);

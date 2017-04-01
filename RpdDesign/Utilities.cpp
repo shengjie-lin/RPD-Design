@@ -139,6 +139,37 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 	curve = tmpCurves[0];
 }
 
+void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness, const bool& shouldAppend) {
+	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
+	auto l1 = norm(v1), l2 = norm(v2);
+	auto d1 = v1 / l1, d2 = v2 / l2;
+	auto sinTheta = d1.cross(d2);
+	auto theta = asin(abs(sinTheta));
+	if (d1.dot(d2) < 0)
+		theta = CV_PI - theta;
+	auto radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
+	vector<Point> thisCurve;
+	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
+	if (!shouldAppend)
+		curve.clear();
+	if (isValidCurve)
+		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
+	else
+		curve.push_back(cornerPoints[1]);
+}
+
+void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed, const float& smoothness) {
+	vector<Point> tmpCurve;
+	for (auto point = curve.begin(); point < curve.end(); ++point) {
+		auto isFirst = point == curve.begin(), isLast = point == curve.end() - 1;
+		if (isClosed || !(isFirst || isLast))
+			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve, smoothness);
+		else
+			tmpCurve.insert(tmpCurve.end(), *point);
+	}
+	smoothCurve = tmpCurve;
+}
+
 void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints) {
 	curve.clear();
 	if (positions[0].zone == positions[1].zone) {
@@ -176,7 +207,7 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			vector<Point> dbCurve;
 			computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
 			*distalPoints = {getTooth(teeth, positions[1]).getAnglePoint(180)};
-			dbCurve.push_back((*distalPoints)[0] += roundToInt(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.8F));
+			dbCurve.push_back((*distalPoints)[0] += roundToInt(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.6));
 			dbCurve.erase(dbCurve.begin() + 1);
 			dbCurve.erase(dbCurve.end() - 2);
 			for (auto i = 0; i < dbCurve.size(); ++i) {
@@ -328,7 +359,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 		position.ordinal = 0;
 	}
 	if (!isInSameZone || positions[0].ordinal == 0 || flag)
-		while (position.ordinal <= nTeethPerZone) {
+		while (position.ordinal < nTeethPerZone) {
 			auto& tooth = getTooth(teeth, position);
 			if (tooth.getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE) {
 				sumOfRadii += tooth.getRadius();
@@ -359,7 +390,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 	dbPosition = ++Rpd::Position(positions[1]);
 	sumOfRadii = nTeeth = 0;
 	position = dbPosition;
-	while (position.ordinal <= nTeethPerZone) {
+	while (position.ordinal < nTeethPerZone) {
 		auto& tooth = getTooth(teeth, position);
 		if (tooth.getLingualBlockage() == RpdAsLingualBlockage::DENTURE_BASE) {
 			sumOfRadii += tooth.getRadius();
@@ -392,6 +423,49 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 		*hasDbCurves = {dbCurve1.size() > 0, dbCurve2.size() > 0};
 }
 
+void computeLingualConfrontationCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone], vector<vector<Point>>& curves) {
+	if (positions.size() == 4) {
+		computeLingualConfrontationCurves(teeth, {positions[0], positions[1]}, hasLingualConfrontations, curves);
+		computeLingualConfrontationCurves(teeth, {positions[2], positions[3]}, hasLingualConfrontations, curves);
+	}
+	else if (positions[0].zone == positions[1].zone) {
+		auto& zone = positions[0].zone;
+		auto& endOrdinal = positions[1].ordinal;
+		auto curOrdinal = positions[0].ordinal;
+		while (curOrdinal <= endOrdinal) {
+			while (curOrdinal <= endOrdinal && !hasLingualConfrontations[zone][curOrdinal])
+				++curOrdinal;
+			if (curOrdinal > endOrdinal)
+				break;
+			auto startOrdinal = curOrdinal;
+			while (curOrdinal <= endOrdinal && hasLingualConfrontations[zone][curOrdinal])
+				++curOrdinal;
+			vector<Point> curve;
+			for (auto position = Rpd::Position(zone, startOrdinal); position < Rpd::Position(zone, curOrdinal); ++position) {
+				auto thisCurve = getTooth(teeth, position).getCurve(180, 0);
+				curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
+			}
+			curves.push_back(curve);
+		}
+	}
+	else {
+		vector<int> startEndOrdinals(2);
+		vector<vector<Point>> tmpCurves;
+		for (auto i = 0; i < 2; ++i) {
+			auto zone = positions[i].zone;
+			while (startEndOrdinals[i] <= positions[i].ordinal && hasLingualConfrontations[zone][startEndOrdinals[i]])
+				++startEndOrdinals[i];
+			computeLingualConfrontationCurves(teeth, {Rpd::Position(zone, startEndOrdinals[i]) ,positions[i]}, hasLingualConfrontations, curves);
+			computeLingualConfrontationCurves(teeth, {Rpd::Position(zone, 0), Rpd::Position(zone, startEndOrdinals[i])}, hasLingualConfrontations, tmpCurves);
+		}
+		if (tmpCurves.size()) {
+			if (tmpCurves.size() == 2)
+				tmpCurves[0].insert(tmpCurves[0].begin(), tmpCurves[1].rbegin(), tmpCurves[1].rend());
+			curves.push_back(tmpCurves[0]);
+		}
+	}
+}
+
 Point2f computeNormalDirection(const Point2f& point, float* const& angle) {
 	auto direction = point - teethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
@@ -401,37 +475,6 @@ Point2f computeNormalDirection(const Point2f& point, float* const& angle) {
 		*angle = thisAngle;
 	auto normalDirection = Point2f(pow(teethEllipse.size.height, 2) * cos(thisAngle), pow(teethEllipse.size.width, 2) * sin(thisAngle));
 	return normalDirection / norm(normalDirection);
-}
-
-void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness, const bool& shouldAppend) {
-	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
-	auto l1 = norm(v1), l2 = norm(v2);
-	auto d1 = v1 / l1, d2 = v2 / l2;
-	auto sinTheta = d1.cross(d2);
-	auto theta = asin(abs(sinTheta));
-	if (d1.dot(d2) < 0)
-		theta = CV_PI - theta;
-	auto radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
-	vector<Point> thisCurve;
-	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
-	if (!shouldAppend)
-		curve.clear();
-	if (isValidCurve)
-		curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
-	else
-		curve.push_back(cornerPoints[1]);
-}
-
-void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed, const float& smoothness) {
-	vector<Point> tmpCurve;
-	for (auto point = curve.begin(); point < curve.end(); ++point) {
-		auto isFirst = point == curve.begin(), isLast = point == curve.end() - 1;
-		if (isClosed || !(isFirst || isLast))
-			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve, smoothness);
-		else
-			tmpCurve.insert(tmpCurve.end(), *point);
-	}
-	smoothCurve = tmpCurve;
 }
 
 vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction>& tipDirections) {
