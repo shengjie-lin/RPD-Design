@@ -1,5 +1,5 @@
 # RPD Design
-Shengjie Lin's graduation project at the Department of Electronic Engineering, Tsinghua University.
+Part of Shengjie Lin's graduation project at the Department of Electronic Engineering, Tsinghua University.
 
 ## Introduction
 Given both the base image and the descriptive Ontology file, the program will generate the RPD design layout.
