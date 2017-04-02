@@ -116,7 +116,7 @@ void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 	for (auto i = 0; i < curve.size(); ++i) {
 		auto delta = computeNormalDirection(curve[i]) * thisAvgRadius;
 		for (auto j = 0; j < distanceScales.size(); ++j)
-			curves[j][i] += roundToInt(delta * distanceScales[j]);
+			curves[j][i] += roundToPoint(delta * distanceScales[j]);
 		if (keepStartEndPoints)
 			if (i == 0) {
 				for (auto j = 0; j < distanceScales.size(); ++j)
@@ -149,7 +149,7 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 		theta = CV_PI - theta;
 	auto radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
 	vector<Point> thisCurve;
-	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToInt(normalize(d1 + d2) * radius / sin(theta / 2)), roundToInt(Size(radius, radius)), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
+	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToPoint(normalize(d1 + d2) * radius / sin(theta / 2)), Size(radius, radius), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
 	if (!shouldAppend)
 		curve.clear();
 	if (isValidCurve)
@@ -223,11 +223,11 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			vector<Point> dbCurve;
 			computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
 			*distalPoints = {getTooth(teeth, positions[1]).getAnglePoint(180)};
-			dbCurve.push_back((*distalPoints)[0] += roundToInt(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.6));
+			dbCurve.push_back((*distalPoints)[0] += roundToPoint(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.6));
 			dbCurve.erase(dbCurve.begin() + 1);
 			dbCurve.erase(dbCurve.end() - 2);
 			for (auto i = 0; i < dbCurve.size(); ++i) {
-				auto delta = roundToInt(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
+				auto delta = roundToPoint(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
 				if (i == 0)
 					dbCurve.insert(dbCurve.begin(), dbCurve[i++] + delta);
 				dbCurve[i] -= delta;
@@ -288,7 +288,7 @@ void computeMesialCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 	auto avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin() + 1; point < curves[i].end(); ++point)
-			*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * 2.4F);
 	if (innerCurve) {
 		innerCurve->clear();
 		innerCurve->push_back(*(curves[0].end() - 2));
@@ -315,7 +315,7 @@ void computeDistalCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 	auto avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin(); point < curves[i].end() - 1; ++point)
-			*point -= roundToInt(computeNormalDirection(*point) * avgRadius * 2.4F);
+			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * 2.4F);
 	if (innerCurve) {
 		innerCurve->push_back((innerCurve->back() + curves[0][1]) / 2);
 		innerCurve->push_back(curves[0][1]);
@@ -450,7 +450,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 			reverse(dbCurve1.begin(), dbCurve1.end());
 		auto tmpPoint = dbCurve1[0];
 		for (auto i = 0; i < 3; ++i) {
-			auto delta = roundToInt(computeNormalDirection(dbCurve1[i]) * thisAvgRadius * 1.6F);
+			auto delta = roundToPoint(computeNormalDirection(dbCurve1[i]) * thisAvgRadius * 1.6F);
 			if (i == 0)
 				dbCurve1.insert(dbCurve1.begin(), dbCurve1[i++] + delta);
 			dbCurve1[i] -= delta;
@@ -478,7 +478,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 		auto& tooth = getTooth(teeth, dbPosition);
 		dbCurve2 = {tooth.getAnglePoint(180), tooth.getAnglePoint(0)};
 		for (auto i = 0; i < 2; ++i) {
-			auto delta = roundToInt(computeNormalDirection(dbCurve2[i]) * thisAvgRadius * 1.6F);
+			auto delta = roundToPoint(computeNormalDirection(dbCurve2[i]) * thisAvgRadius * 1.6F);
 			dbCurve2[i] -= delta;
 			if (i == 1)
 				dbCurve2.push_back(dbCurve2[1] + delta * 2);

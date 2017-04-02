@@ -169,7 +169,7 @@ void RpdViewer::loadBaseImage() {
 				}
 				auto &seventhTooth = teeth_[zone][nTeethPerZone - 2], &eighthTooth = teeth_[zone][nTeethPerZone - 1];
 				auto contour = eighthTooth.getContour();
-				auto translation = roundToInt(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
+				auto translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
 				for (auto point = contour.begin(); point < contour.end(); ++point)
 					*point += translation;
 				eighthTooth.setContour(contour);

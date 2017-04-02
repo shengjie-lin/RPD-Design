@@ -54,6 +54,7 @@ protected:
 };
 
 class RpdAsLingualBlockage : public Rpd {
+	friend class RpdWithLingualClaspArms;
 public:
 	enum LingualBlockage {
 		NONE,
@@ -67,7 +68,6 @@ public:
 protected:
 	RpdAsLingualBlockage(const vector<Position>& positions, const vector<LingualBlockage>& lingualBlockages);
 	RpdAsLingualBlockage(const vector<Position>& positions, const LingualBlockage& lingualBlockage);
-	void registerLingualBlockages(vector<Tooth> teeth[nZones], const deque<bool>& flags) const;
 private:
 	void registerLingualBlockages(vector<Tooth> teeth[nZones], const vector<Position>& positions) const;
 	vector<LingualBlockage> lingualBlockages_;
@@ -150,7 +150,7 @@ private:
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void registerLingualBlockages(vector<Tooth> teeth[nZones]) const override;
 	static void registerDentureBase(vector<Tooth> teeth[nZones], vector<Position> positions);
-	deque<bool> coversTails_ = {false, false};
+	deque<bool> isCoveringTails_ = {false, false};
 	int isBlocked_ = -1;
 };
 
@@ -280,11 +280,5 @@ class HalfClasp : public Rpd, public RpdWithMaterial, public RpdWithDirection {
 class IBar : public Rpd {
 	friend class Rpi;
 	explicit IBar(const vector<Position>& positions);
-	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
-};
-
-class Plating : public Rpd {
-	friend class RpdWithLingualConfrontations;
-	explicit Plating(const vector<Position>& positions);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };

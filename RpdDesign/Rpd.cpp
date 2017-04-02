@@ -82,12 +82,6 @@ void RpdAsLingualBlockage::registerLingualBlockages(vector<Tooth> teeth[nZones],
 	}
 }
 
-void RpdAsLingualBlockage::registerLingualBlockages(vector<Tooth> teeth[nZones], const deque<bool>& flags) const {
-	for (auto i = 0; i < flags.size(); ++i)
-		if (flags[i])
-			getTooth(teeth, positions_[i]).setLingualBlockage(lingualBlockages_[i]);
-}
-
 void RpdWithLingualClaspArms::setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
 	for (auto i = 0; i < positions_.size(); ++i) {
 		auto& position = positions_[i];
@@ -105,7 +99,11 @@ void RpdWithLingualClaspArms::draw(const Mat& designImage, const vector<Tooth> t
 			HalfClasp(positions_[i], material_, tipDirections_[i], HalfClasp::LINGUAL).draw(designImage, teeth);
 }
 
-void RpdWithLingualClaspArms::registerLingualBlockages(vector<Tooth> teeth[nZones]) const { RpdAsLingualBlockage::registerLingualBlockages(teeth, hasLingualClaspArms_); }
+void RpdWithLingualClaspArms::registerLingualBlockages(vector<Tooth> teeth[nZones]) const {
+	for (auto i = 0; i < lingualBlockages_.size(); ++i)
+		if (hasLingualClaspArms_[i])
+			getTooth(teeth, positions_[i]).setLingualBlockage(lingualBlockages_[i]);
+}
 
 RpdWithLingualConfrontations::RpdWithLingualConfrontations(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsLingualBlockage(positions, MAJOR_CONNECTOR) {
 	for (auto zone = 0; zone < nZones; ++zone)
@@ -263,7 +261,7 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* const& env, const jmethod
 void DentureBase::determineTailsCoverage(const bool isEighthToothUsed[nZones]) {
 	for (auto i = 0; i < 2; ++i)
 		if (positions_[i].ordinal == nTeethPerZone + isEighthToothUsed[positions_[i].zone] - 2)
-			coversTails_[i] = true;
+			isCoveringTails_[i] = true;
 }
 
 void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones]) {
@@ -277,20 +275,20 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 	vector<Point> curve;
 	float avgRadius;
 	computeStringCurve(teeth, positions_, curve, avgRadius);
-	if (coversTails_[0]) {
+	if (isCoveringTails_[0]) {
 		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
-		curve.insert(curve.begin(), distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.6F));
+		curve.insert(curve.begin(), distalPoint + roundToPoint(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.6F));
 	}
-	if (coversTails_[1]) {
+	if (isCoveringTails_[1]) {
 		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
-		curve.push_back(distalPoint + roundToInt(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.6));
+		curve.push_back(distalPoint + roundToPoint(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.6));
 	}
-	if (coversTails_[0] || coversTails_[1] || !isBlocked_) {
+	if (isCoveringTails_[0] || isCoveringTails_[1] || !isBlocked_) {
 		curve.erase(curve.begin() + 1);
 		curve.erase(curve.end() - 2);
 		vector<Point> tmpCurve(curve.size());
 		for (auto i = 0; i < curve.size(); ++i) {
-			auto delta = roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
+			auto delta = roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 			tmpCurve[i] = curve[i] + delta;
 			curve[i] -= delta;
 		}
@@ -302,14 +300,14 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 		curve.insert(curve.begin(), curve[0]);
 		curve.push_back(curve.back());
 		for (auto i = 1; i < curve.size() - 1; ++i)
-			curve[i] += roundToInt(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
+			curve[i] += roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 		computeSmoothCurve(curve, curve);
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
 }
 
 void DentureBase::registerLingualBlockages(vector<Tooth> teeth[nZones]) const {
-	if (coversTails_[0] || coversTails_[1])
+	if (isCoveringTails_[0] || isCoveringTails_[1])
 		RpdAsLingualBlockage::registerLingualBlockages(teeth);
 }
 
@@ -607,9 +605,5 @@ void IBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const
 	inclination = radianToDegree(inclination);
 	if (t > 0)
 		t -= 180;
-	ellipse(designImage, c, roundToInt(Size(a, b)), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
+	ellipse(designImage, c, Size(a, b), inclination, t, t + 180, 0, lineThicknessOfLevel[2], LINE_AA);
 }
-
-Plating::Plating(const vector<Position>& positions) : Rpd(positions) {}
-
-void Plating::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const { polylines(designImage, getTooth(teeth, positions_[0]).getCurve(180, 0), false, 0, lineThicknessOfLevel[2], LINE_AA); }

@@ -23,10 +23,7 @@ template <typename T>
 Point2f normalize(const Point_<T>& point) { return static_cast<Point2f>(point) / norm(point); }
 
 template <typename T>
-Point roundToInt(const Point_<T>& point) { return Point(round(point.x), round(point.y)); }
-
-template <typename T>
-Size roundToInt(const Size_<T>& size) { return Size(round(size.width), round(size.height)); }
+Point roundToPoint(const Point_<T>& point) { return Point(round(point.x), round(point.y)); }
 
 void catPath(string& path, const string& searchDirectory, const string& extension);
 
