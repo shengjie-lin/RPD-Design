@@ -49,7 +49,7 @@ private:
 private slots :
 	void loadBaseImage();
 	void loadRpdInfo();
-	void printDesign();
+	void saveDesign();
 	void onShowBaseChanged(bool showBaseImage);
 	void onShowDesignChanged(bool showContoursImage);
 };

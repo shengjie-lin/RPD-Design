@@ -136,9 +136,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="printPushButton">
+      <widget class="QPushButton" name="savePushButton">
        <property name="text">
-        <string>打印</string>
+        <string>保存设计图</string>
        </property>
       </widget>
      </item>

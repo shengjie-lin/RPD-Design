@@ -330,7 +330,7 @@ void RpdViewer::loadRpdInfo() {
 	}
 }
 
-void RpdViewer::printDesign() {
+void RpdViewer::saveDesign() {
 	if (curImage_.data) {
 		QString selectedFilter = "Portable Network Graphics (*.png)";
 		auto fileName = QFileDialog::getSaveFileName(this, u8"选择设计图存储位置", "", "Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)", &selectedFilter);

@@ -21,9 +21,14 @@ Add to PATH:
 * `"%OPENCV_DIR%\bin\"`
 * `"%JDK_DIR%\..\jre1.8.0_121\bin\server\"` or alike
 
-In "%ROOT%\RpdDesign\GlobalVariables.h", modify accordingly the following line:
+In `"%ROOT%\RpdDesign\GlobalVariables.h"`, modify accordingly the following line:
 > `const string jenaLibPath = "C:/Program Files/apache-jena-3.2.0/lib/";`
 
-## Run
-After successful compilation, the executalbe will be stored as "%ROOT%\x64\Debug\RpdDesign.exe". Before execution, add to PATH:
+## Run & Test
+After successful compilation, the executalbe will be stored as `"%ROOT%\x64\Debug\RpdDesign.exe"`.  
+Before execution, add to PATH:
 * `"C:\Qt\Qt5.8.0\5.8\msvc2015_64\bin\"` or alike
+
+You may use sample resources in `"%ROOT%\sample\` to produce the following design:
+
+<img src="sample/sample.png" width="600">
