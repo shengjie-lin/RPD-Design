@@ -216,6 +216,7 @@ void RpdViewer::loadRpdInfo() {
 		auto clsStatement = env_->FindClass(clsStrStatement);
 
 		auto midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
+		auto midGetBoolean = env_->GetMethodID(clsStatement, "getBoolean", "()Z");
 		auto midGetInt = env_->GetMethodID(clsStatement, "getInt", "()I");
 		auto midGetLocalName = env_->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
 		auto midGetOntClass = env_->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
@@ -243,6 +244,12 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "component_position").c_str());
 		auto opComponentPosition = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
+		tmpStr = env_->NewStringUTF((ontPrefix + "enable_buccal_arm").c_str());
+		auto dpEnableBuccalArm = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
+		tmpStr = env_->NewStringUTF((ontPrefix + "enable_lingual_arm").c_str());
+		auto dpEnableLingualArm = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -263,7 +270,7 @@ void RpdViewer::loadRpdInfo() {
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
 				case AKER_CLASP:
-					rpds.push_back(AkerClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(AkerClasp::createFromIndividual(env_, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpEnableBuccalArm, dpEnableLingualArm, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP:
 					rpds.push_back(CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
@@ -311,7 +318,7 @@ void RpdViewer::loadRpdInfo() {
 					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case WW_CLASP:
-					rpds.push_back(WwClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					rpds.push_back(WwClasp::createFromIndividual(env_, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpEnableBuccalArm, dpEnableLingualArm, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				default: ;
 			}

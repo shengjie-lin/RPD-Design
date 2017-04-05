@@ -133,22 +133,37 @@ void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env
 	}
 }
 
-AkerClasp::AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction) : RpdWithDirection(direction), RpdWithLingualClaspArms(positions, material, direction) {}
+AkerClasp::AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm) : RpdWithDirection(direction), RpdWithLingualClaspArms(positions, material, direction), enableBuccalArm_(enableBuccalArm), enableLingualArm_(enableLingualArm) { hasLingualClaspArms_[0] = enableLingualArm; }
 
-AkerClasp* AkerClasp::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
+void AkerClasp::queryArmEnablements(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midResourceGetProperty, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& individual, bool& enableBuccalArm, bool& enableLingualArm) {
+	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpEnableBuccalArm);
+	enableBuccalArm = tmp ? env->CallBooleanMethod(tmp, midGetBoolean) : true;
+	tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpEnableLingualArm);
+	enableLingualArm = tmp ? env->CallBooleanMethod(tmp, midGetBoolean) : true;
+}
+
+AkerClasp* AkerClasp::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Position> positions;
 	Direction claspTipDirection;
 	Material claspMaterial;
+	bool enableBuccalArm, enableLingualArm;
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
 	queryMaterial(env, midGetInt, midResourceGetProperty, dpClaspMaterial, individual, claspMaterial);
-	return new AkerClasp(positions, claspMaterial, claspTipDirection);
+	queryArmEnablements(env, midGetBoolean, midResourceGetProperty, dpEnableBuccalArm, dpEnableLingualArm, individual, enableBuccalArm, enableLingualArm);
+	return new AkerClasp(positions, claspMaterial, claspTipDirection, enableBuccalArm, enableLingualArm);
 }
 
 void AkerClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdWithLingualClaspArms::draw(designImage, teeth);
 	OcclusalRest(positions_, direction_ == MESIAL ? DISTAL : MESIAL).draw(designImage, teeth);
-	HalfClasp(positions_, material_, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
+	if (enableBuccalArm_)
+		HalfClasp(positions_, material_, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
+}
+
+void AkerClasp::setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) {
+	if (hasLingualClaspArms_[0])
+		RpdWithLingualClaspArms::setLingualClaspArms(hasLingualConfrontations);
 }
 
 CombinationAnteriorPosteriorPalatalStrap* CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midStatementGetProperty, const jobject& dpLingualConfrontation, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
@@ -536,20 +551,16 @@ void Rpi::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const 
 	IBar(positions_).draw(designImage, teeth);
 }
 
-WwClasp::WwClasp(const vector<Position>& positions, const Direction& direction) : RpdWithDirection(direction), RpdWithLingualClaspArms(positions, WROUGHT_WIRE, direction) {}
+WwClasp::WwClasp(const vector<Position>& positions, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm) : AkerClasp(positions, WROUGHT_WIRE, direction, enableBuccalArm, enableLingualArm) {}
 
-WwClasp* WwClasp::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
+WwClasp* WwClasp::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Position> positions;
 	Direction claspTipDirection;
+	bool enableBuccalArm, enableLingualArm;
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpClaspTipDirection, individual, claspTipDirection);
-	return new WwClasp(positions, claspTipDirection);
-}
-
-void WwClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	OcclusalRest(positions_, direction_ == MESIAL ? DISTAL : MESIAL).draw(designImage, teeth);
-	RpdWithLingualClaspArms::draw(designImage, teeth);
-	HalfClasp(positions_, WROUGHT_WIRE, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
+	queryArmEnablements(env, midGetBoolean, midResourceGetProperty, dpEnableBuccalArm, dpEnableLingualArm, individual, enableBuccalArm, enableLingualArm);
+	return new WwClasp(positions, claspTipDirection, enableBuccalArm, enableLingualArm);
 }
 
 GuidingPlate::GuidingPlate(const vector<Position>& positions) : Rpd(positions) {}

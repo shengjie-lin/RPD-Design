@@ -74,6 +74,7 @@ private:
 };
 
 class RpdWithLingualClaspArms : public RpdWithMaterial, public RpdAsLingualBlockage {
+	friend class AkerClasp;
 	friend class ContinuousClasp;
 public:
 	virtual void setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]);
@@ -101,10 +102,14 @@ private:
 
 class AkerClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
 public:
-	static AkerClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+	static AkerClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpClaspMaterial, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+protected:
+	AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm);
+	static void queryArmEnablements(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midResourceGetProperty, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& individual, bool& enableBuccalArm, bool& enableLingualArm);
 private:
-	AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+	void setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) override;
+	bool enableBuccalArm_, enableLingualArm_;
 };
 
 class CombinationAnteriorPosteriorPalatalStrap : public RpdWithLingualConfrontations {
@@ -243,12 +248,11 @@ private:
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 
-class WwClasp : public RpdWithDirection, public RpdWithLingualClaspArms {
+class WwClasp : public AkerClasp {
 public:
-	static WwClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
+	static WwClasp* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpClaspTipDirection, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	WwClasp(const vector<Position>& positions, const Direction& direction);
-	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
+	WwClasp(const vector<Position>& positions, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm);
 };
 
 class GuidingPlate : public Rpd {

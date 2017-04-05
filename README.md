@@ -31,4 +31,4 @@ Before execution, add to PATH:
 * `C:\Qt\Qt5.8.0\5.8\msvc2015_64\bin\` or alike
 
 You may use sample resources in `%ROOT%\sample\` to produce the following design:
-> <img src="sample/sample.png" width="600">
+> <img src="sample/sample.png" width="512">
