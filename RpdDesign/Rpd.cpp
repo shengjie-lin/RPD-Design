@@ -133,7 +133,7 @@ void RpdWithLingualConfrontations::queryLingualConfrontations(JNIEnv* const& env
 	}
 }
 
-AkerClasp::AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm) : RpdWithDirection(direction), RpdWithLingualClaspArms(positions, material, direction), enableBuccalArm_(enableBuccalArm), enableLingualArm_(enableLingualArm) { hasLingualClaspArms_[0] = enableLingualArm; }
+AkerClasp::AkerClasp(const vector<Position>& positions, const Material& material, const Direction& direction, const bool& enableBuccalArm, const bool& enableLingualArm) : RpdWithDirection(direction), RpdWithLingualClaspArms(positions, material, direction), enableBuccalArm_(enableBuccalArm) { hasLingualClaspArms_[0] = enableLingualArm; }
 
 void AkerClasp::queryArmEnablements(JNIEnv* const& env, const jmethodID& midGetBoolean, const jmethodID& midResourceGetProperty, const jobject& dpEnableBuccalArm, const jobject& dpEnableLingualArm, const jobject& individual, bool& enableBuccalArm, bool& enableLingualArm) {
 	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpEnableBuccalArm);

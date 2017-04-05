@@ -109,7 +109,7 @@ protected:
 private:
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 	void setLingualClaspArms(bool hasLingualConfrontations[nZones][nTeethPerZone]) override;
-	bool enableBuccalArm_, enableLingualArm_;
+	bool enableBuccalArm_;
 };
 
 class CombinationAnteriorPosteriorPalatalStrap : public RpdWithLingualConfrontations {
