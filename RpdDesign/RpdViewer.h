@@ -32,6 +32,7 @@ private:
 		RING_CLASP,
 		RPA,
 		RPI,
+		TOOTH,
 		WW_CLASP
 	};
 

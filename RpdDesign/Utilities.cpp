@@ -458,7 +458,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 		computeInscribedCurve(dbCurve1, dbCurve1, 0.5F, false);
 		dbCurve1.insert(dbCurve1.begin(), tmpPoint);
 		outerCurve[0] = dbCurve1.back();
-		outerCurve.erase(outerCurve.begin() + 1, outerCurve.begin() + 2);
+		outerCurve.erase(outerCurve.begin() + 1);
 	}
 	dbPosition = ++Rpd::Position(positions[1]);
 	sumOfRadii = nTeeth = 0;
@@ -486,7 +486,7 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 		computeInscribedCurve(dbCurve2, dbCurve2, 0.5F, false);
 		dbCurve2.push_back(tooth.getAnglePoint(0));
 		outerCurve.back() = dbCurve2[0];
-		outerCurve.erase(outerCurve.end() - 2, outerCurve.end() - 1);
+		outerCurve.erase(outerCurve.end() - 2);
 	}
 	computeSmoothCurve(outerCurve, outerCurve);
 	curve = dbCurve1;

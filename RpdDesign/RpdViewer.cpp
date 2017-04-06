@@ -26,6 +26,7 @@ map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
 	{"RPA_clasps", RPA},
 	{"RPI_clasps", RPI},
 	{"single_palatal_strap", PALATAL_PLATE},
+	{"tooth", TOOTH},
 	{"wrought_wire_clasp", WW_CLASP}
 };
 
@@ -250,6 +251,9 @@ void RpdViewer::loadRpdInfo() {
 		tmpStr = env_->NewStringUTF((ontPrefix + "enable_lingual_arm").c_str());
 		auto dpEnableLingualArm = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
+		tmpStr = env_->NewStringUTF((ontPrefix + "is_missing").c_str());
+		auto dpIsMissing = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		tmpStr = env_->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
 		auto dpLingualConfrontation = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
@@ -316,6 +320,10 @@ void RpdViewer::loadRpdInfo() {
 					break;
 				case RPI:
 					rpds.push_back(Rpi::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
+				case TOOTH:
+					if (!env_->CallBooleanMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing), midGetBoolean) && env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone)
+						isEighthToothUsed[env_->CallIntMethod(env_->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = true;
 					break;
 				case WW_CLASP:
 					rpds.push_back(WwClasp::createFromIndividual(env_, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpEnableBuccalArm, dpEnableLingualArm, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
