@@ -274,9 +274,12 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* const& env, const jmethod
 }
 
 void DentureBase::determineTailsCoverage(const bool isEighthToothUsed[nZones]) {
-	for (auto i = 0; i < 2; ++i)
+	for (auto i = 0; i < 2; ++i) {
+		if (i == 0 && positions_[0].zone == positions_[1].zone)
+			continue;
 		if (positions_[i].ordinal == nTeethPerZone + isEighthToothUsed[positions_[i].zone] - 2)
 			isCoveringTails_[i] = true;
+	}
 }
 
 void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones]) {
@@ -298,22 +301,21 @@ void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]
 		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
 		curve.push_back(distalPoint + roundToPoint(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.6));
 	}
+	curve.insert(curve.begin(), curve[0]);
+	curve.push_back(curve.back());
 	if (isCoveringTails_[0] || isCoveringTails_[1] || !isBlocked_) {
-		curve.erase(curve.begin() + 1);
-		curve.erase(curve.end() - 2);
-		vector<Point> tmpCurve(curve.size());
-		for (auto i = 0; i < curve.size(); ++i) {
+		auto tmpCurve = curve;
+		for (auto i = 1; i < curve.size() - 1; ++i) {
 			auto delta = roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 			tmpCurve[i] = curve[i] + delta;
 			curve[i] -= delta;
 		}
+		computePiecewiseSmoothCurve(curve, curve);
+		computePiecewiseSmoothCurve(tmpCurve, tmpCurve);
 		curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-		computeSmoothCurve(curve, curve, true);
 		polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
 	else {
-		curve.insert(curve.begin(), curve[0]);
-		curve.push_back(curve.back());
 		for (auto i = 1; i < curve.size() - 1; ++i)
 			curve[i] += roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
 		computeSmoothCurve(curve, curve);

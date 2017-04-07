@@ -170,27 +170,27 @@ void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, 
 	smoothCurve = tmpCurve;
 }
 
-void computeSmoothCurve(const vector<Point>& curve, const bool& shouldSmoothStart, const bool& shouldSmoothEnd, vector<Point>& smoothCurve) {
-	vector<vector<Point>> tmpCurves(3);
-	tmpCurves[1] = vector<Point>{curve.begin() + 2, curve.end() - 2};
+void computePiecewiseSmoothCurve(const vector<Point>& curve, vector<Point>& piecewiseSmoothCurve, const bool& shouldSmoothStart, const bool& shouldSmoothEnd) {
+	vector<vector<Point>> smoothCurves(3);
+	smoothCurves[1] = vector<Point>{curve.begin() + 2, curve.end() - 2};
 	if (shouldSmoothStart) {
-		computeInscribedCurve(vector<Point>{curve.begin(), curve.begin() + 3}, tmpCurves[0], 1);
-		tmpCurves[0].insert(tmpCurves[0].begin(), curve[0]);
-		tmpCurves[1].insert(tmpCurves[1].begin(), tmpCurves[0].back());
+		computeInscribedCurve(vector<Point>{curve.begin(), curve.begin() + 3}, smoothCurves[0], 1);
+		smoothCurves[0].insert(smoothCurves[0].begin(), curve[0]);
+		smoothCurves[1].insert(smoothCurves[1].begin(), smoothCurves[0].back());
 	}
 	else
-		tmpCurves[1].insert(tmpCurves[1].begin(), curve.begin(), curve.begin() + 2);
+		smoothCurves[1].insert(smoothCurves[1].begin(), curve.begin(), curve.begin() + 2);
 	if (shouldSmoothEnd) {
-		computeInscribedCurve(vector<Point>{curve.end() - 3, curve.end()}, tmpCurves[2], 1);
-		tmpCurves[2].push_back(curve.back());
-		tmpCurves[1].push_back(tmpCurves[2][0]);
+		computeInscribedCurve(vector<Point>{curve.end() - 3, curve.end()}, smoothCurves[2], 1);
+		smoothCurves[2].push_back(curve.back());
+		smoothCurves[1].push_back(smoothCurves[2][0]);
 	}
 	else
-		tmpCurves[1].insert(tmpCurves[1].end(), curve.end() - 2, curve.end());
-	computeSmoothCurve(tmpCurves[1], tmpCurves[1]);
-	smoothCurve.clear();
+		smoothCurves[1].insert(smoothCurves[1].end(), curve.end() - 2, curve.end());
+	computeSmoothCurve(smoothCurves[1], smoothCurves[1]);
+	piecewiseSmoothCurve.clear();
 	for (auto i = 0; i < 3; ++i)
-		smoothCurve.insert(smoothCurve.end(), tmpCurves[i].begin(), tmpCurves[i].end());
+		piecewiseSmoothCurve.insert(piecewiseSmoothCurve.end(), smoothCurves[i].begin(), smoothCurves[i].end());
 }
 
 void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints) {
@@ -207,7 +207,7 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			if (shouldConsiderLast || hasClaspDistalRest) {
 				auto lastPosition = --Rpd::Position(position);
 				computeStringCurve(teeth, {shouldConsiderLast ? lastPosition : position, hasClaspDistalRest ? position : lastPosition}, -1.6F, true, thisCurve);
-				computeSmoothCurve(thisCurve, true, true, thisCurve);
+				computePiecewiseSmoothCurve(thisCurve, thisCurve);
 				curves.push_back(thisCurve);
 				curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 			}
@@ -218,28 +218,21 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			shouldConsiderLast = lingualBlockage == RpdAsLingualBlockage::CLASP_MESIAL_REST;
 		}
 		if (distalPoints && dbStartPosition <= positions[1]) {
-			curve.push_back(getTooth(teeth, dbStartPosition).getAnglePoint(0));
 			float avgRadius;
 			vector<Point> dbCurve;
 			computeStringCurve(teeth, {dbStartPosition, positions[1]}, dbCurve, avgRadius);
 			*distalPoints = {getTooth(teeth, positions[1]).getAnglePoint(180)};
 			dbCurve.push_back((*distalPoints)[0] += roundToPoint(rotate(computeNormalDirection((*distalPoints)[0]), CV_PI * (positions[1].zone % 2 - 0.5)) * avgRadius * 0.6));
-			dbCurve.erase(dbCurve.begin() + 1);
-			dbCurve.erase(dbCurve.end() - 2);
-			for (auto i = 0; i < dbCurve.size(); ++i) {
-				auto delta = roundToPoint(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
-				if (i == 0)
-					dbCurve.insert(dbCurve.begin(), dbCurve[i++] + delta);
-				dbCurve[i] -= delta;
-				if (i == dbCurve.size() - 1)
-					dbCurve.push_back(dbCurve[i++] + delta * 2);
-			}
-			computeSmoothCurve(dbCurve, dbCurve);
-			curve.insert(curve.end(), dbCurve.begin() + 1, dbCurve.end() - 1);
-			curve.push_back((*distalPoints)[0]);
+			dbCurve.insert(dbCurve.begin(), dbCurve[0]);
+			dbCurve.push_back(dbCurve.back());
+			for (auto i = 1; i < dbCurve.size() - 1; ++i)
+				dbCurve[i] -= roundToPoint(computeNormalDirection(dbCurve[i]) * avgRadius * 1.6F);
+			computePiecewiseSmoothCurve(dbCurve, dbCurve);
+			curve.insert(curve.end(), dbCurve.begin(), dbCurve.end());
 		}
 	}
 	else {
+		/*TODO: consider cross tailing denture base for full palatal plate*/
 		vector<Point> thisCurve;
 		vector<Rpd::Position> startPositions = {Rpd::Position(positions[0].zone, 0), Rpd::Position(positions[1].zone, 0)};
 		vector<Point*> thisDistalPoints;
@@ -254,7 +247,7 @@ void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Po
 			computeLingualCurve(teeth, {Rpd::Position(positions[0].zone, 1), positions[0]}, thisCurve, curves, thisDistalPoints[0]);
 			curve.insert(curve.end(), thisCurve.rbegin(), thisCurve.rend());
 			computeStringCurve(teeth, {startPositions[0], startPositions[1]}, -1.6F, true, thisCurve);
-			computeSmoothCurve(thisCurve, true, true, thisCurve);
+			computePiecewiseSmoothCurve(thisCurve, thisCurve);
 			curves.push_back(thisCurve);
 			curve.insert(curve.end(), thisCurve.begin(), thisCurve.end());
 			computeLingualCurve(teeth, {Rpd::Position(positions[1].zone, 1), positions[1]}, thisCurve, curves, thisDistalPoints[1]);
@@ -351,7 +344,7 @@ void computeInnerCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 						tmpCurve[0] = getTooth(teeth, Rpd::Position(zone + 1 - zone % 2 * 2, 0)).getAnglePoint(0);
 				if (!shouldSmoothEnd)
 					tmpCurve.back() = getTooth(teeth, Rpd::Position(zone, curOrdinal + 1)).getAnglePoint(0);
-				computeSmoothCurve(tmpCurve, shouldSmoothStart, shouldSmoothEnd, tmpCurve);
+				computePiecewiseSmoothCurve(tmpCurve, tmpCurve, shouldSmoothStart, shouldSmoothEnd);
 				curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 				if (curOrdinal == endOrdinal)
 					break;
@@ -445,17 +438,12 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 	if (nTeeth > 0) {
 		thisAvgRadius = sumOfRadii / nTeeth;
 		auto& tooth = getTooth(teeth, dbPosition);
-		dbCurve1 = {tooth.getAnglePoint(0), tooth.getAnglePoint(180)};
-		if (isInSameZone && positions[0].ordinal > 0)
-			reverse(dbCurve1.begin(), dbCurve1.end());
+		dbCurve1 = {tooth.getAnglePoint(!isInSameZone || positions[0].ordinal == 0 ? 0 : 180), tooth.getCentroid()};
 		auto tmpPoint = dbCurve1[0];
-		for (auto i = 0; i < 3; ++i) {
-			auto delta = roundToPoint(computeNormalDirection(dbCurve1[i]) * thisAvgRadius * 1.6F);
-			if (i == 0)
-				dbCurve1.insert(dbCurve1.begin(), dbCurve1[i++] + delta);
-			dbCurve1[i] -= delta;
-		}
-		computeInscribedCurve(dbCurve1, dbCurve1, 0.5F, false);
+		dbCurve1.insert(dbCurve1.begin(), tmpPoint);
+		for (auto i = 1; i < 3; ++i)
+			dbCurve1[i] -= roundToPoint(computeNormalDirection(dbCurve1[i]) * thisAvgRadius * 1.6F);
+		computeInscribedCurve(dbCurve1, dbCurve1, 1, false);
 		dbCurve1.insert(dbCurve1.begin(), tmpPoint);
 		outerCurve[0] = dbCurve1.back();
 		outerCurve.erase(outerCurve.begin() + 1);
@@ -476,15 +464,13 @@ void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Posi
 	if (nTeeth > 0) {
 		thisAvgRadius = sumOfRadii / nTeeth;
 		auto& tooth = getTooth(teeth, dbPosition);
-		dbCurve2 = {tooth.getAnglePoint(180), tooth.getAnglePoint(0)};
-		for (auto i = 0; i < 2; ++i) {
-			auto delta = roundToPoint(computeNormalDirection(dbCurve2[i]) * thisAvgRadius * 1.6F);
-			dbCurve2[i] -= delta;
-			if (i == 1)
-				dbCurve2.push_back(dbCurve2[1] + delta * 2);
-		}
-		computeInscribedCurve(dbCurve2, dbCurve2, 0.5F, false);
-		dbCurve2.push_back(tooth.getAnglePoint(0));
+		dbCurve2 = {tooth.getCentroid(), tooth.getAnglePoint(0)};
+		auto tmpPoint = dbCurve2.back();
+		dbCurve2.push_back(tmpPoint);
+		for (auto i = 0; i < 2; ++i)
+			dbCurve2[i] -= roundToPoint(computeNormalDirection(dbCurve2[i]) * thisAvgRadius * 1.6F);
+		computeInscribedCurve(dbCurve2, dbCurve2, 1, false);
+		dbCurve2.push_back(tmpPoint);
 		outerCurve.back() = dbCurve2[0];
 		outerCurve.erase(outerCurve.end() - 2);
 	}

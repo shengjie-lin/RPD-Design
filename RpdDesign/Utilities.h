@@ -47,7 +47,7 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 
 void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, const bool& isClosed = false, const float& smoothness = 0.5F);
 
-void computeSmoothCurve(const vector<Point>& curve, const bool& shouldSmoothStart, const bool& shouldSmoothEnd, vector<Point>& smoothCurve);
+void computePiecewiseSmoothCurve(const vector<Point>& curve, vector<Point>& piecewiseSmoothCurve, const bool& shouldSmoothStart = true, const bool& shouldSmoothEnd = true);
 
 void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints = nullptr);
 
