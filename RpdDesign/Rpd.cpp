@@ -290,42 +290,29 @@ void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones]) {
 }
 
 void DentureBase::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	vector<Point> curve;
-	float avgRadius;
-	computeStringCurve(teeth, positions_, curve, avgRadius);
-	if (isCoveringTails_[0]) {
-		auto distalPoint = getTooth(teeth, positions_[0]).getAnglePoint(180);
-		curve.insert(curve.begin(), distalPoint + roundToPoint(rotate(computeNormalDirection(distalPoint), -CV_PI / 2) * avgRadius * 0.6F));
-	}
-	if (isCoveringTails_[1]) {
-		auto distalPoint = getTooth(teeth, positions_[1]).getAnglePoint(180);
-		curve.push_back(distalPoint + roundToPoint(rotate(computeNormalDirection(distalPoint), CV_PI * (positions_[1].zone % 2 - 0.5)) * avgRadius * 0.6));
-	}
-	curve.insert(curve.begin(), curve[0]);
-	curve.push_back(curve.back());
 	if (isCoveringTails_[0] || isCoveringTails_[1] || !isBlocked_) {
-		auto tmpCurve = curve;
-		for (auto i = 1; i < curve.size() - 1; ++i) {
-			auto delta = roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
-			tmpCurve[i] = curve[i] + delta;
-			curve[i] -= delta;
-		}
-		computePiecewiseSmoothCurve(curve, curve);
-		computePiecewiseSmoothCurve(tmpCurve, tmpCurve);
-		curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-		polylines(designImage, curve, true, 0, lineThicknessOfLevel[2], LINE_AA);
+		vector<vector<Point>> curves;
+		computeStringCurves(teeth, positions_, {1.6F, -1.6F}, true, true, curves);
+		for (auto i = 0; i < 2; ++i)
+			computePiecewiseSmoothCurve(curves[i], curves[i]);
+		curves[0].insert(curves[0].end(), curves[1].rbegin(), curves[1].rend());
+		polylines(designImage, curves[0], true, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
 	else {
-		for (auto i = 1; i < curve.size() - 1; ++i)
-			curve[i] += roundToPoint(computeNormalDirection(curve[i]) * avgRadius * 1.6F);
+		vector<Point> curve;
+		computeStringCurve(teeth, positions_, 1.6F, true, false, curve);
 		computeSmoothCurve(curve, curve);
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
 }
 
 void DentureBase::registerLingualBlockages(vector<Tooth> teeth[nZones]) const {
-	if (isCoveringTails_[0] || isCoveringTails_[1])
+	if (isCoveringTails_[0] || isCoveringTails_[1]) {
 		RpdAsLingualBlockage::registerLingualBlockages(teeth);
+		for (auto i = 0; i < 2; ++i)
+			if (isCoveringTails_[i])
+				getTooth(teeth, positions_[i]).setLingualBlockage(DENTURE_BASE_TAIL);
+	}
 }
 
 void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones], vector<Position> positions) {
@@ -348,7 +335,7 @@ EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv* const& env, const
 
 void EdentulousSpace::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<vector<Point>> curves;
-	computeStringCurves(teeth, positions_, {0.25F, -0.25F}, false, curves);
+	computeStringCurves(teeth, positions_, {0.25F, -0.25F}, false, false, curves);
 	for (auto curve = curves.begin(); curve < curves.end(); ++curve) {
 		computeSmoothCurve(*curve, *curve);
 		polylines(designImage, *curve, false, 0, lineThicknessOfLevel[2], LINE_AA);

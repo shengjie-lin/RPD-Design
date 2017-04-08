@@ -29,6 +29,8 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* const& clsStr);
 
+bool isDentureBase(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage);
+
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
 Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position);
@@ -39,9 +41,9 @@ void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Pos
 
 void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius);
 
-void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<float>& distanceScales, const bool& keepStartEndPoints, vector<vector<Point>>& curves, float* const& avgRadius = nullptr);
+void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<float>& distanceScales, const bool& keepStartEndPoints, const bool& considerDistalPoints, vector<vector<Point>>& curves, float* const& avgRadius = nullptr, vector<Point>* const& distalPoints = nullptr);
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& distanceScale, const bool& keepStartEndPoints, vector<Point>& curve, float* const& avgRadius = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& distanceScale, const bool& keepStartEndPoints, const bool& considerDistalPoints, vector<Point>& curve, float* const& avgRadius = nullptr, vector<Point>* const& distalPoints = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness = 0.5F, const bool& shouldAppend = true);
 
