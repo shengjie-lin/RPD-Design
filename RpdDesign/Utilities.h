@@ -29,6 +29,8 @@ void catPath(string& path, const string& searchDirectory, const string& extensio
 
 string getClsSig(const char* const& clsStr);
 
+Rpd::Direction operator~(const Rpd::Direction& direction);
+
 bool isDentureBase(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage);
 
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);

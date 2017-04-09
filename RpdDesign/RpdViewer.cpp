@@ -8,7 +8,8 @@
 #include "Utilities.h"
 
 map<string, RpdViewer::RpdClass> RpdViewer::rpdMapping_ = {
-	{"Aker_clasp", AKER_CLASP},
+	{"aker_clasp", AKERS_CLASP},
+	{"canine_aker_clasp", CANINE_AKERS_CLASP},
 	{"combination_anterior_posterior_palatal_strap", COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP},
 	{"combination_clasp", COMBINATION_CLASP},
 	{"combined_clasp", COMBINED_CLASP},
@@ -67,9 +68,9 @@ void RpdViewer::updateRpdDesign() {
 				rpdWithLingualConfrontations->registerLingualConfrontations(hasLingualConfrontations);
 		}
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdWithLingualClaspArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
-			if (rpdWithLingualClaspArms)
-				rpdWithLingualClaspArms->setLingualClaspArms(hasLingualConfrontations);
+			auto rpdWithLingualArms = dynamic_cast<RpdWithLingualArms*>(*rpd);
+			if (rpdWithLingualArms)
+				rpdWithLingualArms->setLingualClaspArms(hasLingualConfrontations);
 		}
 	}
 	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
@@ -118,7 +119,7 @@ void RpdViewer::loadBaseImage() {
 	if (!fileName.isEmpty()) {
 		auto image = imread(fileName.toLocal8Bit().data());
 		if (image.empty())
-			QMessageBox::information(this, u8"错误", u8"无效的图像文件！");
+			QMessageBox::critical(this, u8"错误", u8"非有效的图像文件！");
 		else {
 			justLoadedImage_ = true;
 			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
@@ -267,14 +268,18 @@ void RpdViewer::loadRpdInfo() {
 		auto dpToothZone = env_->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
 		vector<Rpd*> rpds;
-		bool isEighthToothUsed[nZones] = {};
 		auto individuals = env_->CallObjectMethod(ontModel, midListIndividuals);
+		auto isValid = env_->CallBooleanMethod(individuals, midHasNext);
+		bool isEighthToothUsed[nZones] = {};
 		while (env_->CallBooleanMethod(individuals, midHasNext)) {
 			auto individual = env_->CallObjectMethod(individuals, midNext);
 			auto ontClassStr = env_->GetStringUTFChars(static_cast<jstring>(env_->CallObjectMethod(env_->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
 			switch (rpdMapping_[ontClassStr]) {
-				case AKER_CLASP:
-					rpds.push_back(AkerClasp::createFromIndividual(env_, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpEnableBuccalArm, dpEnableLingualArm, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+				case AKERS_CLASP:
+					rpds.push_back(AkersClasp::createFromIndividual(env_, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpEnableBuccalArm, dpEnableLingualArm, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
+					break;
+				case CANINE_AKERS_CLASP:
+					rpds.push_back(CanineAkersClasp::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
 					break;
 				case COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP:
 					rpds.push_back(CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(env_, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, isEighthToothUsed));
@@ -331,7 +336,7 @@ void RpdViewer::loadRpdInfo() {
 				default: ;
 			}
 		}
-		if (rpds.size()) {
+		if (isValid) {
 			justLoadedRpd_ = true;
 			copy(begin(isEighthToothUsed), end(isEighthToothUsed), isEighthToothUsed_);
 			rpds_ = rpds;
@@ -341,7 +346,7 @@ void RpdViewer::loadRpdInfo() {
 			}
 		}
 		else
-			QMessageBox::information(this, u8"警告", u8"文件中不存在有效的RPD实例！");
+			QMessageBox::critical(this, u8"错误", u8"非有效的本体文件！");
 	}
 }
 
@@ -353,7 +358,7 @@ void RpdViewer::saveDesign() {
 			imwrite(fileName.toLocal8Bit().data(), curImage_);
 	}
 	else
-		QMessageBox::information(this, u8"错误", u8"不存在有效的设计图！");
+		QMessageBox::critical(this, u8"错误", u8"无有效的设计图！");
 }
 
 void RpdViewer::onShowBaseChanged(bool showBaseImage) {

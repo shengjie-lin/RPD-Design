@@ -5135,6 +5135,7 @@ note : set for tooth now</rdfs:comment>
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#lingual_rest_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#lingual_rest"/>
         <component_position rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth22"/>
+        <rest_mesial_or_distal rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</rest_mesial_or_distal>
     </owl:NamedIndividual>
     
 
@@ -5264,6 +5265,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth18">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
+        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">8</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</tooth_zone>
     </owl:NamedIndividual>
@@ -5314,12 +5316,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth25">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <gingival_swollen rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</gingival_swollen>
-        <mobility rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</mobility>
-        <percussion rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</percussion>
-        <tooth_defect rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</tooth_defect>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">5</tooth_ordinal>
-        <tooth_position rdf:datatype="http://www.w3.org/2001/XMLSchema#int">5</tooth_position>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">2</tooth_zone>
     </owl:NamedIndividual>
     
@@ -5329,7 +5326,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth26">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">6</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">2</tooth_zone>
     </owl:NamedIndividual>
@@ -5340,12 +5336,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth27">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <gingival_swollen rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</gingival_swollen>
-        <mobility rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</mobility>
-        <percussion rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</percussion>
-        <tooth_defect rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</tooth_defect>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">7</tooth_ordinal>
-        <tooth_position rdf:datatype="http://www.w3.org/2001/XMLSchema#int">5</tooth_position>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">2</tooth_zone>
     </owl:NamedIndividual>
     
@@ -5355,6 +5346,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth28">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
+        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">8</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">2</tooth_zone>
     </owl:NamedIndividual>
@@ -5365,7 +5357,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth31">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">3</tooth_zone>
     </owl:NamedIndividual>
@@ -5406,10 +5397,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth35">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <gingival_swollen rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</gingival_swollen>
-        <mobility rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</mobility>
-        <percussion rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</percussion>
-        <tooth_defect rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</tooth_defect>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">5</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">3</tooth_zone>
     </owl:NamedIndividual>
@@ -5420,7 +5407,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth36">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">6</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">3</tooth_zone>
     </owl:NamedIndividual>
@@ -5431,10 +5417,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth37">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <gingival_swollen rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</gingival_swollen>
-        <mobility rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</mobility>
-        <percussion rdf:datatype="http://www.w3.org/2001/XMLSchema#int">0</percussion>
-        <tooth_defect rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</tooth_defect>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">7</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">3</tooth_zone>
     </owl:NamedIndividual>
@@ -5506,7 +5488,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth46">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">6</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">4</tooth_zone>
     </owl:NamedIndividual>
@@ -5517,7 +5498,6 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth47">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">7</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">4</tooth_zone>
     </owl:NamedIndividual>
@@ -5528,7 +5508,7 @@ note : set for tooth now</rdfs:comment>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth48">
         <rdf:type rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#tooth"/>
-        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</is_missing>
+        <is_missing rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</is_missing>
         <tooth_ordinal rdf:datatype="http://www.w3.org/2001/XMLSchema#int">8</tooth_ordinal>
         <tooth_zone rdf:datatype="http://www.w3.org/2001/XMLSchema#int">4</tooth_zone>
     </owl:NamedIndividual>
