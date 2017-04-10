@@ -205,7 +205,7 @@ class LingualRest : public RpdWithDirection, public RpdWithLingualArms {
 public:
 	static LingualRest* createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]);
 private:
-	LingualRest(const vector<Position>& positions, const Direction& direction);
+	LingualRest(const vector<Position>& positions, const Material& material, const Direction& direction);
 	void draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const override;
 };
 

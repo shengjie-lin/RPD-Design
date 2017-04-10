@@ -3,7 +3,6 @@
 
 RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	ui_.setupUi(this);
-	this->showMaximized();
 	rpdViewer_ = new RpdViewer(this, ui_.baseCheckBox->isChecked(), ui_.designCheckBox->isChecked());
 	ui_.verticalLayout->insertWidget(0, rpdViewer_);
 	connect(ui_.loadBasePushButton, SIGNAL(clicked()), rpdViewer_, SLOT(loadBaseImage()));

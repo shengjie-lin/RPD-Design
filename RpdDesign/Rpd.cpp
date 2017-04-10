@@ -179,7 +179,7 @@ CanineAkersClasp* CanineAkersClasp::createFromIndividual(JNIEnv* const& env, con
 CanineAkersClasp::CanineAkersClasp(const vector<Position>& positions, const Material& material, const Direction& direction): RpdWithDirection(direction), RpdWithLingualArms(positions, material, direction) {}
 
 void CanineAkersClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
-	LingualRest(positions_, ~direction_).draw(designImage, teeth);
+	LingualRest(positions_, WROUGHT_WIRE, ~direction_).draw(designImage, teeth);
 	HalfClasp(positions_, material_, direction_, HalfClasp::BUCCAL).draw(designImage, teeth);
 }
 
@@ -278,8 +278,8 @@ void ContinuousClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZo
 		curve2.insert(curve2.end(), curve1.begin(), curve1.end());
 	}
 	else
-		polylines(designImage, curve1, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
-	polylines(designImage, curve2, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
+		polylines(designImage, curve1, false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
+	polylines(designImage, curve2, false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 }
 
 DentureBase::DentureBase(const vector<Position>& positions) : RpdAsLingualBlockage(positions, DENTURE_BASE) {}
@@ -432,30 +432,29 @@ void LingualPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones
 	bitwise_and(thisDesign, designImage, designImage);
 }
 
-LingualRest::LingualRest(const vector<Position>& positions, const Direction& direction) : RpdWithDirection(direction), RpdWithLingualArms(positions, Material(), ~direction) {}
+LingualRest::LingualRest(const vector<Position>& positions, const Material& material, const Direction& direction) : RpdWithDirection(direction), RpdWithLingualArms(positions, material, ~direction) {}
 
 LingualRest* LingualRest::createFromIndividual(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midHasNext, const jmethodID& midListProperties, const jmethodID& midNext, const jmethodID& midResourceGetProperty, const jmethodID& midStatementGetProperty, const jobject& dpRestMesialOrDistal, const jobject& dpToothZone, const jobject& dpToothOrdinal, const jobject& opComponentPosition, const jobject& individual, bool isEighthToothUsed[nZones]) {
 	vector<Position> positions;
 	Direction restMesialOrDistal;
 	queryPositions(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, positions, isEighthToothUsed);
 	queryDirection(env, midGetInt, midResourceGetProperty, dpRestMesialOrDistal, individual, restMesialOrDistal);
-	return new LingualRest(positions, restMesialOrDistal);
+	return new LingualRest(positions, CAST, restMesialOrDistal);
 }
 
 void LingualRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto curve = tooth.getCurve(240, 300);
-	vector<Point2f> points{curve.back(), curve[0]};
-	vector<Point> tmpCurve{points[0], points[1]};
+	vector<Point> tmpCurve{curve.back(), curve[0]};
 	auto& centroid = tooth.getCentroid();
 	for (auto i = 0; i < 2; ++i)
-		tmpCurve.insert(tmpCurve.end() - 1, points[i] + (centroid - points[i]) / 5);
+		tmpCurve.insert(tmpCurve.end() - 1, centroid + (static_cast<Point2f>(tmpCurve[i * 2]) - centroid) * 0.8F);
 	computePiecewiseSmoothCurve(tmpCurve, tmpCurve);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
-	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
+	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
 	auto isMesial = direction_ == MESIAL;
-	polylines(designImage, tooth.getCurve(isMesial ? 240 : 180, isMesial ? 0 : 300), false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, tooth.getCurve(isMesial ? 300 : 180, isMesial ? 0 : 240), false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 }
 
 OcclusalRest::OcclusalRest(const vector<Position>& positions, const Direction& direction) : Rpd(positions), RpdWithDirection(direction) {}
@@ -472,18 +471,11 @@ OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv* const& env, const jmeth
 
 void OcclusalRest::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
-	Point2f point;
-	vector<Point> curve;
-	if (direction_ == MESIAL) {
-		point = tooth.getAnglePoint(0);
-		curve = tooth.getCurve(340, 20);
-	}
-	else {
-		point = tooth.getAnglePoint(180);
-		curve = tooth.getCurve(160, 200);
-	}
-	auto& centroid = tooth.getCentroid();
-	curve.push_back(centroid + (point - centroid) / 2);
+	auto isMesial = direction_ == MESIAL;
+	auto curve = tooth.getCurve(isMesial ? 340 : 160, isMesial ? 20 : 200);
+	vector<Point> tmpCurve{curve.back(), (tooth.getCentroid() + static_cast<Point2f>(tooth.getAnglePoint(isMesial ? 0 : 180))) / 2, curve[0]};
+	computeSmoothCurve(tmpCurve, tmpCurve, false, 0.3F);
+	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	polylines(designImage, curve, true, 0, lineThicknessOfLevel[1], LINE_AA);
 	fillPoly(designImage, vector<vector<Point>>{curve}, 0, LINE_AA);
 }
@@ -534,7 +526,7 @@ void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 	if (material_ == CAST)
 		OcclusalRest(positions_, DISTAL).draw(designImage, teeth);
 	auto isUpper = positions_[0].zone < nZones / 2;
-	polylines(designImage, getTooth(teeth, positions_[0]).getCurve(isUpper ? 60 : 0, isUpper ? 0 : 300), false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
+	polylines(designImage, getTooth(teeth, positions_[0]).getCurve(isUpper ? 60 : 0, isUpper ? 0 : 300), false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 }
 
 Rpa::Rpa(const vector<Position>& positions, const Material& material) : Rpd(positions), RpdWithMaterial(material) {}
@@ -612,7 +604,7 @@ void HalfClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 			break;
 		default: ;
 	}
-	polylines(designImage, curve, false, 0, lineThicknessOfLevel[1 + (material_ == CAST ? 1 : 0)], LINE_AA);
+	polylines(designImage, curve, false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 }
 
 IBar::IBar(const vector<Position>& positions) : Rpd(positions) {}
