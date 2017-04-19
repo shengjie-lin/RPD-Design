@@ -3,6 +3,8 @@
 #include "Tooth.h"
 #include "Utilities.h"
 
+bool Tooth::isEighthUsed[nZones];
+
 Tooth::Tooth(const vector<Point>& contour) { setContour(contour); }
 
 const vector<Point>& Tooth::getContour() const { return contour_; }
@@ -120,8 +122,38 @@ void Tooth::findAnglePoints(const int& zone) {
 	}
 }
 
+const bool& Tooth::expectDentureBaseAnchor(const Rpd::Direction& direction) const { return direction == Rpd::MESIAL ? expectMesialDentureBaseAnchor_ : expectDistalDentureBaseAnchor_; }
+
+const bool& Tooth::expectMajorConnectorAnchor(const Rpd::Direction& direction) const { return direction == Rpd::MESIAL ? expectMesialMajorConnectorAnchor_ : expectDistalMajorConnectorAnchor_; }
+
+const bool& Tooth::hasClaspRootOrRest(const Rpd::Direction& direction) const { return direction == Rpd::MESIAL ? hasMesialClaspRootOrRest_ : hasDistalClaspRootOrRest_; }
+
+const bool& Tooth::hasDentureBase(const DentureBase::Side& side) const { return side == DentureBase::SINGLE ? hasSingleSidedDentureBase_ : hasDoubleSidedDentureBase_; }
+
+const bool& Tooth::hasLingualConfrontation() const { return hasLingualConfrontation_; }
+
+const bool& Tooth::hasLingualCoverage(const Rpd::Direction& direction) const { return direction == Rpd::MESIAL ? hasMesialLingualCoverage_ : hasDistalLingualCoverage_; }
+
+const bool& Tooth::hasLingualRest(const Rpd::Direction& direction) const { return direction == Rpd::MESIAL ? hasMesialLingualRest_ : hasDistalLingualRest_; }
+
+const bool& Tooth::hasMajorConnector() const { return hasMajorConnector_; }
+
 const float& Tooth::getRadius() const { return radius_; }
 
-const RpdAsLingualBlockage::LingualBlockage& Tooth::getLingualBlockage() const { return lingualBlockage_; }
+void Tooth::setClaspRootOrRest(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? hasMesialClaspRootOrRest_ : hasDistalClaspRootOrRest_) = true; }
 
-void Tooth::setLingualBlockage(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage) { lingualBlockage_ = lingualBlockage; }
+void Tooth::setDentureBase(const DentureBase::Side& side) { (side == DentureBase::SINGLE ? hasSingleSidedDentureBase_ : hasDoubleSidedDentureBase_) = true; }
+
+void Tooth::setExpectedDentureBaseAnchor(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? expectMesialDentureBaseAnchor_ : expectDistalDentureBaseAnchor_) = true; }
+
+void Tooth::setExpectedMajorConnectorAnchor(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? expectMesialMajorConnectorAnchor_ : expectDistalMajorConnectorAnchor_) = true; }
+
+void Tooth::setLingualConfrontation() { hasLingualConfrontation_ = true; }
+
+void Tooth::setLingualCoverage(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? hasMesialLingualCoverage_ : hasDistalLingualCoverage_) = true; }
+
+void Tooth::setLingualRest(const Rpd::Direction& direction) { (direction == Rpd::MESIAL ? hasMesialLingualRest_ : hasDistalLingualRest_) = true; }
+
+void Tooth::setMajorConnector() { hasMajorConnector_ = true; }
+
+void Tooth::unsetAll() { expectDistalDentureBaseAnchor_ = expectDistalMajorConnectorAnchor_ = expectMesialDentureBaseAnchor_ = expectMesialMajorConnectorAnchor_ = hasDistalClaspRootOrRest_ = hasDistalLingualCoverage_ = hasDistalLingualRest_ = hasDoubleSidedDentureBase_ = hasLingualConfrontation_ = hasMajorConnector_ = hasMesialClaspRootOrRest_ = hasMesialLingualCoverage_ = hasMesialLingualRest_ = hasSingleSidedDentureBase_ = false; }

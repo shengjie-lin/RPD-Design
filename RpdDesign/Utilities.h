@@ -31,21 +31,15 @@ string getClsSig(const char* const& clsStr);
 
 Rpd::Direction operator~(const Rpd::Direction& direction);
 
-bool isDentureBase(const RpdAsLingualBlockage::LingualBlockage& lingualBlockage);
-
 const Tooth& getTooth(const vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
 Tooth& getTooth(vector<Tooth> teeth[nZones], const Rpd::Position& position);
 
-bool findLingualBlockage(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions);
+bool isBlockedByMajorConnector(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions);
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& sumOfRadii, int& nTeeth);
+void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<float>& distanceScales, const deque<bool>& keepStartEndPoints, const deque<bool>& considerAnchorDisplacements, const bool& considerDistalPoints, vector<vector<Point>>& curves, float* const& sumOfRadii = nullptr, int* const& nTeeth = nullptr, vector<Point>* const& distalPoints = nullptr);
 
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float& avgRadius);
-
-void computeStringCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<float>& distanceScales, const bool& keepStartEndPoints, const bool& considerDistalPoints, vector<vector<Point>>& curves, float* const& avgRadius = nullptr, vector<Point>* const& distalPoints = nullptr);
-
-void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& distanceScale, const bool& keepStartEndPoints, const bool& considerDistalPoints, vector<Point>& curve, float* const& avgRadius = nullptr, vector<Point>* const& distalPoints = nullptr);
+void computeStringCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& distanceScale, const deque<bool>& keepStartEndPoints, const deque<bool>& considerAnchorDisplacements, const bool& considerDistalPoints, vector<Point>& curve, float* const& sumOfRadii = nullptr, int* const& nTeeth = nullptr, vector<Point>* const& distalPoints = nullptr);
 
 void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& curve, const float& smoothness = 0.5F, const bool& shouldAppend = true);
 
@@ -53,20 +47,26 @@ void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, 
 
 void computePiecewiseSmoothCurve(const vector<Point>& curve, vector<Point>& piecewiseSmoothCurve, const bool& shouldSmoothStart = true, const bool& shouldSmoothEnd = true);
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints = nullptr);
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool& shouldFindAnchors, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>& anchorPoints = {}, vector<Point>* const& distalPoints = nullptr);
 
-void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point* const& distalPoint);
+void computeLingualCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool& shouldFindAnchors, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>& anchorPoints, Point& distalPoint);
 
 void computeMesialCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, vector<Point>* const& innerCurve = nullptr);
 
 void computeDistalCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const vector<Point>& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve = nullptr);
 
-void computeInnerCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const float& avgRadius, const bool hasLingualConfrontations[nZones][nTeethPerZone], vector<Point>& curve, const bool& isSelfCall = false);
+void computeInnerCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool& shouldFindAnchors, const float& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>& anchorPoints = {});
 
 void computeOuterCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve, float* const& avgRadius = nullptr);
 
-void computeLingualConfrontationCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone], vector<vector<Point>>& curves);
+void computeLingualConfrontationCurve(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<Point>& curve);
+
+void computeLingualConfrontationCurves(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, vector<vector<Point>>& curves);
 
 Point2f computeNormalDirection(const Point2f& point, float* const& angle = nullptr);
 
-vector<RpdAsLingualBlockage::LingualBlockage> tipDirectionsToLingualBlockages(const vector<Rpd::Direction>& tipDirections);
+bool shouldAnchor(const vector<Tooth> teeth[nZones], const Rpd::Position& position, const Rpd::Direction& direction);
+
+void findAnchorPoints(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool& shouldFindAnchors, const vector<Point>& anchorPoints, vector<Rpd::Position>& startEndPositions, vector<Point>* const& thisAnchorPoints = nullptr);
+
+bool isLastTooth(const Rpd::Position& position);
