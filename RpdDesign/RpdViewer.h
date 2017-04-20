@@ -13,6 +13,7 @@ class RpdViewer : public QLabel {
 	Q_OBJECT
 public:
 	RpdViewer(QWidget* const& parent, const bool& showBaseImage, const bool& showContoursImage);
+	void onRemedyImageChanged();
 	~RpdViewer();
 private:
 	enum RpdClass {
@@ -37,21 +38,21 @@ private:
 		WW_CLASP
 	};
 
-	void refreshDisplay(const bool& shouldUpdateCurImage = true);
+	void refreshDisplay(const bool& updateCurImage = true);
 	void resizeEvent(QResizeEvent* event) override;
 	void updateRpdDesign();
 	bool justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;
 	JNIEnv* env_;
-	Mat baseImage_, curImage_, designImages_[2];
-	QSize imageSize_;
+	Mat baseImage_, curImage_, designImages_[2], remediedDesignImages_[2];
+	QSize imageSize_, remediedImageSize_;
 	static map<string, RpdClass> rpdMapping_;
 	vector<Rpd*> rpds_;
-	vector<Tooth> teeth_[nZones];
-private slots :
+	vector<Tooth> teeth_[nZones], remediedTeeth_[nZones];
+private slots:
 	void loadBaseImage();
 	void loadRpdInfo();
 	void saveDesign();
-	void onShowBaseChanged(bool showBaseImage);
-	void onShowDesignChanged(bool showContoursImage);
+	void onShowBaseChanged(const bool& showBaseImage);
+	void onShowDesignChanged(const bool& showContoursImage);
 };

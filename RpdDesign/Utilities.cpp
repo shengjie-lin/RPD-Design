@@ -198,17 +198,17 @@ void computeSmoothCurve(const vector<Point>& curve, vector<Point>& smoothCurve, 
 	smoothCurve = tmpCurve;
 }
 
-void computePiecewiseSmoothCurve(const vector<Point>& curve, vector<Point>& piecewiseSmoothCurve, const bool& shouldSmoothStart, const bool& shouldSmoothEnd) {
+void computePiecewiseSmoothCurve(const vector<Point>& curve, vector<Point>& piecewiseSmoothCurve, const bool& smoothStart, const bool& smoothEnd) {
 	vector<vector<Point>> smoothCurves(3);
 	smoothCurves[1] = vector<Point>{curve.begin() + 2, curve.end() - 2};
-	if (shouldSmoothStart) {
+	if (smoothStart) {
 		computeInscribedCurve(vector<Point>{curve.begin(), curve.begin() + 3}, smoothCurves[0], 1);
 		smoothCurves[0].insert(smoothCurves[0].begin(), curve[0]);
 		smoothCurves[1].insert(smoothCurves[1].begin(), smoothCurves[0].back());
 	}
 	else
 		smoothCurves[1].insert(smoothCurves[1].begin(), curve.begin(), curve.begin() + 2);
-	if (shouldSmoothEnd) {
+	if (smoothEnd) {
 		computeInscribedCurve(vector<Point>{curve.end() - 3, curve.end()}, smoothCurves[2], 1);
 		smoothCurves[2].push_back(curve.back());
 		smoothCurves[1].push_back(smoothCurves[2][0]);
@@ -690,13 +690,14 @@ void computeLingualConfrontationCurves(const vector<Tooth> teeth[nZones], const 
 }
 
 Point2f computeNormalDirection(const Point2f& point, float* const& angle) {
-	auto direction = point - teethEllipse.center;
-	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(teethEllipse.angle);
+	auto& curTeethEllipse = remedyImage ? remediedTeethEllipse : teethEllipse;
+	auto direction = point - curTeethEllipse.center;
+	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(curTeethEllipse.angle);
 	if (thisAngle < -CV_PI)
 		thisAngle += CV_2PI;
 	if (angle)
 		*angle = thisAngle;
-	auto normalDirection = Point2f(pow(teethEllipse.size.height, 2) * cos(thisAngle), pow(teethEllipse.size.width, 2) * sin(thisAngle));
+	auto normalDirection = Point2f(pow(curTeethEllipse.size.height, 2) * cos(thisAngle), pow(curTeethEllipse.size.width, 2) * sin(thisAngle));
 	return normalDirection / norm(normalDirection);
 }
 

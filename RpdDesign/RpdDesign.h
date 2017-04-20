@@ -12,4 +12,6 @@ public:
 private:
 	RpdViewer* rpdViewer_;
 	Ui::RpdDesignClass ui_;
+private slots:
+	void onRemedyImageChanged(const bool& thisRemedyImage) const;
 };

@@ -53,49 +53,54 @@ RpdViewer::~RpdViewer() {
 }
 
 void RpdViewer::updateRpdDesign() {
-	if (!justLoadedImage_)
-		for (auto zone = 0; zone < nZones; ++zone)
-			for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
-				teeth_[zone][ordinal].unsetAll();
-	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
-		if (rpdAsMajorConnector) {
-			rpdAsMajorConnector->registerMajorConnector(teeth_);
-			rpdAsMajorConnector->registerExpectedAnchors(teeth_);
-			rpdAsMajorConnector->registerLingualConfrontations(teeth_);
-		}
-		auto rpdWithClaspRootOrRest = dynamic_cast<RpdWithClaspRootOrRest*>(*rpd);
-		if (rpdWithClaspRootOrRest)
-			rpdWithClaspRootOrRest->registerClaspRootOrRest(teeth_);
-		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-		if (dentureBase)
-			dentureBase->registerExpectedAnchors(teeth_);
-	}
-	if (justLoadedRpd_)
+	for (auto i = 0; i < 2; ++i) {
+		auto teeth = i ? remediedTeeth_ : teeth_;
+		auto designImages = i ? remediedDesignImages_ : designImages_;
+		auto& imageSize = i ? remediedImageSize_ : imageSize_;
+		if (!justLoadedImage_)
+			for (auto zone = 0; zone < nZones; ++zone)
+				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
+					teeth[zone][ordinal].unsetAll();
 		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
-			if (rpdWithLingualArms)
-				rpdWithLingualArms->setLingualClaspArms(teeth_);
+			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
+			if (rpdAsMajorConnector) {
+				rpdAsMajorConnector->registerMajorConnector(teeth);
+				rpdAsMajorConnector->registerExpectedAnchors(teeth);
+				rpdAsMajorConnector->registerLingualConfrontations(teeth);
+			}
+			auto rpdWithClaspRootOrRest = dynamic_cast<RpdWithClaspRootOrRest*>(*rpd);
+			if (rpdWithClaspRootOrRest)
+				rpdWithClaspRootOrRest->registerClaspRootOrRest(teeth);
 			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
 			if (dentureBase)
-				dentureBase->setSide(teeth_);
+				dentureBase->registerExpectedAnchors(teeth);
 		}
-	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-		auto rpdWithLingualCoverage = dynamic_cast<RpdWithLingualCoverage*>(*rpd);
-		if (rpdWithLingualCoverage)
-			rpdWithLingualCoverage->registerLingualCoverage(teeth_);
-		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-		if (dentureBase)
-			dentureBase->registerDentureBase(teeth_);
+		if (justLoadedRpd_)
+			for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+				auto rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
+				if (rpdWithLingualArms)
+					rpdWithLingualArms->setLingualClaspArms(teeth);
+				auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+				if (dentureBase)
+					dentureBase->setSide(teeth);
+			}
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
+			auto rpdWithLingualCoverage = dynamic_cast<RpdWithLingualCoverage*>(*rpd);
+			if (rpdWithLingualCoverage)
+				rpdWithLingualCoverage->registerLingualCoverage(teeth);
+			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+			if (dentureBase)
+				dentureBase->registerDentureBase(teeth);
+		}
+		designImages[1] = Mat(qSizeToSize(imageSize), CV_8U, 255);
+		for (auto zone = 0; zone < nZones; ++zone) {
+			if (Tooth::isEighthUsed[zone])
+				polylines(designImages[1], teeth[zone][nTeethPerZone - 1].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+		}
+		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
+			(*rpd)->draw(designImages[1], teeth);
 	}
 	justLoadedRpd_ = justLoadedImage_ = false;
-	designImages_[1] = Mat(qSizeToSize(imageSize_), CV_8U, 255);
-	for (auto zone = 0; zone < nZones; ++zone) {
-		if (Tooth::isEighthUsed[zone])
-			polylines(designImages_[1], teeth_[zone][nTeethPerZone - 1].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
-	}
-	for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
-		(*rpd)->draw(designImages_[1], teeth_);
 }
 
 void RpdViewer::resizeEvent(QResizeEvent* event) {
@@ -104,18 +109,20 @@ void RpdViewer::resizeEvent(QResizeEvent* event) {
 		refreshDisplay(false);
 }
 
-void RpdViewer::refreshDisplay(const bool& shouldUpdateCurImage) {
-	if (shouldUpdateCurImage) {
-		curImage_ = showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize_), CV_8UC3, Scalar::all(255));
+void RpdViewer::refreshDisplay(const bool& updateCurImage) {
+	auto& imageSize = remedyImage ? remediedImageSize_ : imageSize_;
+	if (updateCurImage) {
+		curImage_ = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize), CV_8UC3, Scalar::all(255));
+		auto designImages = remedyImage ? remediedDesignImages_ : designImages_;
 		if (showDesignImage_) {
 			Mat designImage;
-			bitwise_and(designImages_[0], designImages_[1], designImage);
+			bitwise_and(designImages[0], designImages[1], designImage);
 			cvtColor(designImage, designImage, COLOR_GRAY2BGR);
 			bitwise_and(designImage, curImage_, curImage_);
 		}
 	}
 	auto curImage = curImage_.clone();
-	cv::resize(curImage, curImage, qSizeToSize(imageSize_.scaled(size(), Qt::KeepAspectRatio)));
+	cv::resize(curImage, curImage, qSizeToSize(imageSize.scaled(size(), Qt::KeepAspectRatio)));
 	setPixmap(matToQPixmap(curImage));
 }
 
@@ -139,14 +146,16 @@ void RpdViewer::loadBaseImage() {
 			for (auto i = hierarchy[0][2]; i >= 0; i = hierarchy[i][0])
 				for (auto j = hierarchy[i][2]; j >= 0; j = hierarchy[j][0])
 					tmpTeeth.push_back(Tooth(contours[j]));
-			auto nTeeth = tmpTeeth.size();
-			vector<Point2f> centroids(nTeeth);
-			for (auto i = 0; i < nTeeth; ++i)
-				centroids[i] = tmpTeeth[i].getCentroid();
+			vector<Point2f> centroids;
+			for (auto tooth = tmpTeeth.begin(); tooth < tmpTeeth.end(); ++tooth)
+				centroids.push_back(tooth->getCentroid());
 			teethEllipse = fitEllipse(centroids);
+			auto nTeeth = (nTeethPerZone - 1) * nZones;
 			vector<float> angles(nTeeth);
+			auto oldRemedyImage = remedyImage;
+			remedyImage = false;
 			for (auto i = 0; i < nTeeth; ++i)
-				tmpTeeth[i].setNormalDirection(computeNormalDirection(centroids[i], &angles[i]));
+				computeNormalDirection(centroids[i], &angles[i]);
 			vector<int> idx;
 			sortIdx(angles, idx, SORT_ASCENDING);
 			vector<vector<uint8_t>> isInZone(nZones);
@@ -171,22 +180,69 @@ void RpdViewer::loadBaseImage() {
 					auto& tooth = teeth_[zone][ordinal];
 					if (ordinal == nTeethPerZone - 2)
 						teeth_[zone].push_back(tooth);
-					tooth.findAnglePoints(zone);
 					polylines(designImages_[0], tooth.getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 				}
 				auto &seventhTooth = teeth_[zone][nTeethPerZone - 2], &eighthTooth = teeth_[zone][nTeethPerZone - 1];
-				auto contour = eighthTooth.getContour();
 				auto translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
+				auto contour = eighthTooth.getContour();
 				for (auto point = contour.begin(); point < contour.end(); ++point)
 					*point += translation;
 				eighthTooth.setContour(contour);
-				auto eighthCentroid = eighthTooth.getCentroid();
-				auto theta = asin(computeNormalDirection(seventhTooth.getCentroid()).cross(computeNormalDirection(eighthCentroid)));
-				for (auto point = contour.begin(); point < contour.end(); ++point)
-					*point = eighthCentroid + rotate(static_cast<Point2f>(*point) - eighthCentroid, theta);
-				eighthTooth.setContour(contour);
-				eighthTooth.findAnglePoints(zone);
+				centroids.push_back(eighthTooth.getCentroid());
 			}
+			teethEllipse = fitEllipse(centroids);
+			auto direction = rotate(Point(0, 1), degreeToRadian(teethEllipse.angle));
+			float sumOfRadii = 0;
+			for (auto zone = 0; zone < nZones; ++zone)
+				sumOfRadii += teeth_[zone][nTeethPerZone - 1].getRadius();
+			(sumOfRadii *= 2) /= 3;
+			auto translation = roundToPoint(direction * sumOfRadii);
+			remediedImageSize_ = imageSize_ + QSize(0, sumOfRadii);
+			centroids.clear();
+			for (auto zone = 0; zone < nZones; ++zone) {
+				auto& teeth = teeth_[zone];
+				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
+					auto& tooth = teeth[ordinal];
+					tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
+					if (ordinal == nTeethPerZone - 1) {
+						auto contour = tooth.getContour();
+						auto centroid = tooth.getCentroid();
+						auto theta = asin(teeth[ordinal - 1].getNormalDirection().cross(tooth.getNormalDirection()));
+						for (auto point = contour.begin(); point < contour.end(); ++point)
+							*point = centroid + rotate(static_cast<Point2f>(*point) - centroid, theta);
+						tooth.setContour(contour);
+					}
+					auto remediedTooth = tooth;
+					if (zone >= nZones / 2) {
+						auto contour = remediedTooth.getContour();
+						for (auto point = contour.begin(); point < contour.end(); ++point)
+							*point += translation;
+						remediedTooth.setContour(contour);
+					}
+					centroids.push_back(remediedTooth.getCentroid());
+					remediedTeeth_[zone].push_back(remediedTooth);
+					tooth.findAnglePoints(zone);
+				}
+			}
+			remediedTeethEllipse = fitEllipse(centroids);
+			auto theta = degreeToRadian(-remediedTeethEllipse.angle);
+			remediedTeethEllipse.angle = 0;
+			remedyImage = true;
+			remediedDesignImages_[0] = Mat(qSizeToSize(remediedImageSize_), CV_8U, 255);
+			for (auto zone = 0; zone < nZones; ++zone) {
+				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
+					auto& tooth = remediedTeeth_[zone][ordinal];
+					auto contour = tooth.getContour();
+					if (ordinal < nTeethPerZone - 1)
+						polylines(remediedDesignImages_[0], contour, true, 0, lineThicknessOfLevel[0], LINE_AA);
+					for (auto point = contour.begin(); point < contour.end(); ++point)
+						*point = remediedTeethEllipse.center + rotate(static_cast<Point2f>(*point) - remediedTeethEllipse.center, theta);
+					tooth.setContour(contour);
+					tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
+					tooth.findAnglePoints(zone);
+				}
+			}
+			remedyImage = oldRemedyImage;
 			updateRpdDesign();
 			refreshDisplay();
 		}
@@ -372,13 +428,18 @@ void RpdViewer::saveDesign() {
 		QMessageBox::critical(this, u8"错误", u8"无有效的设计图！");
 }
 
-void RpdViewer::onShowBaseChanged(bool showBaseImage) {
+void RpdViewer::onRemedyImageChanged() {
+	if (baseImage_.data)
+		refreshDisplay();
+}
+
+void RpdViewer::onShowBaseChanged(const bool& showBaseImage) {
 	showBaseImage_ = showBaseImage;
 	if (baseImage_.data)
 		refreshDisplay();
 }
 
-void RpdViewer::onShowDesignChanged(bool showDesignImage) {
+void RpdViewer::onShowDesignChanged(const bool& showDesignImage) {
 	showDesignImage_ = showDesignImage;
 	if (baseImage_.data)
 		refreshDisplay();

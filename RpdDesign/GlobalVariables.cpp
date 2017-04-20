@@ -2,4 +2,8 @@
 
 using namespace cv;
 
+bool remedyImage;
+
 RotatedRect teethEllipse;
+
+RotatedRect remediedTeethEllipse;
