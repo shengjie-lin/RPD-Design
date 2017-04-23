@@ -193,12 +193,12 @@ void RpdViewer::loadBaseImage() {
 			teethEllipse = fitEllipse(centroids);
 			auto theta = degreeToRadian(teethEllipse.angle);
 			auto direction = rotate(Point(0, 1), theta);
-			float sumOfRadii = 0;
+			float distance = 0;
 			for (auto zone = 0; zone < nZones; ++zone)
-				sumOfRadii += teeth_[zone][nTeethPerZone - 1].getRadius();
-			(sumOfRadii *= 2) /= 3;
-			auto translation = roundToPoint(direction * sumOfRadii);
-			remediedImageSize_ = imageSize_ + QSize(0, sumOfRadii * cos(theta));
+				distance += teeth_[zone][nTeethPerZone - 1].getRadius();
+			(distance *= 2) /= 3;
+			auto translation = roundToPoint(direction * distance);
+			remediedImageSize_ = imageSize_ + QSize(0, distance * cos(theta));
 			centroids.clear();
 			for (auto zone = 0; zone < nZones; ++zone) {
 				auto& teeth = teeth_[zone];
