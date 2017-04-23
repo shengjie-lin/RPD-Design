@@ -97,7 +97,7 @@
      <item>
       <widget class="QPushButton" name="switchLanguagePushButton">
        <property name="text">
-        <string notr="true">切换至中文</string>
+        <string notr="true">Language Files Not Found!</string>
        </property>
       </widget>
      </item>
@@ -196,9 +196,7 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources>
-  <include location="RpdDesign.qrc"/>
- </resources>
+ <resources/>
  <connections/>
  <slots>
   <slot>loadImage()</slot>
