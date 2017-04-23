@@ -127,7 +127,7 @@ void RpdViewer::refreshDisplay(const bool& updateCurImage) {
 }
 
 void RpdViewer::loadBaseImage() {
-	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", "All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)");
+	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
 	if (!fileName.isEmpty()) {
 		auto image = imread(fileName.toLocal8Bit().data());
 		if (image.empty())
@@ -191,13 +191,14 @@ void RpdViewer::loadBaseImage() {
 				centroids.push_back(eighthTooth.getCentroid());
 			}
 			teethEllipse = fitEllipse(centroids);
-			auto direction = rotate(Point(0, 1), degreeToRadian(teethEllipse.angle));
+			auto theta = degreeToRadian(teethEllipse.angle);
+			auto direction = rotate(Point(0, 1), theta);
 			float sumOfRadii = 0;
 			for (auto zone = 0; zone < nZones; ++zone)
 				sumOfRadii += teeth_[zone][nTeethPerZone - 1].getRadius();
 			(sumOfRadii *= 2) /= 3;
 			auto translation = roundToPoint(direction * sumOfRadii);
-			remediedImageSize_ = imageSize_ + QSize(0, sumOfRadii);
+			remediedImageSize_ = imageSize_ + QSize(0, sumOfRadii * cos(theta));
 			centroids.clear();
 			for (auto zone = 0; zone < nZones; ++zone) {
 				auto& teeth = teeth_[zone];
@@ -209,7 +210,7 @@ void RpdViewer::loadBaseImage() {
 					if (ordinal == nTeethPerZone - 1) {
 						auto contour = tooth.getContour();
 						auto centroid = tooth.getCentroid();
-						auto theta = asin(teeth[ordinal - 1].getNormalDirection().cross(tooth.getNormalDirection()));
+						theta = asin(teeth[ordinal - 1].getNormalDirection().cross(tooth.getNormalDirection()));
 						for (auto point = contour.begin(); point < contour.end(); ++point)
 							*point = centroid + rotate(static_cast<Point2f>(*point) - centroid, theta);
 						tooth.setContour(contour);
@@ -227,7 +228,7 @@ void RpdViewer::loadBaseImage() {
 				}
 			}
 			remediedTeethEllipse = fitEllipse(centroids);
-			auto theta = degreeToRadian(-remediedTeethEllipse.angle);
+			theta = degreeToRadian(-remediedTeethEllipse.angle);
 			remediedTeethEllipse.angle = 0;
 			remediedDesignImages_[0] = Mat(qSizeToSize(remediedImageSize_), CV_8U, 255);
 			remedyImage = true;
@@ -252,7 +253,7 @@ void RpdViewer::loadBaseImage() {
 }
 
 void RpdViewer::loadRpdInfo() {
-	auto fileName = QFileDialog::getOpenFileName(this, tr("Select RPD Information"), "", "Ontology files (*.owl)");
+	auto fileName = QFileDialog::getOpenFileName(this, tr("Select RPD Information"), "", tr("Ontology files (*.owl)"));
 	if (!fileName.isEmpty()) {
 		auto clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
 		auto clsStrIndividual = "org/apache/jena/ontology/Individual";
@@ -421,8 +422,8 @@ void RpdViewer::loadRpdInfo() {
 
 void RpdViewer::saveDesign() {
 	if (curImage_.data) {
-		QString selectedFilter = "Portable Network Graphics (*.png)";
-		auto fileName = QFileDialog::getSaveFileName(this, tr("Select Save Path"), "", "Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)", &selectedFilter);
+		auto selectedFilter = tr("Portable Network Graphics (*.png)");
+		auto fileName = QFileDialog::getSaveFileName(this, tr("Select Save Path"), "", tr("Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"), &selectedFilter);
 		if (!fileName.isEmpty())
 			imwrite(fileName.toLocal8Bit().data(), curImage_);
 	}
