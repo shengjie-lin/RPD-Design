@@ -177,7 +177,8 @@ void computeInscribedCurve(const vector<Point>& cornerPoints, vector<Point>& cur
 		theta = CV_PI - theta;
 	auto radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
 	vector<Point> thisCurve;
-	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToPoint(normalize(d1 + d2) * radius / sin(theta / 2)), Size(radius, radius), radianToDegree(sinTheta > 0 ? atan2(d2.x, -d2.y) : atan2(d1.x, -d1.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
+	auto& d = sinTheta < 0 ? d1 : d2;
+	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToPoint(normalize(d1 + d2) * radius / sin(theta / 2)), Size(radius, radius), radianToDegree(atan2(d.x, -d.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
 	if (!shouldAppend)
 		curve.clear();
 	if (isValidCurve)

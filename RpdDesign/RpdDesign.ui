@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>RPD设计</string>
+   <string notr="true">RPD Design</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -31,8 +31,11 @@
      </item>
      <item>
       <widget class="QCheckBox" name="remedyCheckBox">
+       <property name="locale">
+        <locale language="Chinese" country="China"/>
+       </property>
        <property name="text">
-        <string>矫正</string>
+        <string notr="true">Remedy</string>
        </property>
        <property name="checked">
         <bool>true</bool>
@@ -45,7 +48,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>底图</string>
+        <string notr="true">Base</string>
        </property>
        <property name="checked">
         <bool>false</bool>
@@ -68,7 +71,7 @@
      <item>
       <widget class="QCheckBox" name="designCheckBox">
        <property name="text">
-        <string>设计图</string>
+        <string notr="true">Design</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -80,6 +83,26 @@
      </item>
      <item>
       <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="switchLanguagePushButton">
+       <property name="text">
+        <string notr="true">切换至中文</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_8">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -111,7 +134,7 @@
      <item>
       <widget class="QPushButton" name="loadBasePushButton">
        <property name="text">
-        <string>加载底图</string>
+        <string notr="true">Load Base</string>
        </property>
       </widget>
      </item>
@@ -131,7 +154,7 @@
      <item>
       <widget class="QPushButton" name="loadRpdPushButton">
        <property name="text">
-        <string>加载RPD信息</string>
+        <string notr="true">Load RPD</string>
        </property>
       </widget>
      </item>
@@ -149,9 +172,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="savePushButton">
+      <widget class="QPushButton" name="saveDesignPushButton">
        <property name="text">
-        <string>保存设计图</string>
+        <string notr="true">Save Design</string>
        </property>
       </widget>
      </item>

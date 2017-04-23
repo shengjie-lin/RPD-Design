@@ -75,7 +75,7 @@ void RpdViewer::updateRpdDesign() {
 			if (dentureBase)
 				dentureBase->registerExpectedAnchors(teeth);
 		}
-		if (justLoadedRpd_)
+		if (justLoadedRpd_ && i == 0)
 			for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
 				auto rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
 				if (rpdWithLingualArms)
@@ -127,11 +127,11 @@ void RpdViewer::refreshDisplay(const bool& updateCurImage) {
 }
 
 void RpdViewer::loadBaseImage() {
-	auto fileName = QFileDialog::getOpenFileName(this, u8"选择图像", "", "All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)");
+	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", "All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)");
 	if (!fileName.isEmpty()) {
 		auto image = imread(fileName.toLocal8Bit().data());
 		if (image.empty())
-			QMessageBox::critical(this, u8"错误", u8"非有效的图像文件！");
+			QMessageBox::critical(this, tr("Error"), tr("Not a Valid Image!"));
 		else {
 			justLoadedImage_ = true;
 			copyMakeBorder(image, baseImage_, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
@@ -201,6 +201,8 @@ void RpdViewer::loadBaseImage() {
 			centroids.clear();
 			for (auto zone = 0; zone < nZones; ++zone) {
 				auto& teeth = teeth_[zone];
+				auto& remediedTeeth = remediedTeeth_[zone];
+				remediedTeeth.clear();
 				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
 					auto& tooth = teeth[ordinal];
 					tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
@@ -220,15 +222,15 @@ void RpdViewer::loadBaseImage() {
 						remediedTooth.setContour(contour);
 					}
 					centroids.push_back(remediedTooth.getCentroid());
-					remediedTeeth_[zone].push_back(remediedTooth);
+					remediedTeeth.push_back(remediedTooth);
 					tooth.findAnglePoints(zone);
 				}
 			}
 			remediedTeethEllipse = fitEllipse(centroids);
 			auto theta = degreeToRadian(-remediedTeethEllipse.angle);
 			remediedTeethEllipse.angle = 0;
-			remedyImage = true;
 			remediedDesignImages_[0] = Mat(qSizeToSize(remediedImageSize_), CV_8U, 255);
+			remedyImage = true;
 			for (auto zone = 0; zone < nZones; ++zone) {
 				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
 					auto& tooth = remediedTeeth_[zone][ordinal];
@@ -250,7 +252,7 @@ void RpdViewer::loadBaseImage() {
 }
 
 void RpdViewer::loadRpdInfo() {
-	auto fileName = QFileDialog::getOpenFileName(this, u8"选择RPD信息", "", "Ontology files (*.owl)");
+	auto fileName = QFileDialog::getOpenFileName(this, tr("Select RPD Information"), "", "Ontology files (*.owl)");
 	if (!fileName.isEmpty()) {
 		auto clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
 		auto clsStrIndividual = "org/apache/jena/ontology/Individual";
@@ -413,19 +415,19 @@ void RpdViewer::loadRpdInfo() {
 			}
 		}
 		else
-			QMessageBox::critical(this, u8"错误", u8"非有效的本体文件！");
+			QMessageBox::critical(this, tr("Error"), tr("Not a Valid Ontology!"));
 	}
 }
 
 void RpdViewer::saveDesign() {
 	if (curImage_.data) {
 		QString selectedFilter = "Portable Network Graphics (*.png)";
-		auto fileName = QFileDialog::getSaveFileName(this, u8"选择设计图存储位置", "", "Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)", &selectedFilter);
+		auto fileName = QFileDialog::getSaveFileName(this, tr("Select Save Path"), "", "Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)", &selectedFilter);
 		if (!fileName.isEmpty())
 			imwrite(fileName.toLocal8Bit().data(), curImage_);
 	}
 	else
-		QMessageBox::critical(this, u8"错误", u8"无有效的设计图！");
+		QMessageBox::critical(this, tr("Error"), tr("No Available Design!"));
 }
 
 void RpdViewer::onRemedyImageChanged() {
