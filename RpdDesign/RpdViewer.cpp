@@ -113,8 +113,8 @@ void RpdViewer::refreshDisplay(const bool& updateCurImage) {
 	auto& imageSize = remedyImage ? remediedImageSize_ : imageSize_;
 	if (updateCurImage) {
 		curImage_ = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat(qSizeToSize(imageSize), CV_8UC3, Scalar::all(255));
-		auto designImages = remedyImage ? remediedDesignImages_ : designImages_;
 		if (showDesignImage_) {
+			auto designImages = remedyImage ? remediedDesignImages_ : designImages_;
 			Mat designImage;
 			bitwise_and(designImages[0], designImages[1], designImage);
 			cvtColor(designImage, designImage, COLOR_GRAY2BGR);

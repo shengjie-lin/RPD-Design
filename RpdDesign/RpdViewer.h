@@ -41,12 +41,12 @@ private:
 	void refreshDisplay(const bool& updateCurImage = true);
 	void resizeEvent(QResizeEvent* event) override;
 	void updateRpdDesign();
+	static map<string, RpdClass> rpdMapping_;
 	bool justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;
 	JNIEnv* env_;
 	Mat baseImage_, curImage_, designImages_[2], remediedDesignImages_[2];
 	QSize imageSize_, remediedImageSize_;
-	static map<string, RpdClass> rpdMapping_;
 	vector<Rpd*> rpds_;
 	vector<Tooth> teeth_[nZones], remediedTeeth_[nZones];
 private slots:

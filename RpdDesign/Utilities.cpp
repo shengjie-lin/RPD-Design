@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/core/mat.hpp>
 #include <QMessageBox>
 
 #include "Utilities.h"

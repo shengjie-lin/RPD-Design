@@ -148,9 +148,9 @@ void RpdWithClaspRootOrRest::registerClaspRootOrRest(vector<Tooth> teeth[nZones]
 		getTooth(teeth, positions_[positions_.size() == 1 ? 0 : i]).setClaspRootOrRest(rootDirections_[i]);
 }
 
-RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(const vector<Position> positions, const vector<Direction>& rootDirections): Rpd(positions), rootDirections_(rootDirections) {}
+RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(const vector<Position> positions, const vector<Direction>& rootDirections) : Rpd(positions), rootDirections_(rootDirections) {}
 
-RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(const vector<Position> positions, const Direction& rootDirection): RpdWithClaspRootOrRest(positions, vector<Direction>{rootDirection}) {}
+RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(const vector<Position> positions, const Direction& rootDirection) : RpdWithClaspRootOrRest(positions, vector<Direction>{rootDirection}) {}
 
 void RpdWithLingualClaspArms::setLingualClaspArms(vector<Tooth> teeth[nZones]) {
 	for (auto i = 0; i < positions_.size(); ++i)
@@ -237,7 +237,7 @@ CombinationAnteriorPosteriorPalatalStrap* CombinationAnteriorPosteriorPalatalStr
 	return new CombinationAnteriorPosteriorPalatalStrap(positions, hasLingualConfrontations);
 }
 
-CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
 void CombinationAnteriorPosteriorPalatalStrap::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
@@ -413,7 +413,7 @@ FullPalatalPlate* FullPalatalPlate::createFromIndividual(JNIEnv* const& env, con
 	return new FullPalatalPlate(positions, hasLingualConfrontations);
 }
 
-FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+FullPalatalPlate::FullPalatalPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
 void FullPalatalPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
@@ -439,7 +439,7 @@ LingualBar* LingualBar::createFromIndividual(JNIEnv* const& env, const jmethodID
 	return new LingualBar(positions, hasLingualConfrontations);
 }
 
-LingualBar::LingualBar(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+LingualBar::LingualBar(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
 void LingualBar::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	vector<Point> curve, tmpCurve;
@@ -464,7 +464,7 @@ LingualPlate* LingualPlate::createFromIndividual(JNIEnv* const& env, const jmeth
 	return new LingualPlate(positions, hasLingualConfrontations);
 }
 
-LingualPlate::LingualPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]): RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+LingualPlate::LingualPlate(const vector<Position>& positions, const bool hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
 void LingualPlate::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
