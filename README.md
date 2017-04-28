@@ -14,11 +14,11 @@ To compile the code, you will need:
 * [Apache Jena](https://jena.apache.org/)
 
 Set new environment variables:
-* `OPENCV_DIR="C:\Program Files\opencv\build\x64\vc14\"` or alike
+* `OPENCV_DIR="C:\Program Files\opencv\build\"` or alike
 * `JDK_DIR="C:\Program Files\Java\jdk1.8.0_121\"` or alike
 
 Add to PATH:
-* `%OPENCV_DIR%\bin\`
+* `%OPENCV_DIR%\x64\vc14\bin\`
 * `%JDK_DIR%\..\jre1.8.0_121\bin\server\` or alike
 
 In `%ROOT%\RpdDesign\GlobalVariables.h`, modify accordingly the following line:
