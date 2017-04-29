@@ -70,3 +70,7 @@ bool shouldAnchor(const vector<Tooth> teeth[nZones], const Rpd::Position& positi
 void findAnchorPoints(const vector<Tooth> teeth[nZones], const vector<Rpd::Position>& positions, const bool& shouldFindAnchors, const vector<Point>& anchorPoints, vector<Rpd::Position>& startEndPositions, vector<Point>* const& thisAnchorPoints = nullptr);
 
 bool isLastTooth(const Rpd::Position& position);
+
+bool queryRpds(JNIEnv* const& env, const jobject& ontModel, vector<Rpd*>& rpds);
+
+bool analyzeBaseImage(const Mat& image, vector<Tooth> remediedTeeth[nZones], Mat remediedDesignImages[2], vector<Tooth> teeth[nZones] = nullptr, Mat designImages[2] = nullptr, Mat* const& baseImage = nullptr);

@@ -1,10 +1,12 @@
 #include <Windows.h>
-#include <opencv2/core/mat.hpp>
+#include <opencv2/imgproc.hpp>
 #include <QMessageBox>
 
 #include "Utilities.h"
 #include "EllipticCurve.h"
 #include "Tooth.h"
+
+using namespace stdext;
 
 QImage matToQImage(const Mat& inputMat) {
 	switch (inputMat.type()) {
@@ -712,3 +714,274 @@ bool shouldAnchor(const vector<Tooth> teeth[nZones], const Rpd::Position& positi
 }
 
 bool isLastTooth(const Rpd::Position& position) { return position.ordinal == nTeethPerZone + Tooth::isEighthUsed[position.zone] - 2; }
+
+bool queryRpds(JNIEnv* const& env, const jobject& ontModel, vector<Rpd*>& rpds) {
+	auto clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
+	auto clsStrObject = "java/lang/Object";
+	auto clsStrOntClass = "org/apache/jena/ontology/OntClass";
+	auto clsStrStmtIterator = "org/apache/jena/rdf/model/StmtIterator";
+	auto clsStrIndividual = "org/apache/jena/ontology/Individual";
+	auto clsStrIterator = "java/util/Iterator";
+	auto clsStrModelCon = "org/apache/jena/rdf/model/ModelCon";
+	auto clsStrOntModel = "org/apache/jena/ontology/OntModel";
+	auto clsStrProperty = "org/apache/jena/rdf/model/Property";
+	auto clsStrResource = "org/apache/jena/rdf/model/Resource";
+	auto clsStrStatement = "org/apache/jena/rdf/model/Statement";
+	auto clsStrString = "java/lang/String";
+	auto clsIndividual = env->FindClass(clsStrIndividual);
+	auto clsIterator = env->FindClass(clsStrIterator);
+	auto clsModelCon = env->FindClass(clsStrModelCon);
+	auto clsOntModel = env->FindClass(clsStrOntModel);
+	auto clsResource = env->FindClass(clsStrResource);
+	auto clsStatement = env->FindClass(clsStrStatement);
+
+	auto midGetBoolean = env->GetMethodID(clsStatement, "getBoolean", "()Z");
+	auto midGetInt = env->GetMethodID(clsStatement, "getInt", "()I");
+	auto midGetLocalName = env->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
+	auto midGetOntClass = env->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
+	auto midHasNext = env->GetMethodID(clsIterator, "hasNext", "()Z");
+	auto midListIndividuals = env->GetMethodID(clsOntModel, "listIndividuals", ("()" + getClsSig(clsStrExtendedIterator)).c_str());
+	auto midListProperties = env->GetMethodID(clsResource, "listProperties", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStmtIterator)).c_str());
+	auto midModelConGetProperty = env->GetMethodID(clsModelCon, "getProperty", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrProperty)).c_str());
+	auto midNext = env->GetMethodID(clsIterator, "next", ("()" + getClsSig(clsStrObject)).c_str());
+	auto midResourceGetProperty = env->GetMethodID(clsResource, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
+	auto midStatementGetProperty = env->GetMethodID(clsStatement, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
+
+	string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
+	auto tmpStr = env->NewStringUTF((ontPrefix + "clasp_material").c_str());
+	auto dpClaspMaterial = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "clasp_tip_direction").c_str());
+	auto dpClaspTipDirection = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "clasp_tip_side").c_str());
+	auto dpClaspTipSide = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "component_position").c_str());
+	auto opComponentPosition = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "enable_buccal_arm").c_str());
+	auto dpEnableBuccalArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "enable_lingual_arm").c_str());
+	auto dpEnableLingualArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "enable_rest").c_str());
+	auto dpEnableRest = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "is_missing").c_str());
+	auto dpIsMissing = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
+	auto dpLingualConfrontation = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "rest_mesial_or_distal").c_str());
+	auto dpRestMesialOrDistal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "tooth_ordinal").c_str());
+	auto dpToothOrdinal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	tmpStr = env->NewStringUTF((ontPrefix + "tooth_zone").c_str());
+	auto dpToothZone = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	env->ReleaseStringUTFChars(tmpStr, env->GetStringUTFChars(tmpStr, nullptr));
+	auto individuals = env->CallObjectMethod(ontModel, midListIndividuals);
+	auto isValid = env->CallBooleanMethod(individuals, midHasNext);
+	vector<Rpd*> thisRpds;
+	bool thisIsEighthToothUsed[nZones] = {};
+	while (env->CallBooleanMethod(individuals, midHasNext)) {
+		auto individual = env->CallObjectMethod(individuals, midNext);
+		auto ontClassStr = env->GetStringUTFChars(static_cast<jstring>(env->CallObjectMethod(env->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
+		auto tmp = rpdMapping_.find(ontClassStr);
+		switch (tmp == rpdMapping_.end() ? -1 : tmp->second) {
+			case AKERS_CLASP:
+				thisRpds.push_back(AkersClasp::createFromIndividual(env, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpEnableBuccalArm, dpEnableLingualArm, dpEnableRest, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case CANINE_AKERS_CLASP:
+				thisRpds.push_back(CanineAkersClasp::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP:
+				thisRpds.push_back(CombinationAnteriorPosteriorPalatalStrap::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case COMBINATION_CLASP:
+				thisRpds.push_back(CombinationClasp::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case COMBINED_CLASP:
+				thisRpds.push_back(CombinedClasp::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case CONTINUOUS_CLASP:
+				thisRpds.push_back(ContinuousClasp::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case DENTURE_BASE:
+				thisRpds.push_back(DentureBase::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case EDENTULOUS_SPACE:
+				thisRpds.push_back(EdentulousSpace::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case FULL_PALATAL_PLATE:
+				thisRpds.push_back(FullPalatalPlate::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case LINGUAL_BAR:
+				thisRpds.push_back(LingualBar::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case LINGUAL_PLATE:
+				thisRpds.push_back(LingualPlate::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case LINGUAL_REST:
+				thisRpds.push_back(LingualRest::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case OCCLUSAL_REST:
+				thisRpds.push_back(OcclusalRest::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpRestMesialOrDistal, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case PALATAL_PLATE:
+				thisRpds.push_back(PalatalPlate::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpLingualConfrontation, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case RING_CLASP:
+				thisRpds.push_back(RingClasp::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpClaspTipSide, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case RPA:
+				thisRpds.push_back(Rpa::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspMaterial, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case RPI:
+				thisRpds.push_back(Rpi::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			case TOOTH:
+				if (!env->CallBooleanMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing), midGetBoolean) && env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone)
+					thisIsEighthToothUsed[env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = true;
+				break;
+			case WW_CLASP:
+				thisRpds.push_back(WwClasp::createFromIndividual(env, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpEnableBuccalArm, dpEnableLingualArm, dpEnableRest, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
+				break;
+			default: ;
+		}
+	}
+	if (isValid) {
+		rpds = thisRpds;
+		copy(begin(thisIsEighthToothUsed), end(thisIsEighthToothUsed), Tooth::isEighthUsed);
+	}
+	return isValid;
+}
+
+bool analyzeBaseImage(const Mat& image, vector<Tooth> remediedTeeth[nZones], Mat remediedDesignImages[2], vector<Tooth> teeth[nZones], Mat designImages[2], Mat* const& baseImage) {
+	if (image.empty())
+		return false;
+	Mat thisBaseImage;
+	copyMakeBorder(image, thisBaseImage, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
+	if (baseImage)
+		*baseImage = thisBaseImage;
+	Mat tmpImage;
+	cvtColor(thisBaseImage, tmpImage, COLOR_BGR2GRAY);
+	threshold(tmpImage, tmpImage, 0, 255, THRESH_BINARY | THRESH_OTSU);
+	vector<vector<Point>> contours;
+	vector<Tooth> tmpTeeth;
+	vector<Vec4i> hierarchy;
+	findContours(tmpImage, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+	for (auto i = hierarchy[0][2]; i >= 0; i = hierarchy[i][0])
+		for (auto j = hierarchy[i][2]; j >= 0; j = hierarchy[j][0])
+			tmpTeeth.push_back(Tooth(contours[j]));
+	vector<Point2f> centroids;
+	for (auto tooth = tmpTeeth.begin(); tooth < tmpTeeth.end(); ++tooth)
+		centroids.push_back(tooth->getCentroid());
+	teethEllipse = fitEllipse(centroids);
+	auto nTeeth = (nTeethPerZone - 1) * nZones;
+	vector<float> angles(nTeeth);
+	auto oldRemedyImage = remedyImage;
+	remedyImage = false;
+	for (auto i = 0; i < nTeeth; ++i)
+		computeNormalDirection(centroids[i], &angles[i]);
+	vector<int> idx;
+	sortIdx(angles, idx, SORT_ASCENDING);
+	vector<vector<uint8_t>> isInZone(nZones);
+	vector<Tooth> thisTeeth[nZones];
+	for (auto i = 0; i < nZones; ++i) {
+		inRange(angles, CV_2PI / nZones * (i - 2), CV_2PI / nZones * (i - 1), isInZone[i]);
+		thisTeeth[i].clear();
+	}
+	for (auto i = 0; i < nTeeth; ++i) {
+		auto no = idx[i];
+		for (auto j = 0; j < nZones; ++j)
+			if (isInZone[j][no]) {
+				if (j % 2)
+					thisTeeth[j].push_back(tmpTeeth[no]);
+				else
+					thisTeeth[j].insert(thisTeeth[j].begin(), tmpTeeth[no]);
+				break;
+			}
+	}
+	auto imageSize = thisBaseImage.size();
+	if (designImages)
+		designImages[0] = Mat(imageSize, CV_8U, 255);
+	for (auto zone = 0; zone < nZones; ++zone) {
+		for (auto ordinal = 0; ordinal < nTeethPerZone - 1; ++ordinal) {
+			auto& tooth = thisTeeth[zone][ordinal];
+			if (ordinal == nTeethPerZone - 2)
+				thisTeeth[zone].push_back(tooth);
+			if (designImages)
+				polylines(designImages[0], tooth.getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
+		}
+		auto &seventhTooth = thisTeeth[zone][nTeethPerZone - 2], &eighthTooth = thisTeeth[zone][nTeethPerZone - 1];
+		auto translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
+		auto contour = eighthTooth.getContour();
+		for (auto point = contour.begin(); point < contour.end(); ++point)
+			*point += translation;
+		eighthTooth.setContour(contour);
+		centroids.push_back(eighthTooth.getCentroid());
+	}
+	teethEllipse = fitEllipse(centroids);
+	auto theta = degreeToRadian(teethEllipse.angle);
+	auto direction = rotate(Point(0, 1), theta);
+	float distance = 0;
+	for (auto zone = 0; zone < nZones; ++zone)
+		distance += thisTeeth[zone][nTeethPerZone - 1].getRadius();
+	(distance *= 2) /= 3;
+	auto translation = roundToPoint(direction * distance);
+	centroids.clear();
+	for (auto zone = 0; zone < nZones; ++zone) {
+		auto& teethZone = thisTeeth[zone];
+		auto& remediedTeethZone = remediedTeeth[zone];
+		remediedTeethZone.clear();
+		for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
+			auto& tooth = teethZone[ordinal];
+			tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
+			if (ordinal == nTeethPerZone - 1) {
+				auto contour = tooth.getContour();
+				auto centroid = tooth.getCentroid();
+				theta = asin(teethZone[ordinal - 1].getNormalDirection().cross(tooth.getNormalDirection()));
+				for (auto point = contour.begin(); point < contour.end(); ++point)
+					*point = centroid + rotate(static_cast<Point2f>(*point) - centroid, theta);
+				tooth.setContour(contour);
+			}
+			auto remediedTooth = tooth;
+			if (zone >= nZones / 2) {
+				auto contour = remediedTooth.getContour();
+				for (auto point = contour.begin(); point < contour.end(); ++point)
+					*point += translation;
+				remediedTooth.setContour(contour);
+			}
+			centroids.push_back(remediedTooth.getCentroid());
+			remediedTeethZone.push_back(remediedTooth);
+			tooth.findAnglePoints(zone);
+		}
+	}
+	if (teeth)
+		copy(begin(thisTeeth), end(thisTeeth), checked_array_iterator<vector<Tooth>*>(teeth, nZones));
+	remediedTeethEllipse = fitEllipse(centroids);
+	theta = degreeToRadian(-remediedTeethEllipse.angle);
+	remediedTeethEllipse.angle = 0;
+	remediedDesignImages[0] = Mat(imageSize + Size(0, distance * cos(theta)), CV_8U, 255);
+	remedyImage = true;
+	for (auto zone = 0; zone < nZones; ++zone) {
+		for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal) {
+			auto& tooth = remediedTeeth[zone][ordinal];
+			auto contour = tooth.getContour();
+			if (ordinal < nTeethPerZone - 1)
+				polylines(remediedDesignImages[0], contour, true, 0, lineThicknessOfLevel[0], LINE_AA);
+			for (auto point = contour.begin(); point < contour.end(); ++point)
+				*point = remediedTeethEllipse.center + rotate(static_cast<Point2f>(*point) - remediedTeethEllipse.center, theta);
+			tooth.setContour(contour);
+			tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
+			tooth.findAnglePoints(zone);
+		}
+	}
+	remedyImage = oldRemedyImage;
+	return true;
+}
