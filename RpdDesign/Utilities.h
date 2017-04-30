@@ -1,16 +1,6 @@
 #pragma once
 
-#include <QImage>
-
 #include "Rpd.h"
-
-QImage matToQImage(const Mat& inputMat);
-
-QPixmap matToQPixmap(const Mat& inputMat);
-
-Size qSizeToSize(const QSize& size);
-
-QSize sizeToQSize(const Size& size);
 
 float degreeToRadian(const float& degree);
 
@@ -74,3 +64,5 @@ bool isLastTooth(const Rpd::Position& position);
 bool queryRpds(JNIEnv* const& env, const jobject& ontModel, vector<Rpd*>& rpds);
 
 bool analyzeBaseImage(const Mat& image, vector<Tooth> remediedTeeth[nZones], Mat remediedDesignImages[2], vector<Tooth> teeth[nZones] = nullptr, Mat designImages[2] = nullptr, Mat* const& baseImage = nullptr);
+
+void updateDesign(vector<Tooth> teeth[nZones], vector<Rpd*>& rpds, Mat designImages[2], const bool& justLoadedImage, const bool& justLoadedRpds);

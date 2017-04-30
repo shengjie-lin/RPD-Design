@@ -19,9 +19,8 @@ public:
 private:
 	void changeEvent(QEvent* event) override;
 	void updateViewer();
-	void updateDesign();
 	bool isEnglish_ = true;
-	bool justLoadedImage_ = false, justLoadedRpd_ = false, showBaseImage_, showDesignImage_;
+	bool justLoadedRpds_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;
 	JNIEnv* env_;
 	Mat baseImage_, designImages_[2], remediedDesignImages_[2];

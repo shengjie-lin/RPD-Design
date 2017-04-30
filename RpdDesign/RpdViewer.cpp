@@ -1,7 +1,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "RpdViewer.h"
-#include "Utilities.h"
+#include "QUtilities.h"
 
 RpdViewer::RpdViewer(QWidget* const& parent) : QLabel(parent) { setAlignment(Qt::AlignCenter); }
 

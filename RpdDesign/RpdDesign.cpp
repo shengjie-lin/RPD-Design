@@ -61,8 +61,7 @@ void RpdDesign::changeEvent(QEvent* event) {
 }
 
 void RpdDesign::updateViewer() {
-	auto imageSize = (remedyImage ? remediedDesignImages_[0].size : designImages_[0].size)();
-	auto curImage = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat(imageSize, CV_8UC3, Scalar::all(255));
+	auto curImage = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat((remedyImage ? remediedDesignImages_[0].size : designImages_[0].size)(), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		auto designImages = remedyImage ? remediedDesignImages_ : designImages_;
 		Mat designImage;
@@ -73,64 +72,14 @@ void RpdDesign::updateViewer() {
 	rpdViewer_->setCurImage(curImage);
 }
 
-void RpdDesign::updateDesign() {
-	for (auto i = 0; i < 2; ++i) {
-		auto teeth = i ? remediedTeeth_ : teeth_;
-		auto designImages = i ? remediedDesignImages_ : designImages_;
-		auto imageSize = (i ? remediedDesignImages_[0].size : designImages_[0].size)();
-		if (!justLoadedImage_)
-			for (auto zone = 0; zone < nZones; ++zone)
-				for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
-					teeth[zone][ordinal].unsetAll();
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
-			if (rpdAsMajorConnector) {
-				rpdAsMajorConnector->registerMajorConnector(teeth);
-				rpdAsMajorConnector->registerExpectedAnchors(teeth);
-				rpdAsMajorConnector->registerLingualConfrontations(teeth);
-			}
-			auto rpdWithClaspRootOrRest = dynamic_cast<RpdWithClaspRootOrRest*>(*rpd);
-			if (rpdWithClaspRootOrRest)
-				rpdWithClaspRootOrRest->registerClaspRootOrRest(teeth);
-			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-			if (dentureBase)
-				dentureBase->registerExpectedAnchors(teeth);
-		}
-		if (justLoadedRpd_ && i == 0)
-			for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-				auto rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
-				if (rpdWithLingualArms)
-					rpdWithLingualArms->setLingualClaspArms(teeth);
-				auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-				if (dentureBase)
-					dentureBase->setSide(teeth);
-			}
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd) {
-			auto rpdWithLingualCoverage = dynamic_cast<RpdWithLingualCoverage*>(*rpd);
-			if (rpdWithLingualCoverage)
-				rpdWithLingualCoverage->registerLingualCoverage(teeth);
-			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
-			if (dentureBase)
-				dentureBase->registerDentureBase(teeth);
-		}
-		designImages[1] = Mat(imageSize, CV_8U, 255);
-		for (auto zone = 0; zone < nZones; ++zone) {
-			if (Tooth::isEighthUsed[zone])
-				polylines(designImages[1], teeth[zone][nTeethPerZone - 1].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
-		}
-		for (auto rpd = rpds_.begin(); rpd < rpds_.end(); ++rpd)
-			(*rpd)->draw(designImages[1], teeth);
-	}
-	justLoadedRpd_ = justLoadedImage_ = false;
-}
-
 void RpdDesign::loadBaseImage() {
 	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
 	if (!fileName.isEmpty()) {
 		auto image = imread(fileName.toLocal8Bit().data());
-		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, teeth_, &baseImage_)) {
-			justLoadedImage_ = true;
-			updateDesign();
+		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, teeth_, designImages_, &baseImage_)) {
+			updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
+			updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
+			justLoadedRpds_ = false;
 			updateViewer();
 		}
 		else
@@ -157,13 +106,15 @@ void RpdDesign::loadRpdInfo() {
 		auto ontModel = env_->CallStaticObjectMethod(clsModelFactory, midCreateOntologyModel, env_->GetStaticObjectField(clsOntModelSpec, env_->GetStaticFieldID(clsOntModelSpec, "OWL_DL_MEM", getClsSig(clsStrOntModelSpec).c_str())));
 		auto tmpStr = env_->NewStringUTF(fileName.toUtf8().data());
 		env_->CallVoidMethod(ontModel, midRead, tmpStr);
-		env_->ReleaseStringUTFChars(tmpStr, env_->GetStringUTFChars(tmpStr, nullptr));
+		env_->DeleteLocalRef(tmpStr);
 		if (queryRpds(env_, ontModel, rpds_)) {
-			justLoadedRpd_ = true;
 			if (baseImage_.data) {
-				updateDesign();
+				updateDesign(teeth_, rpds_, designImages_, false, true);
+				updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, false, true);
 				updateViewer();
 			}
+			else
+				justLoadedRpds_ = true;
 		}
 		else
 			QMessageBox::critical(this, tr("Error"), tr("Not a Valid Ontology!"));

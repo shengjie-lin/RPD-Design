@@ -65,7 +65,10 @@ void Rpd::queryPositions(JNIEnv* const& env, const jmethodID& midGetInt, const j
 
 RpdWithMaterial::RpdWithMaterial(const Material& material) : material_(material) {}
 
-void RpdWithMaterial::queryMaterial(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial) { claspMaterial = static_cast<Material>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspMaterial), midGetInt)); }
+void RpdWithMaterial::queryMaterial(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspMaterial, const jobject& individual, Material& claspMaterial) {
+	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpClaspMaterial);
+	claspMaterial = tmp ? static_cast<Material>(env->CallIntMethod(tmp, midGetInt)) : CAST;
+}
 
 RpdWithDirection::RpdWithDirection(const Rpd::Direction& direction) : direction_(direction) {}
 
@@ -580,7 +583,10 @@ void RingClasp::draw(const Mat& designImage, const vector<Tooth> teeth[nZones]) 
 	polylines(designImage, getTooth(teeth, positions_[0]).getCurve(isBuccal ? 60 : 0, isBuccal ? 0 : 300), false, 0, lineThicknessOfLevel[1 + (material_ == CAST)], LINE_AA);
 }
 
-void RingClasp::queryTipSide(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipSide, const jobject& individual, Side& tipSide) { tipSide = static_cast<Side>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipSide), midGetInt)); }
+void RingClasp::queryTipSide(JNIEnv* const& env, const jmethodID& midGetInt, const jmethodID& midResourceGetProperty, const jobject& dpClaspTipSide, const jobject& individual, Side& tipSide) {
+	auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipSide);
+	tipSide = tmp ? static_cast<Side>(env->CallIntMethod(tmp, midGetInt)) : BUCCAL;
+}
 
 Rpa::Rpa(const vector<Position>& positions, const Material& material) : Rpd(positions), RpdWithMaterial(material), RpdWithClaspRootOrRest(positions, {MESIAL, DISTAL}) {}
 
