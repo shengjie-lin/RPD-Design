@@ -23,7 +23,7 @@ Mat& jMatToMat(JNIEnv* const& env, const jobject& jMat) {
 	return *reinterpret_cast<Mat*>(matAddr);
 }
 
-JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(JNIEnv* env, jclass cls, jobject ontModel, jobject base) {
+JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(JNIEnv* env, jclass, jobject ontModel, jobject base) {
 	vector<Tooth> teeth[nZones];
 	Mat designImages[2], designImage = imread("base.png");
 	analyzeBaseImage(jMatToMat(env, base), teeth, designImages);

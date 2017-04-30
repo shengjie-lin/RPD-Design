@@ -8,8 +8,6 @@ using namespace cv;
 
 const int lineThicknessOfLevel[]{1, 4, 7}, nTeethPerZone = 8, nZones = 4;
 
-const string jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";
-
 enum RpdClass {
 	AKERS_CLASP,
 	CANINE_AKERS_CLASP,

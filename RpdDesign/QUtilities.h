@@ -1,7 +1,7 @@
 #pragma once
 
 #include <opencv2/core/mat.hpp>
-#include <QMessageBox>
+#include <QImage>
 
 using namespace cv;
 

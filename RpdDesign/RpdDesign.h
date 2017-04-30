@@ -19,6 +19,7 @@ public:
 private:
 	void changeEvent(QEvent* event) override;
 	void updateViewer();
+	static string jenaLibPath;
 	bool isEnglish_ = true;
 	bool justLoadedRpds_ = false, showBaseImage_, showDesignImage_;
 	JavaVM* vm_;

@@ -5,9 +5,6 @@
 
 using namespace cv;
 
-class Rpd;
-class Tooth;
-
 class RpdViewer : public QLabel {
 	Q_OBJECT
 public:
