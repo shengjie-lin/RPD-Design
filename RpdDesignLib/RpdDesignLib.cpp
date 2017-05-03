@@ -41,5 +41,5 @@ JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_
 JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2(JNIEnv* env, jclass cls, jobject ontModel) {
 	auto hRsrc = FindResource(dllHandle, MAKEINTRESOURCE(IDB_PNG1), TEXT("PNG"));
 	auto pBuf = static_cast<uchar*>(LockResource(LoadResource(dllHandle, hRsrc)));
-	return Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(env, cls, ontModel, matToJMat(env, imdecode(vector<char>(pBuf, pBuf + SizeofResource(dllHandle, hRsrc)), IMREAD_COLOR)));
+	return Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(env, cls, ontModel, matToJMat(env, imdecode(vector<uchar>(pBuf, pBuf + SizeofResource(dllHandle, hRsrc)), IMREAD_COLOR)));
 }

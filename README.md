@@ -33,13 +33,14 @@ Before execution, add to PATH:
 * `C:\Qt\Qt5.8.0\5.8\msvc2015_64\bin\` or alike
 
 You may use sample resources in `%ROOT%\sample\` to produce the following design:
-> <img src="sample/sample.png" width="400">
+> <img src=sample\sample.png width=400>
 
 ## RpdDesignLib
 Wraps the above-mentioned functionality into a library (DLL), to be called by Java users.
 
 ### Build
-Same as above, except that Qt is not required, and that Jena is not explictly required (should be provided instead by Java callers). Note however, by default this project will be built together with RpdDesign, as they share one Visual Studio solution.
+Same as above, except that Qt is not required, and that Jena is not explictly required (should be provided instead by Java callers). Note however, by default this project will be built together with RpdDesign, as they share one Visual Studio solution.  
+_N.B. `com_shengjie_Main.h` is directly related to the Java caller, and can be auto-generated._
 
 ### Run & Test
 After successful compilation, the DLL will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesignLib.dll`.
@@ -55,7 +56,8 @@ To build the project, you will need:
 * [Apache Jena](https://jena.apache.org/)
 * Generated RpdDesignLib.dll in RpdDesignLib
 
-Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Dependencies in Modules (or modify `%ROOT%\RpdDesignLibTest\RpdDesignLibTest.iml` directly)
+Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Dependencies in Modules (or modify `%ROOT%\RpdDesignLibTest\RpdDesignLibTest.iml` directly).  
+_N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`._
 
 ### Run & Test
-After successful build, run the program directly shall produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest`. Both of them should resemble `%ROOT%\sample\sample.png`.
+After successful build, running the program directly should produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest`. They should both resemble `%ROOT%\sample\sample.png`.
