@@ -161,6 +161,8 @@
     <ClInclude Include="..\RpdDesign\Tooth.h" />
     <ClInclude Include="..\RpdDesign\Utilities.h" />
     <ClInclude Include="com_shengjie_Main.h" />
+    <ClInclude Include="dllmain.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RpdDesign\EllipticCurve.cpp" />
@@ -168,7 +170,14 @@
     <ClCompile Include="..\RpdDesign\Rpd.cpp" />
     <ClCompile Include="..\RpdDesign\Tooth.cpp" />
     <ClCompile Include="..\RpdDesign\Utilities.cpp" />
+    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="RpdDesignLib.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RpdDesignLib.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\sample\base.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

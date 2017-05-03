@@ -24,8 +24,10 @@ Add to PATH:
 In `%ROOT%\RpdDesign\RpdDesign.cpp`, modify accordingly the following line:
 > `string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";`
 
+Use `lrelease` to generated Qt Linguist translation files for `%ROOT%\RpdDesign\rpddesign_[en,zh].ts`.
+
 ### Run & Test
-After successful build, the executalbe will be stored as `%ROOT%\x64\Release\RpdDesign.exe`.
+After successful build, the executalbe will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesign.exe`.
 
 Before execution, add to PATH:
 * `C:\Qt\Qt5.8.0\5.8\msvc2015_64\bin\` or alike
@@ -40,7 +42,7 @@ Wraps the above-mentioned functionality into a library (DLL), to be called by Ja
 Same as above, except that Qt is not required, and that Jena is not explictly required (should be provided instead by Java callers). Note however, by default this project will be built together with RpdDesign, as they share one Visual Studio solution.
 
 ### Run & Test
-After successful compilation, the DLL will be stored as `%ROOT%\x64\Release\RpdDesignLib.dll`.
+After successful compilation, the DLL will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesignLib.dll`.
 
 ## RpdDesignLibTest
 Serves as a test program, which calls in Java `RpdDesignLib.dll` to generate Rpd designs provided the Ontology model and an optional base image.

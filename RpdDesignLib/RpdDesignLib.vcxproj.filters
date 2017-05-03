@@ -33,6 +33,12 @@
     <ClInclude Include="com_shengjie_Main.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="dllmain.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RpdDesign\EllipticCurve.cpp">
@@ -53,5 +59,18 @@
     <ClCompile Include="RpdDesignLib.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RpdDesignLib.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\sample\base.png">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

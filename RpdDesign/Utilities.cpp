@@ -1,5 +1,5 @@
 #include <iterator>
-#include <Windows.h>
+#include <windows.h>
 #include <opencv2/imgproc.hpp>
 
 #include "Utilities.h"
