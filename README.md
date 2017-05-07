@@ -39,8 +39,8 @@ You may use sample resources in `%ROOT%\sample\` to produce the following design
 Wraps the above-mentioned functionality into a library (DLL), to be called by Java users.
 
 ### Build
-Same as above, except that Qt is not required, and that Jena is not explictly required (should be provided instead by Java callers). Note however, by default this project will be built together with RpdDesign, as they share one Visual Studio solution.  
-_N.B. `com_shengjie_Main.h` is directly related to the Java caller, and can be auto-generated._
+Same as above, except that Qt is not required, and that Jena is not explictly required (should be provided instead by the Java caller). In addition, by default this project will be built together with RpdDesign, as they share one Visual Studio solution.  
+_N.B. `com_shengjie_Main.h` is directly related to the Java caller, and may be auto-generated._
 
 ### Run & Test
 After successful compilation, the DLL will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesignLib.dll`.
@@ -54,7 +54,7 @@ To build the project, you will need:
 * [OpenCV 3.x](http://opencv.org/)
 * [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Jena](https://jena.apache.org/)
-* Generated RpdDesignLib.dll in RpdDesignLib
+* The generated `RpdDesignLib.dll` in RpdDesignLib
 
 Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Dependencies in Modules (or modify `%ROOT%\RpdDesignLibTest\RpdDesignLibTest.iml` directly).  
 _N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`._

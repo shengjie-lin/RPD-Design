@@ -21,8 +21,7 @@ public class Main {
     public static void main(String[] args) {
         OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_DL_MEM);
         ontModel.read("../sample/sample.owl");
-        Mat base = imread("../sample/base.png");
-        imwrite("design_with_base.png", getRpdDesign(ontModel, base));
+        imwrite("design_with_base.png", getRpdDesign(ontModel, imread("../sample/base.png")));
         imwrite("design.png", getRpdDesign(ontModel));
     }
 }

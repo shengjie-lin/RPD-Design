@@ -19,7 +19,6 @@ extern "C" {
 	 * Signature: (Lorg/apache/jena/ontology/OntModel;)Lorg/opencv/core/Mat;
 	 */
 	JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2(JNIEnv* env, jclass cls, jobject ontModel);
-
 #ifdef __cplusplus
 }
 #endif
