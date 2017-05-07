@@ -27,15 +27,15 @@ Mat& jMatToMat(JNIEnv* const& env, const jobject& jMat) {
 
 JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(JNIEnv* env, jclass, jobject ontModel, jobject base) {
 	vector<Tooth> teeth[nZones];
-	Mat designImages[2], designImage = imread("base.png");
+	Mat designImages[2];
 	analyzeBaseImage(jMatToMat(env, base), teeth, designImages);
 	vector<Rpd*> rpds;
 	queryRpds(env, ontModel, rpds);
 	updateDesign(teeth, rpds, designImages, true, true);
 	for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd)
 		delete *rpd;
-	bitwise_and(designImages[0], designImages[1], designImage);
-	return matToJMat(env, designImage);
+	bitwise_and(designImages[0], designImages[1], designImages[0]);
+	return matToJMat(env, designImages[0]);
 }
 
 JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2(JNIEnv* env, jclass cls, jobject ontModel) {
