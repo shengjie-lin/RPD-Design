@@ -33,9 +33,9 @@ private:
 private slots:
 	void loadBaseImage();
 	void loadRpdInfo();
-	void onRemedyImageChanged(const bool& thisRemedyImage);
-	void onShowBaseChanged(const bool& showBaseImage);
-	void onShowDesignChanged(const bool& showContoursImage);
+	void onRemedyImageChanged(bool const& thisRemedyImage);
+	void onShowBaseChanged(bool const& showBaseImage);
+	void onShowDesignChanged(bool const& showContoursImage);
 	void saveDesign();
 	void switchLanguage(bool* const& isEnglish = nullptr);
 };

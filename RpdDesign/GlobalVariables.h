@@ -6,7 +6,7 @@
 using namespace std;
 using namespace cv;
 
-const int lineThicknessOfLevel[]{1, 4, 7}, nTeethPerZone = 8, nZones = 4;
+int const lineThicknessOfLevel[]{1, 4, 7}, nTeethPerZone = 8, nZones = 4;
 
 enum RpdClass {
 	AKERS_CLASP,
@@ -30,7 +30,7 @@ enum RpdClass {
 	WW_CLASP
 };
 
-const map<string, RpdClass> rpdMapping_ = {
+map<string, RpdClass> const rpdMapping_ = {
 	{"aker_clasp", AKERS_CLASP},
 	{"canine_aker_clasp", CANINE_AKERS_CLASP},
 	{"combination_anterior_posterior_palatal_strap", COMBINATION_ANTERIOR_POSTERIOR_PALATAL_STRAP},

@@ -5,9 +5,9 @@
 
 RpdViewer::RpdViewer(QWidget* const& parent) : QLabel(parent) { setAlignment(Qt::AlignCenter); }
 
-const Mat& RpdViewer::getCurImage() const { return curImage_; }
+Mat const& RpdViewer::getCurImage() const { return curImage_; }
 
-void RpdViewer::setCurImage(const Mat& mat) {
+void RpdViewer::setCurImage(Mat const& mat) {
 	curImage_ = mat;
 	imageSize_ = sizeToQSize(mat.size());
 	resizeEvent(nullptr);

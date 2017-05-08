@@ -6,7 +6,7 @@
 #include "../RpdDesign/Tooth.h"
 #include "../RpdDesign/Utilities.h"
 
-jobject matToJMat(JNIEnv* const& env, const Mat& mat) {
+jobject matToJMat(JNIEnv* const& env, Mat const& mat) {
 	auto clsStrMat = "org/opencv/core/Mat";
 	auto clsMat = env->FindClass(clsStrMat);
 	auto matConstructor = env->GetMethodID(clsMat, "<init>", "()V");
@@ -17,7 +17,7 @@ jobject matToJMat(JNIEnv* const& env, const Mat& mat) {
 	return jMat;
 }
 
-Mat& jMatToMat(JNIEnv* const& env, const jobject& jMat) {
+Mat& jMatToMat(JNIEnv* const& env, jobject const& jMat) {
 	auto clsStrMat = "org/opencv/core/Mat";
 	auto clsMat = env->FindClass(clsStrMat);
 	auto midGetNativeObjAddr = env->GetMethodID(clsMat, "getNativeObjAddr", "()J");

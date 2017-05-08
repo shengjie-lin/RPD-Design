@@ -9,8 +9,8 @@ class RpdViewer : public QLabel {
 	Q_OBJECT
 public:
 	explicit RpdViewer(QWidget* const& parent = nullptr);
-	const Mat& getCurImage() const;
-	void setCurImage(const Mat& mat);
+	Mat const& getCurImage() const;
+	void setCurImage(Mat const& mat);
 private:
 	void resizeEvent(QResizeEvent* event) override;
 	Mat curImage_;

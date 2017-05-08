@@ -5,10 +5,10 @@
 
 using namespace cv;
 
-QImage matToQImage(const Mat& inputMat);
+QImage matToQImage(Mat const& inputMat);
 
-QPixmap matToQPixmap(const Mat& inputMat);
+QPixmap matToQPixmap(Mat const& inputMat);
 
-Size qSizeToSize(const QSize& size);
+Size qSizeToSize(QSize const& size);
 
-QSize sizeToQSize(const Size& size);
+QSize sizeToQSize(Size const& size);

@@ -4,7 +4,7 @@
 
 using namespace std;
 
-QImage matToQImage(const Mat& inputMat) {
+QImage matToQImage(Mat const& inputMat) {
 	switch (inputMat.type()) {
 			// 8-bit, 4-channel
 		case CV_8UC4:
@@ -31,8 +31,8 @@ QImage matToQImage(const Mat& inputMat) {
 	}
 }
 
-QPixmap matToQPixmap(const Mat& inputMat) { return QPixmap::fromImage(matToQImage(inputMat)); }
+QPixmap matToQPixmap(Mat const& inputMat) { return QPixmap::fromImage(matToQImage(inputMat)); }
 
-Size qSizeToSize(const QSize& size) { return Size(size.width(), size.height()); }
+Size qSizeToSize(QSize const& size) { return Size(size.width(), size.height()); }
 
-QSize sizeToQSize(const Size& size) { return QSize(size.width, size.height); }
+QSize sizeToQSize(Size const& size) { return QSize(size.width, size.height); }

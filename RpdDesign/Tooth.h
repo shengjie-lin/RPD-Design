@@ -4,32 +4,32 @@
 
 class Tooth {
 public:
-	const bool& expectDentureBaseAnchor(const Rpd::Direction& direction) const;
-	const bool& expectMajorConnectorAnchor(const Rpd::Direction& direction) const;
-	const bool& hasClaspRootOrRest(const Rpd::Direction& direction) const;
-	const bool& hasDentureBase(const DentureBase::Side& side) const;
-	const bool& hasLingualConfrontation() const;
-	const bool& hasLingualCoverage(const Rpd::Direction& direction) const;
-	const bool& hasLingualRest(const Rpd::Direction& direction) const;
-	const bool& hasMajorConnector() const;
-	const float& getRadius() const;
-	const Point& getAnglePoint(const int& angle) const;
-	const Point2f& getCentroid() const;
-	const Point2f& getNormalDirection() const;
-	const vector<Point>& getContour() const;
-	explicit Tooth(const vector<Point>& contour);
-	vector<Point> getCurve(const int& startAngle, const int& endAngle, const bool& isConvex = true) const;
-	void findAnglePoints(const int& zone);
-	void setClaspRootOrRest(const Rpd::Direction& direction);
-	void setContour(const vector<Point>& contour);
-	void setDentureBase(const DentureBase::Side& side);
-	void setExpectedDentureBaseAnchor(const Rpd::Direction& direction);
-	void setExpectedMajorConnectorAnchor(const Rpd::Direction& direction);
+	bool const& expectDentureBaseAnchor(Rpd::Direction const& direction) const;
+	bool const& expectMajorConnectorAnchor(Rpd::Direction const& direction) const;
+	bool const& hasClaspRootOrRest(Rpd::Direction const& direction) const;
+	bool const& hasDentureBase(DentureBase::Side const& side) const;
+	bool const& hasLingualConfrontation() const;
+	bool const& hasLingualCoverage(Rpd::Direction const& direction) const;
+	bool const& hasLingualRest(Rpd::Direction const& direction) const;
+	bool const& hasMajorConnector() const;
+	float const& getRadius() const;
+	Point const& getAnglePoint(int const& angle) const;
+	Point2f const& getCentroid() const;
+	Point2f const& getNormalDirection() const;
+	vector<Point> const& getContour() const;
+	explicit Tooth(vector<Point> const& contour);
+	vector<Point> getCurve(int const& startAngle, int const& endAngle, bool const& isConvex = true) const;
+	void findAnglePoints(int const& zone);
+	void setClaspRootOrRest(Rpd::Direction const& direction);
+	void setContour(vector<Point> const& contour);
+	void setDentureBase(DentureBase::Side const& side);
+	void setExpectedDentureBaseAnchor(Rpd::Direction const& direction);
+	void setExpectedMajorConnectorAnchor(Rpd::Direction const& direction);
 	void setLingualConfrontation();
-	void setLingualCoverage(const Rpd::Direction& direction);
-	void setLingualRest(const Rpd::Direction& direction);
+	void setLingualCoverage(Rpd::Direction const& direction);
+	void setLingualRest(Rpd::Direction const& direction);
 	void setMajorConnector();
-	void setNormalDirection(const Point2f& normalDirection);
+	void setNormalDirection(Point2f const& normalDirection);
 	void unsetAll();
 	static bool isEighthUsed[nZones];
 private:

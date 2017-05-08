@@ -25,9 +25,9 @@ RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	connect(ui_.loadBasePushButton, SIGNAL(clicked()), this, SLOT(loadBaseImage()));
 	connect(ui_.loadRpdPushButton, SIGNAL(clicked()), this, SLOT(loadRpdInfo()));
 	connect(ui_.saveDesignPushButton, SIGNAL(clicked()), this, SLOT(saveDesign()));
-	connect(ui_.remedyCheckBox, SIGNAL(toggled(bool)), this, SLOT(onRemedyImageChanged(const bool&)));
-	connect(ui_.baseCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowBaseChanged(const bool&)));
-	connect(ui_.designCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowDesignChanged(const bool&)));
+	connect(ui_.remedyCheckBox, SIGNAL(toggled(bool)), this, SLOT(onRemedyImageChanged(bool const&)));
+	connect(ui_.baseCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowBaseChanged(bool const&)));
+	connect(ui_.designCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowDesignChanged(bool const&)));
 	JavaVMInitArgs vmInitArgs;
 	vmInitArgs.version = JNI_VERSION_1_8;
 	vmInitArgs.nOptions = 1;
@@ -97,19 +97,16 @@ void RpdDesign::loadRpdInfo() {
 		auto clsStrOntModel = "org/apache/jena/ontology/OntModel";
 		auto clsStrOntModelSpec = "org/apache/jena/ontology/OntModelSpec";
 		auto clsStrString = "java/lang/String";
-
 		auto clsModelFactory = env_->FindClass(clsStrModelFactory);
 		auto clsModel = env_->FindClass(clsStrModel);
 		auto clsOntModelSpec = env_->FindClass(clsStrOntModelSpec);
-
 		auto midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
 		auto midRead = env_->GetMethodID(clsModel, "read", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrModel)).c_str());
-
 		auto ontModel = env_->CallStaticObjectMethod(clsModelFactory, midCreateOntologyModel, env_->GetStaticObjectField(clsOntModelSpec, env_->GetStaticFieldID(clsOntModelSpec, "OWL_DL_MEM", getClsSig(clsStrOntModelSpec).c_str())));
 		auto tmpStr = env_->NewStringUTF(fileName.toUtf8().data());
 		env_->CallVoidMethod(ontModel, midRead, tmpStr);
 		env_->DeleteLocalRef(tmpStr);
-		if (queryRpds(env_, ontModel, rpds_)) {
+		if (queryRpds(env_, ontModel, rpds_))
 			if (baseImage_.data) {
 				updateDesign(teeth_, rpds_, designImages_, false, true);
 				updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, false, true);
@@ -117,26 +114,25 @@ void RpdDesign::loadRpdInfo() {
 			}
 			else
 				justLoadedRpds_ = true;
-		}
 		else
 			QMessageBox::critical(this, tr("Error"), tr("Not a Valid Ontology!"));
 	}
 }
 
-void RpdDesign::onRemedyImageChanged(const bool& thisRemedyImage) {
+void RpdDesign::onRemedyImageChanged(bool const& thisRemedyImage) {
 	remedyImage = thisRemedyImage;
 	ui_.baseCheckBox->setEnabled(!remedyImage);
 	if (baseImage_.data)
 		updateViewer();
 }
 
-void RpdDesign::onShowBaseChanged(const bool& showBaseImage) {
+void RpdDesign::onShowBaseChanged(bool const& showBaseImage) {
 	showBaseImage_ = showBaseImage;
 	if (baseImage_.data)
 		updateViewer();
 }
 
-void RpdDesign::onShowDesignChanged(const bool& showDesignImage) {
+void RpdDesign::onShowDesignChanged(bool const& showDesignImage) {
 	showDesignImage_ = showDesignImage;
 	if (baseImage_.data)
 		updateViewer();
