@@ -4,6 +4,7 @@
 
 class Tooth {
 public:
+	explicit Tooth(vector<Point> const& contour);
 	bool const& expectDentureBaseAnchor(Rpd::Direction const& direction) const;
 	bool const& expectMajorConnectorAnchor(Rpd::Direction const& direction) const;
 	bool const& hasClaspRootOrRest(Rpd::Direction const& direction) const;
@@ -17,7 +18,6 @@ public:
 	Point2f const& getCentroid() const;
 	Point2f const& getNormalDirection() const;
 	vector<Point> const& getContour() const;
-	explicit Tooth(vector<Point> const& contour);
 	vector<Point> getCurve(int const& startAngle, int const& endAngle, bool const& isConvex = true) const;
 	void findAnglePoints(int const& zone);
 	void setClaspRootOrRest(Rpd::Direction const& direction);

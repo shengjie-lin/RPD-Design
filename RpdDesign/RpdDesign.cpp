@@ -63,7 +63,7 @@ void RpdDesign::changeEvent(QEvent* event) {
 }
 
 void RpdDesign::updateViewer() {
-	auto curImage = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat((remedyImage ? remediedDesignImages_[0].size : designImages_[0].size)(), CV_8UC3, Scalar::all(255));
+	auto const& curImage = !remedyImage && showBaseImage_ ? baseImage_.clone() : Mat((remedyImage ? remediedDesignImages_[0].size : designImages_[0].size)(), CV_8UC3, Scalar::all(255));
 	if (showDesignImage_) {
 		auto designImages = remedyImage ? remediedDesignImages_ : designImages_;
 		Mat designImage;
@@ -75,9 +75,9 @@ void RpdDesign::updateViewer() {
 }
 
 void RpdDesign::loadBaseImage() {
-	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
+	auto const& fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
 	if (!fileName.isEmpty()) {
-		auto image = imread(fileName.toLocal8Bit().data());
+		auto const& image = imread(fileName.toLocal8Bit().data());
 		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, &teeth_, &designImages_, &baseImage_)) {
 			updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
 			updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
@@ -90,20 +90,20 @@ void RpdDesign::loadBaseImage() {
 }
 
 void RpdDesign::loadRpdInfo() {
-	auto fileName = QFileDialog::getOpenFileName(this, tr("Select RPD Information"), "", tr("Ontology files (*.owl)"));
+	auto const& fileName = QFileDialog::getOpenFileName(this, tr("Select RPD Information"), "", tr("Ontology files (*.owl)"));
 	if (!fileName.isEmpty()) {
-		auto clsStrModel = "org/apache/jena/rdf/model/Model";
-		auto clsStrModelFactory = "org/apache/jena/rdf/model/ModelFactory";
-		auto clsStrOntModel = "org/apache/jena/ontology/OntModel";
-		auto clsStrOntModelSpec = "org/apache/jena/ontology/OntModelSpec";
-		auto clsStrString = "java/lang/String";
-		auto clsModelFactory = env_->FindClass(clsStrModelFactory);
-		auto clsModel = env_->FindClass(clsStrModel);
-		auto clsOntModelSpec = env_->FindClass(clsStrOntModelSpec);
-		auto midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
-		auto midRead = env_->GetMethodID(clsModel, "read", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrModel)).c_str());
-		auto ontModel = env_->CallStaticObjectMethod(clsModelFactory, midCreateOntologyModel, env_->GetStaticObjectField(clsOntModelSpec, env_->GetStaticFieldID(clsOntModelSpec, "OWL_DL_MEM", getClsSig(clsStrOntModelSpec).c_str())));
-		auto tmpStr = env_->NewStringUTF(fileName.toUtf8().data());
+		auto const& clsStrModel = "org/apache/jena/rdf/model/Model";
+		auto const& clsStrModelFactory = "org/apache/jena/rdf/model/ModelFactory";
+		auto const& clsStrOntModel = "org/apache/jena/ontology/OntModel";
+		auto const& clsStrOntModelSpec = "org/apache/jena/ontology/OntModelSpec";
+		auto const& clsStrString = "java/lang/String";
+		auto const& clsModelFactory = env_->FindClass(clsStrModelFactory);
+		auto const& clsModel = env_->FindClass(clsStrModel);
+		auto const& clsOntModelSpec = env_->FindClass(clsStrOntModelSpec);
+		auto const& midCreateOntologyModel = env_->GetStaticMethodID(clsModelFactory, "createOntologyModel", ('(' + getClsSig(clsStrOntModelSpec) + ')' + getClsSig(clsStrOntModel)).c_str());
+		auto const& midRead = env_->GetMethodID(clsModel, "read", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrModel)).c_str());
+		auto const& ontModel = env_->CallStaticObjectMethod(clsModelFactory, midCreateOntologyModel, env_->GetStaticObjectField(clsOntModelSpec, env_->GetStaticFieldID(clsOntModelSpec, "OWL_DL_MEM", getClsSig(clsStrOntModelSpec).c_str())));
+		auto const& tmpStr = env_->NewStringUTF(fileName.toUtf8().data());
 		env_->CallVoidMethod(ontModel, midRead, tmpStr);
 		env_->DeleteLocalRef(tmpStr);
 		if (queryRpds(env_, ontModel, rpds_))
@@ -141,8 +141,7 @@ void RpdDesign::onShowDesignChanged(bool const& showDesignImage) {
 void RpdDesign::saveDesign() {
 	auto& curImage = rpdViewer_->getCurImage();
 	if (curImage.data) {
-		auto selectedFilter = tr("Portable Network Graphics (*.png)");
-		auto fileName = QFileDialog::getSaveFileName(this, tr("Select Save Path"), "", tr("Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"), &selectedFilter);
+		auto const& fileName = QFileDialog::getSaveFileName(this, tr("Select Save Path"), "", tr("Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"), new QString(tr("Portable Network Graphics (*.png)")));
 		if (!fileName.isEmpty())
 			imwrite(fileName.toLocal8Bit().data(), curImage);
 	}

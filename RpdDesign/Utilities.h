@@ -45,7 +45,7 @@ void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 
 void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve = nullptr);
 
-void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, bool const& shouldFindAnchors, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints = nullptr);
+void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints = nullptr);
 
 void computeOuterCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, float* const& avgRadius = nullptr);
 

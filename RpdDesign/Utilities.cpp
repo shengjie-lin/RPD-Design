@@ -1,4 +1,3 @@
-#include <iterator>
 #include <windows.h>
 #include <opencv2/imgproc.hpp>
 
@@ -6,16 +5,14 @@
 #include "EllipticCurve.h"
 #include "Tooth.h"
 
-using namespace stdext;
-
 float degreeToRadian(float const& degree) { return degree / 180 * CV_PI; }
 
 float radianToDegree(float const& radian) { return radian / CV_PI * 180; }
 
 void catPath(string& path, string const& searchDirectory, string const& extension) {
-	auto searchPattern = searchDirectory + extension;
+	auto const& searchPattern = searchDirectory + extension;
 	WIN32_FIND_DATA findData;
-	auto hFind = FindFirstFile(searchPattern.c_str(), &findData);
+	auto const& hFind = FindFirstFile(searchPattern.c_str(), &findData);
 	do
 		if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 			path.append(searchDirectory + findData.cFileName + ';');
@@ -48,8 +45,6 @@ void computeStringCurves(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 	float thisSumOfRadii = 0;
 	if (sumOfRadii)
 		thisSumOfRadii = *sumOfRadii;
-	if (distalPoints)
-		*distalPoints = vector<Point>(2);
 	vector<Point> curve;
 	if (positions[0].zone == positions[1].zone) {
 		Point lastPoint;
@@ -64,7 +59,7 @@ void computeStringCurves(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 		}
 		curve.push_back(lastPoint);
 		if (considerAnchorDisplacements[0]) {
-			auto position = --Rpd::Position(positions[0]);
+			auto const& position = --Rpd::Position(positions[0]);
 			auto& tooth = getTooth(teeth, position);
 			if (positions[0].ordinal) {
 				if (tooth.expectMajorConnectorAnchor(Rpd::MESIAL) && !shouldAnchor(teeth, position, Rpd::MESIAL))
@@ -74,7 +69,7 @@ void computeStringCurves(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 				curve[0] = tooth.getAnglePoint(0);
 		}
 		if (considerAnchorDisplacements[1] && !isLastTooth(positions[1])) {
-			auto position = ++Rpd::Position(positions[1]);
+			auto const& position = ++Rpd::Position(positions[1]);
 			auto& tooth = getTooth(teeth, position);
 			if (tooth.expectMajorConnectorAnchor(Rpd::DISTAL) && !shouldAnchor(teeth, position, Rpd::DISTAL))
 				curve.back() = tooth.getAnglePoint(0);
@@ -96,13 +91,13 @@ void computeStringCurves(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 	auto thisAvgRadius = thisSumOfRadii / thisNTeeth;
 	if (considerDistalPoints) {
 		if (positions[0].zone != positions[1].zone && isLastTooth(positions[0])) {
-			auto tmpPoint = getTooth(teeth, positions[0]).getAnglePoint(180);
+			auto& tmpPoint = getTooth(teeth, positions[0]).getAnglePoint(180);
 			curve.insert(curve.begin(), tmpPoint + roundToPoint(rotate(computeNormalDirection(tmpPoint), -CV_PI / 2) * thisAvgRadius * 0.6F));
 			if (distalPoints)
 				(*distalPoints)[0] = curve[0];
 		}
 		if (isLastTooth(positions[1])) {
-			auto tmpPoint = getTooth(teeth, positions[1]).getAnglePoint(180);
+			auto& tmpPoint = getTooth(teeth, positions[1]).getAnglePoint(180);
 			curve.push_back(tmpPoint + roundToPoint(rotate(computeNormalDirection(tmpPoint), CV_PI * (positions[1].zone % 2 - 0.5)) * thisAvgRadius * 0.6F));
 			if (distalPoints)
 				(*distalPoints)[1] = curve.back();
@@ -137,17 +132,17 @@ void computeStringCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 }
 
 void computeInscribedCurve(vector<Point> const& cornerPoints, vector<Point>& curve, float const& smoothness, bool const& shouldAppend) {
-	Point2f v1 = cornerPoints[0] - cornerPoints[1], v2 = cornerPoints[2] - cornerPoints[1];
-	auto l1 = norm(v1), l2 = norm(v2);
-	auto d1 = v1 / l1, d2 = v2 / l2;
-	auto sinTheta = d1.cross(d2);
+	Point2f const &v1 = cornerPoints[0] - cornerPoints[1], &v2 = cornerPoints[2] - cornerPoints[1];
+	auto const &l1 = norm(v1), &l2 = norm(v2);
+	auto const &d1 = v1 / l1, &d2 = v2 / l2;
+	auto const& sinTheta = d1.cross(d2);
 	auto theta = asin(abs(sinTheta));
 	if (d1.dot(d2) < 0)
 		theta = CV_PI - theta;
-	auto radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
+	auto const& radius = static_cast<float>(min({l1, l2}) * tan(theta / 2) * smoothness);
 	vector<Point> thisCurve;
-	auto& d = sinTheta < 0 ? d1 : d2;
-	auto isValidCurve = EllipticCurve(cornerPoints[1] + roundToPoint(normalize(d1 + d2) * radius / sin(theta / 2)), Size(radius, radius), radianToDegree(atan2(d.x, -d.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
+	auto const& d = sinTheta < 0 ? d1 : d2;
+	auto const& isValidCurve = EllipticCurve(cornerPoints[1] + roundToPoint(normalize(d1 + d2) * radius / sin(theta / 2)), Size(radius, radius), radianToDegree(atan2(d.x, -d.y)), 180 - radianToDegree(theta), sinTheta > 0).getCurve(thisCurve);
 	if (!shouldAppend)
 		curve.clear();
 	if (isValidCurve)
@@ -159,7 +154,7 @@ void computeInscribedCurve(vector<Point> const& cornerPoints, vector<Point>& cur
 void computeSmoothCurve(vector<Point> const& curve, vector<Point>& smoothCurve, bool const& isClosed, float const& smoothness) {
 	vector<Point> tmpCurve;
 	for (auto point = curve.begin(); point < curve.end(); ++point) {
-		auto isFirst = point == curve.begin(), isLast = point == curve.end() - 1;
+		auto const &isFirst = point == curve.begin(), &isLast = point == curve.end() - 1;
 		if (isClosed || !(isFirst || isLast))
 			computeInscribedCurve({isFirst ? curve.back() : *(point - 1), *point, isLast ? curve[0] : *(point + 1)}, tmpCurve, smoothness);
 		else
@@ -213,6 +208,8 @@ void findAnchorPoints(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position
 
 void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, vector<vector<Point>>& curves, vector<Point>* const& distalPoints, const vector<Point>* const& anchorPoints) {
 	curve.clear();
+	if (distalPoints)
+		*distalPoints = vector<Point>(2);
 	vector<Rpd::Position> startEndPositions;
 	vector<Point> thisAnchorPoints;
 	findAnchorPoints(teeth, positions, startEndPositions, anchorPoints, &thisAnchorPoints);
@@ -222,7 +219,8 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 			++dbStartPosition;
 		auto considerLast = false;
 		for (auto position = startEndPositions[0]; position <= dbStartPosition; ++position) {
-			auto isValidPosition = position < dbStartPosition, hasMesialLingualCoverage = false, hasDistalLingualCoverage = false;
+			auto const& isValidPosition = position < dbStartPosition;
+			auto hasMesialLingualCoverage = false, hasDistalLingualCoverage = false;
 			if (isValidPosition) {
 				auto& tooth = getTooth(teeth, position);
 				hasMesialLingualCoverage = tooth.hasLingualCoverage(Rpd::MESIAL);
@@ -230,7 +228,7 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 			}
 			vector<Point> thisCurve;
 			if (considerLast || hasDistalLingualCoverage) {
-				auto lastPosition = --Rpd::Position(position);
+				auto const& lastPosition = --Rpd::Position(position);
 				computeStringCurve(teeth, {considerLast ? lastPosition : position, hasDistalLingualCoverage ? position : lastPosition}, -1.5F, {true, true}, {false, false}, false, thisCurve);
 				computePiecewiseSmoothCurve(thisCurve, thisCurve);
 				curves.push_back(thisCurve);
@@ -254,13 +252,11 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 		}
 	}
 	else {
-		vector<int> zones = {startEndPositions[0].zone, startEndPositions[1].zone};
-		vector<Rpd::Position> startPositions = {Rpd::Position(zones[0], 0), Rpd::Position(zones[1], 0)};
-		vector<Tooth> startTeeth = {getTooth(teeth, startPositions[0]), getTooth(teeth, startPositions[1])};
+		vector<int> const& zones{startEndPositions[0].zone, startEndPositions[1].zone};
+		vector<Rpd::Position> const& startPositions{Rpd::Position(zones[0], 0), Rpd::Position(zones[1], 0)};
+		vector<Tooth> const& startTeeth{getTooth(teeth, startPositions[0]), getTooth(teeth, startPositions[1])};
 		vector<vector<Point>> tmpCurves(2);
 		vector<Point> tmpDistalPoints(2);
-		if (distalPoints)
-			*distalPoints = vector<Point>(2);
 		if (startTeeth[0].hasDentureBase(DentureBase::DOUBLE) && startTeeth[1].hasDentureBase(DentureBase::DOUBLE)) {
 			auto dbPositions = startPositions;
 			for (auto i = 0; i < 2; ++i) {
@@ -315,13 +311,13 @@ void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, startPositions[i], Rpd::MESIAL))
 			++startPositions[i];
-	auto& ordinal = max(startPositions[0].ordinal, startPositions[1].ordinal);
+	auto const& ordinal = max(startPositions[0].ordinal, startPositions[1].ordinal);
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
 	for (auto i = 0; i < 2; ++i)
 		computeStringCurve(teeth, {startPositions[i], Rpd::Position(positions[i].zone, ordinal)}, 0, {true, false}, {true, false}, false, curves[i], &sumOfRadii, &nTeeth);
-	auto avgRadius = sumOfRadii / nTeeth;
+	auto const& avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin() + 1; point < curves[i].end(); ++point)
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * 2.4F);
@@ -342,7 +338,7 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, endPositions[i], Rpd::DISTAL))
 			--endPositions[i];
-	auto& ordinal = min(endPositions[0].ordinal, endPositions[1].ordinal);
+	auto const& ordinal = min(endPositions[0].ordinal, endPositions[1].ordinal);
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
@@ -352,7 +348,7 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 			curves[i].back() = distalPoints[i];
 		curves[i].push_back(curves[i].back());
 	}
-	auto avgRadius = sumOfRadii / nTeeth;
+	auto const& avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin(); point < curves[i].end() - 1; ++point)
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * 2.4F);
@@ -370,20 +366,20 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 	computeSmoothCurve(curve, curve);
 }
 
-void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, bool const& shouldFindAnchors, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints) {
+void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints) {
 	vector<Rpd::Position> startEndPositions;
 	vector<Point> thisAnchorPoints;
 	findAnchorPoints(teeth, positions, startEndPositions, anchorPoints, &thisAnchorPoints);
 	if (startEndPositions[0].zone == startEndPositions[1].zone) {
-		auto& zone = startEndPositions[0].zone;
-		auto& startOrdinal = startEndPositions[0].ordinal;
-		auto& endOrdinal = startEndPositions[1].ordinal;
+		auto const& zone = startEndPositions[0].zone;
+		auto const& startOrdinal = startEndPositions[0].ordinal;
+		auto const& endOrdinal = startEndPositions[1].ordinal;
 		auto curOrdinal = startOrdinal - 1;
 		while (curOrdinal < endOrdinal) {
 			auto thisStartOrdinal = ++curOrdinal;
 			auto& tooth = getTooth(teeth, Rpd::Position(zone, curOrdinal));
-			auto hasLingualConfrontation = tooth.hasLingualConfrontation();
-			auto hasSingleDb = tooth.hasDentureBase(DentureBase::SINGLE);
+			auto& hasLingualConfrontation = tooth.hasLingualConfrontation();
+			auto& hasSingleDb = tooth.hasDentureBase(DentureBase::SINGLE);
 			while (curOrdinal < endOrdinal) {
 				auto& thisTooth = getTooth(teeth, Rpd::Position(zone, curOrdinal + 1));
 				auto& thisHasLingualConfrontation = thisTooth.hasLingualConfrontation();
@@ -393,7 +389,7 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 				else
 					break;
 			}
-			auto isStart = thisStartOrdinal == startOrdinal && shouldFindAnchors, isEnd = curOrdinal == endOrdinal;
+			auto const &isStart = thisStartOrdinal == startOrdinal && !anchorPoints, &isEnd = curOrdinal == endOrdinal;
 			if (hasLingualConfrontation) {
 				vector<vector<Point>> tmpCurves;
 				computeLingualConfrontationCurves(teeth, {Rpd::Position(zone, thisStartOrdinal), Rpd::Position(zone, curOrdinal)}, tmpCurves);
@@ -461,10 +457,10 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 					else
 						break;
 				}
-				computeInnerCurve(teeth, {++Rpd::Position(startPositions[i]), startEndPositions[i]}, false, avgRadius, thisCurves[i], curves, new vector<Point>{Point(), thisAnchorPoints[i]});
+				computeInnerCurve(teeth, {++Rpd::Position(startPositions[i]), startEndPositions[i]}, avgRadius, thisCurves[i], curves, new vector<Point>{Point(), thisAnchorPoints[i]});
 			}
 			else
-				computeInnerCurve(teeth, {startPositions[i], startEndPositions[i]}, false, avgRadius, thisCurves[i], curves, new vector<Point>{Point(), thisAnchorPoints[i]});
+				computeInnerCurve(teeth, {startPositions[i], startEndPositions[i]}, avgRadius, thisCurves[i], curves, new vector<Point>{Point(), thisAnchorPoints[i]});
 			isCoinciding[i] = startPositions[i] == startEndPositions[i];
 		}
 		curve.insert(curve.end(), thisCurves[0].rbegin(), thisCurves[0].rend());
@@ -528,7 +524,7 @@ void computeOuterCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 	if (avgRadius)
 		*avgRadius = thisAvgRadius;
 	auto dbPosition = startEndPositions[0];
-	auto isInSameZone = startEndPositions[0].zone == startEndPositions[1].zone;
+	auto const& isInSameZone = startEndPositions[0].zone == startEndPositions[1].zone;
 	isInSameZone ? --dbPosition : ++dbPosition;
 	sumOfRadii = nTeeth = 0;
 	auto position = dbPosition;
@@ -543,7 +539,7 @@ void computeOuterCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 			else
 				break;
 		}
-	auto flag = position.ordinal < 0;
+	auto const& flag = position.ordinal < 0;
 	if (flag)
 		--++position;
 	if (!isInSameZone || startEndPositions[0].ordinal == 0 || flag)
@@ -626,8 +622,8 @@ void computeLingualConfrontationCurves(const vector<Tooth> (&teeth)[nZones], vec
 		computeLingualConfrontationCurves(teeth, {positions[2], positions[3]}, curves);
 	}
 	else if (positions[0].zone == positions[1].zone) {
-		auto& zone = positions[0].zone;
-		auto& endOrdinal = positions[1].ordinal;
+		auto const& zone = positions[0].zone;
+		auto const& endOrdinal = positions[1].ordinal;
 		auto curOrdinal = positions[0].ordinal - 1;
 		while (curOrdinal < endOrdinal) {
 			while (curOrdinal < endOrdinal && !getTooth(teeth, Rpd::Position(zone, curOrdinal + 1)).hasLingualConfrontation())
@@ -660,14 +656,14 @@ void computeLingualConfrontationCurves(const vector<Tooth> (&teeth)[nZones], vec
 }
 
 Point2f computeNormalDirection(Point2f const& point, float* const& angle) {
-	auto& curTeethEllipse = remedyImage ? remediedTeethEllipse : teethEllipse;
-	auto direction = point - curTeethEllipse.center;
+	auto const& curTeethEllipse = remedyImage ? remediedTeethEllipse : teethEllipse;
+	auto const& direction = point - curTeethEllipse.center;
 	auto thisAngle = atan2(direction.y, direction.x) - degreeToRadian(curTeethEllipse.angle);
 	if (thisAngle < -CV_PI)
 		thisAngle += CV_2PI;
 	if (angle)
 		*angle = thisAngle;
-	auto normalDirection = Point2f(pow(curTeethEllipse.size.height, 2) * cos(thisAngle), pow(curTeethEllipse.size.width, 2) * sin(thisAngle));
+	auto const& normalDirection = Point2f(pow(curTeethEllipse.size.height, 2) * cos(thisAngle), pow(curTeethEllipse.size.width, 2) * sin(thisAngle));
 	return normalDirection / norm(normalDirection);
 }
 
@@ -683,80 +679,80 @@ bool shouldAnchor(const vector<Tooth> (&teeth)[nZones], Rpd::Position const& pos
 bool isLastTooth(Rpd::Position const& position) { return position.ordinal == nTeethPerZone + Tooth::isEighthUsed[position.zone] - 2; }
 
 bool queryRpds(JNIEnv* const& env, jobject const& ontModel, vector<Rpd*>& rpds) {
-	auto clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
-	auto clsStrIndividual = "org/apache/jena/ontology/Individual";
-	auto clsStrIterator = "java/util/Iterator";
-	auto clsStrModelCon = "org/apache/jena/rdf/model/ModelCon";
-	auto clsStrObject = "java/lang/Object";
-	auto clsStrOntClass = "org/apache/jena/ontology/OntClass";
-	auto clsStrOntModel = "org/apache/jena/ontology/OntModel";
-	auto clsStrProperty = "org/apache/jena/rdf/model/Property";
-	auto clsStrResource = "org/apache/jena/rdf/model/Resource";
-	auto clsStrStatement = "org/apache/jena/rdf/model/Statement";
-	auto clsStrStmtIterator = "org/apache/jena/rdf/model/StmtIterator";
-	auto clsStrString = "java/lang/String";
-	auto clsIndividual = env->FindClass(clsStrIndividual);
-	auto clsIterator = env->FindClass(clsStrIterator);
-	auto clsModelCon = env->FindClass(clsStrModelCon);
-	auto clsOntModel = env->FindClass(clsStrOntModel);
-	auto clsResource = env->FindClass(clsStrResource);
-	auto clsStatement = env->FindClass(clsStrStatement);
-	auto midGetBoolean = env->GetMethodID(clsStatement, "getBoolean", "()Z");
-	auto midGetInt = env->GetMethodID(clsStatement, "getInt", "()I");
-	auto midGetLocalName = env->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
-	auto midGetOntClass = env->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
-	auto midHasNext = env->GetMethodID(clsIterator, "hasNext", "()Z");
-	auto midListIndividuals = env->GetMethodID(clsOntModel, "listIndividuals", ("()" + getClsSig(clsStrExtendedIterator)).c_str());
-	auto midListProperties = env->GetMethodID(clsResource, "listProperties", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStmtIterator)).c_str());
-	auto midModelConGetProperty = env->GetMethodID(clsModelCon, "getProperty", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrProperty)).c_str());
-	auto midNext = env->GetMethodID(clsIterator, "next", ("()" + getClsSig(clsStrObject)).c_str());
-	auto midResourceGetProperty = env->GetMethodID(clsResource, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
-	auto midStatementGetProperty = env->GetMethodID(clsStatement, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
-	string ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
+	auto const& clsStrExtendedIterator = "org/apache/jena/util/iterator/ExtendedIterator";
+	auto const& clsStrIndividual = "org/apache/jena/ontology/Individual";
+	auto const& clsStrIterator = "java/util/Iterator";
+	auto const& clsStrModelCon = "org/apache/jena/rdf/model/ModelCon";
+	auto const& clsStrObject = "java/lang/Object";
+	auto const& clsStrOntClass = "org/apache/jena/ontology/OntClass";
+	auto const& clsStrOntModel = "org/apache/jena/ontology/OntModel";
+	auto const& clsStrProperty = "org/apache/jena/rdf/model/Property";
+	auto const& clsStrResource = "org/apache/jena/rdf/model/Resource";
+	auto const& clsStrStatement = "org/apache/jena/rdf/model/Statement";
+	auto const& clsStrStmtIterator = "org/apache/jena/rdf/model/StmtIterator";
+	auto const& clsStrString = "java/lang/String";
+	auto const& clsIndividual = env->FindClass(clsStrIndividual);
+	auto const& clsIterator = env->FindClass(clsStrIterator);
+	auto const& clsModelCon = env->FindClass(clsStrModelCon);
+	auto const& clsOntModel = env->FindClass(clsStrOntModel);
+	auto const& clsResource = env->FindClass(clsStrResource);
+	auto const& clsStatement = env->FindClass(clsStrStatement);
+	auto const& midGetBoolean = env->GetMethodID(clsStatement, "getBoolean", "()Z");
+	auto const& midGetInt = env->GetMethodID(clsStatement, "getInt", "()I");
+	auto const& midGetLocalName = env->GetMethodID(clsResource, "getLocalName", ("()" + getClsSig(clsStrString)).c_str());
+	auto const& midGetOntClass = env->GetMethodID(clsIndividual, "getOntClass", ("()" + getClsSig(clsStrOntClass)).c_str());
+	auto const& midHasNext = env->GetMethodID(clsIterator, "hasNext", "()Z");
+	auto const& midListIndividuals = env->GetMethodID(clsOntModel, "listIndividuals", ("()" + getClsSig(clsStrExtendedIterator)).c_str());
+	auto const& midListProperties = env->GetMethodID(clsResource, "listProperties", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStmtIterator)).c_str());
+	auto const& midModelConGetProperty = env->GetMethodID(clsModelCon, "getProperty", ('(' + getClsSig(clsStrString) + ')' + getClsSig(clsStrProperty)).c_str());
+	auto const& midNext = env->GetMethodID(clsIterator, "next", ("()" + getClsSig(clsStrObject)).c_str());
+	auto const& midResourceGetProperty = env->GetMethodID(clsResource, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
+	auto const& midStatementGetProperty = env->GetMethodID(clsStatement, "getProperty", ('(' + getClsSig(clsStrProperty) + ')' + getClsSig(clsStrStatement)).c_str());
+	string const& ontPrefix = "http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#";
 	auto tmpStr = env->NewStringUTF((ontPrefix + "clasp_material").c_str());
-	auto dpClaspMaterial = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpClaspMaterial = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "clasp_tip_direction").c_str());
-	auto dpClaspTipDirection = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpClaspTipDirection = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "clasp_tip_side").c_str());
-	auto dpClaspTipSide = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpClaspTipSide = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "component_position").c_str());
 	auto opComponentPosition = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "enable_buccal_arm").c_str());
-	auto dpEnableBuccalArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpEnableBuccalArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "enable_lingual_arm").c_str());
-	auto dpEnableLingualArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpEnableLingualArm = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "enable_rest").c_str());
-	auto dpEnableRest = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpEnableRest = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "is_missing").c_str());
-	auto dpIsMissing = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpIsMissing = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "lingual_confrontation").c_str());
-	auto dpLingualConfrontation = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpLingualConfrontation = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "rest_mesial_or_distal").c_str());
-	auto dpRestMesialOrDistal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpRestMesialOrDistal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "tooth_ordinal").c_str());
-	auto dpToothOrdinal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpToothOrdinal = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
 	tmpStr = env->NewStringUTF((ontPrefix + "tooth_zone").c_str());
-	auto dpToothZone = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
+	auto const& dpToothZone = env->CallObjectMethod(ontModel, midModelConGetProperty, tmpStr);
 	env->DeleteLocalRef(tmpStr);
-	auto individuals = env->CallObjectMethod(ontModel, midListIndividuals);
-	auto isValid = env->CallBooleanMethod(individuals, midHasNext);
+	auto const& individuals = env->CallObjectMethod(ontModel, midListIndividuals);
+	auto const& isValid = env->CallBooleanMethod(individuals, midHasNext);
 	vector<Rpd*> thisRpds;
 	bool thisIsEighthToothUsed[nZones] = {};
 	while (env->CallBooleanMethod(individuals, midHasNext)) {
-		auto individual = env->CallObjectMethod(individuals, midNext);
-		auto ontClassStr = env->GetStringUTFChars(static_cast<jstring>(env->CallObjectMethod(env->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
-		auto tmpIt = rpdMapping_.find(ontClassStr);
+		auto const& individual = env->CallObjectMethod(individuals, midNext);
+		auto const& ontClassStr = env->GetStringUTFChars(static_cast<jstring>(env->CallObjectMethod(env->CallObjectMethod(individual, midGetOntClass), midGetLocalName)), nullptr);
+		auto const& tmpIt = rpdMapping_.find(ontClassStr);
 		switch (tmpIt == rpdMapping_.end() ? -1 : tmpIt->second) {
 			case AKERS_CLASP:
 				thisRpds.push_back(AkersClasp::createFromIndividual(env, midGetBoolean, midGetInt, midHasNext, midListProperties, midNext, midResourceGetProperty, midStatementGetProperty, dpClaspTipDirection, dpClaspMaterial, dpEnableBuccalArm, dpEnableLingualArm, dpEnableRest, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
@@ -810,7 +806,7 @@ bool queryRpds(JNIEnv* const& env, jobject const& ontModel, vector<Rpd*>& rpds) 
 				thisRpds.push_back(Rpi::createFromIndividual(env, midGetInt, midHasNext, midListProperties, midNext, midStatementGetProperty, dpToothZone, dpToothOrdinal, opComponentPosition, individual, thisIsEighthToothUsed));
 				break;
 			case TOOTH: {
-				auto tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing);
+				auto const& tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpIsMissing);
 				if (!(tmp && env->CallBooleanMethod(tmp, midGetBoolean)) && env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpToothOrdinal), midGetInt) == nTeethPerZone)
 					thisIsEighthToothUsed[env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpToothZone), midGetInt) - 1] = true;
 			}
@@ -849,7 +845,7 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 	for (auto tooth = tmpTeeth.begin(); tooth < tmpTeeth.end(); ++tooth)
 		centroids.push_back(tooth->getCentroid());
 	teethEllipse = fitEllipse(centroids);
-	auto nTeeth = (nTeethPerZone - 1) * nZones;
+	auto const& nTeeth = (nTeethPerZone - 1) * nZones;
 	vector<float> angles(nTeeth);
 	auto oldRemedyImage = remedyImage;
 	remedyImage = false;
@@ -864,7 +860,7 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 		thisTeeth[i].clear();
 	}
 	for (auto i = 0; i < nTeeth; ++i) {
-		auto no = idx[i];
+		auto const& no = idx[i];
 		for (auto j = 0; j < nZones; ++j)
 			if (isInZone[j][no]) {
 				if (j % 2)
@@ -874,19 +870,20 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 				break;
 			}
 	}
-	auto imageSize = thisBaseImage.size();
+	auto const& imageSize = thisBaseImage.size();
 	if (designImages)
 		(*designImages)[0] = Mat(imageSize, CV_8U, 255);
 	for (auto zone = 0; zone < nZones; ++zone) {
 		for (auto ordinal = 0; ordinal < nTeethPerZone - 1; ++ordinal) {
-			auto& tooth = thisTeeth[zone][ordinal];
+			auto const& tooth = thisTeeth[zone][ordinal];
 			if (ordinal == nTeethPerZone - 2)
 				thisTeeth[zone].push_back(tooth);
 			if (designImages)
 				polylines((*designImages)[0], tooth.getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
 		}
-		auto &seventhTooth = thisTeeth[zone][nTeethPerZone - 2], &eighthTooth = thisTeeth[zone][nTeethPerZone - 1];
-		auto translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
+		auto const& seventhTooth = thisTeeth[zone][nTeethPerZone - 2];
+		auto& eighthTooth = thisTeeth[zone][nTeethPerZone - 1];
+		auto const& translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
 		auto contour = eighthTooth.getContour();
 		for (auto point = contour.begin(); point < contour.end(); ++point)
 			*point += translation;
@@ -895,12 +892,12 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 	}
 	teethEllipse = fitEllipse(centroids);
 	auto theta = degreeToRadian(teethEllipse.angle);
-	auto direction = rotate(Point(0, 1), theta);
+	auto const& direction = rotate(Point(0, 1), theta);
 	float distance = 0;
 	for (auto zone = 0; zone < nZones; ++zone)
 		distance += thisTeeth[zone][nTeethPerZone - 1].getRadius();
 	(distance *= 2) /= 3;
-	auto translation = roundToPoint(direction * distance);
+	auto const& translation = roundToPoint(direction * distance);
 	centroids.clear();
 	for (auto zone = 0; zone < nZones; ++zone) {
 		auto& teethZone = thisTeeth[zone];
@@ -911,7 +908,7 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 			tooth.setNormalDirection(computeNormalDirection(tooth.getCentroid()));
 			if (ordinal == nTeethPerZone - 1) {
 				auto contour = tooth.getContour();
-				auto centroid = tooth.getCentroid();
+				auto& centroid = tooth.getCentroid();
 				theta = asin(teethZone[ordinal - 1].getNormalDirection().cross(tooth.getNormalDirection()));
 				for (auto point = contour.begin(); point < contour.end(); ++point)
 					*point = centroid + rotate(static_cast<Point2f>(*point) - centroid, theta);
@@ -959,33 +956,33 @@ void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&desi
 			for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
 				teeth[zone][ordinal].unsetAll();
 	for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
-		auto rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
+		auto const& rpdAsMajorConnector = dynamic_cast<RpdAsMajorConnector*>(*rpd);
 		if (rpdAsMajorConnector) {
 			rpdAsMajorConnector->registerMajorConnector(teeth);
 			rpdAsMajorConnector->registerExpectedAnchors(teeth);
 			rpdAsMajorConnector->registerLingualConfrontations(teeth);
 		}
-		auto rpdWithClaspRootOrRest = dynamic_cast<RpdWithClaspRootOrRest*>(*rpd);
+		auto const& rpdWithClaspRootOrRest = dynamic_cast<RpdWithClaspRootOrRest*>(*rpd);
 		if (rpdWithClaspRootOrRest)
 			rpdWithClaspRootOrRest->registerClaspRootOrRest(teeth);
-		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+		auto const& dentureBase = dynamic_cast<DentureBase*>(*rpd);
 		if (dentureBase)
 			dentureBase->registerExpectedAnchors(teeth);
 	}
 	if (justLoadedRpds)
 		for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
-			auto rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
+			auto const& rpdWithLingualArms = dynamic_cast<RpdWithLingualClaspArms*>(*rpd);
 			if (rpdWithLingualArms)
 				rpdWithLingualArms->setLingualClaspArms(teeth);
-			auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+			auto const& dentureBase = dynamic_cast<DentureBase*>(*rpd);
 			if (dentureBase)
 				dentureBase->setSide(teeth);
 		}
 	for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd) {
-		auto rpdWithLingualCoverage = dynamic_cast<RpdWithLingualCoverage*>(*rpd);
+		auto const& rpdWithLingualCoverage = dynamic_cast<RpdWithLingualCoverage*>(*rpd);
 		if (rpdWithLingualCoverage)
 			rpdWithLingualCoverage->registerLingualCoverage(teeth);
-		auto dentureBase = dynamic_cast<DentureBase*>(*rpd);
+		auto const& dentureBase = dynamic_cast<DentureBase*>(*rpd);
 		if (dentureBase)
 			dentureBase->registerDentureBase(teeth);
 	}

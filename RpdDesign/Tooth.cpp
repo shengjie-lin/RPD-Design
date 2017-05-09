@@ -11,7 +11,7 @@ vector<Point> const& Tooth::getContour() const { return contour_; }
 
 void Tooth::setContour(vector<Point> const& contour) {
 	contour_ = contour;
-	auto moment = moments(contour);
+	auto const& moment = moments(contour);
 	radius_ = sqrt(moment.m00 / CV_PI);
 	centroid_ = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 }
@@ -22,9 +22,9 @@ vector<Point> Tooth::getCurve(int const& startAngle, int const& endAngle, bool c
 	auto midAngle = (startAngle + endAngle) / 2;
 	if (startAngle > endAngle)
 		midAngle = (midAngle + 180) % 360;
-	auto& startIdx = anglePointIndices_[startAngle];
-	auto& midIdx = anglePointIndices_[midAngle];
-	auto& endIdx = anglePointIndices_[endAngle];
+	auto const& startIdx = anglePointIndices_[startAngle];
+	auto const& midIdx = anglePointIndices_[midAngle];
+	auto const& endIdx = anglePointIndices_[endAngle];
 	vector<Point> curve;
 	if ((midIdx - startIdx) * (endIdx - midIdx) >= 0)
 		if (startIdx < endIdx)
@@ -42,7 +42,7 @@ vector<Point> Tooth::getCurve(int const& startAngle, int const& endAngle, bool c
 	if (isConvex) {
 		vector<int> convexIdx;
 		convexHull(curve, convexIdx);
-		auto minMaxIts = minmax_element(convexIdx.begin(), convexIdx.end());
+		auto const& minMaxIts = minmax_element(convexIdx.begin(), convexIdx.end());
 		vector<Point> convexCurve;
 		if (minMaxIts.first < minMaxIts.second)
 			if ((minMaxIts.second - minMaxIts.first) * 2 >= convexIdx.size())
@@ -75,8 +75,8 @@ Point2f const& Tooth::getNormalDirection() const { return normalDirection_; }
 void Tooth::setNormalDirection(Point2f const& normalDirection) { normalDirection_ = normalDirection; }
 
 void Tooth::findAnglePoints(int const& zone) {
-	auto signVal = 1 - zone % 2 * 2;
-	auto deltaAngle = degreeToRadian(1);
+	auto const& signVal = 1 - zone % 2 * 2;
+	auto const& deltaAngle = degreeToRadian(1);
 	int angle;
 	float targetAngle;
 	if (signVal == 1) {
@@ -91,13 +91,13 @@ void Tooth::findAnglePoints(int const& zone) {
 	auto j = 0;
 	while (angle >= 0 && angle < 360) {
 		auto isFound = false;
-		auto d = rotate(normalDirection_, targetAngle);
+		auto const& d = rotate(normalDirection_, targetAngle);
 		while (!isFound) {
-			auto& p1 = contour_[j];
-			auto& p2 = contour_[(j + 1) % nPoints];
-			auto t = d.cross(centroid_ - static_cast<Point2f>(p1)) / d.cross(p2 - p1);
+			auto const& p1 = contour_[j];
+			auto const& p2 = contour_[(j + 1) % nPoints];
+			auto const& t = d.cross(centroid_ - static_cast<Point2f>(p1)) / d.cross(p2 - p1);
 			if (t >= 0 && t < 1) {
-				auto point = p1 + t * (p2 - p1);
+				auto const& point = p1 + t * (p2 - p1);
 				if (d.dot(static_cast<Point2f>(point) - centroid_) > 0) {
 					if (point == p1)
 						anglePointIndices_[angle] = j;
