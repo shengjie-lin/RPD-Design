@@ -74,9 +74,9 @@ RpdWithDirection::RpdWithDirection(Rpd::Direction const& direction) : direction_
 
 void RpdWithDirection::queryDirection(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midResourceGetProperty, jobject const& dpClaspTipDirection, jobject const& individual, Rpd::Direction& claspTipDirection) { claspTipDirection = static_cast<Rpd::Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
 
-void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> teeth[nZones]) const { registerMajorConnector(teeth, positions_); }
+void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> (&teeth)[nZones]) const { registerMajorConnector(teeth, positions_); }
 
-void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> teeth[nZones], vector<Position> const& positions) {
+void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> (&teeth)[nZones], vector<Position> const& positions) {
 	if (positions.size() == 2)
 		if (positions[0].zone == positions[1].zone)
 			for (auto position = positions[0]; position <= positions[1]; ++position)
@@ -89,9 +89,9 @@ void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> teeth[nZones], ve
 			registerMajorConnector(teeth, {positions[i] , positions[++i]});
 }
 
-void RpdAsMajorConnector::registerExpectedAnchors(vector<Tooth> teeth[nZones]) const { registerExpectedAnchors(teeth, positions_); }
+void RpdAsMajorConnector::registerExpectedAnchors(vector<Tooth> (&teeth)[nZones]) const { registerExpectedAnchors(teeth, positions_); }
 
-void RpdAsMajorConnector::registerExpectedAnchors(vector<Tooth> teeth[nZones], vector<Position> const& positions) {
+void RpdAsMajorConnector::registerExpectedAnchors(vector<Tooth> (&teeth)[nZones], vector<Position> const& positions) {
 	if (positions.size() == 2) {
 		getTooth(teeth, positions[0]).setExpectedMajorConnectorAnchor(positions[0].zone == positions[1].zone ? MESIAL : DISTAL);
 		getTooth(teeth, positions[1]).setExpectedMajorConnectorAnchor(DISTAL);
@@ -101,19 +101,19 @@ void RpdAsMajorConnector::registerExpectedAnchors(vector<Tooth> teeth[nZones], v
 			registerExpectedAnchors(teeth, {positions[i] , positions[++i]});
 }
 
-void RpdAsMajorConnector::registerLingualConfrontations(vector<Tooth> teeth[nZones]) const {
+void RpdAsMajorConnector::registerLingualConfrontations(vector<Tooth> (&teeth)[nZones]) const {
 	for (auto zone = 0; zone < nZones; ++zone)
 		for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
 			if (hasLingualConfrontations_[zone][ordinal])
 				teeth[zone][ordinal].setLingualConfrontation();
 }
 
-RpdAsMajorConnector::RpdAsMajorConnector(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : Rpd(positions) {
+RpdAsMajorConnector::RpdAsMajorConnector(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : Rpd(positions) {
 	for (auto zone = 0; zone < nZones; ++zone)
 		copy(begin(hasLingualConfrontations[zone]), end(hasLingualConfrontations[zone]), hasLingualConfrontations_[zone]);
 }
 
-void RpdAsMajorConnector::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void RpdAsMajorConnector::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	vector<vector<Point>> curves;
 	computeLingualConfrontationCurves(teeth, positions_, curves);
 	for (auto curve = curves.begin(); curve < curves.end(); ++curve)
@@ -129,7 +129,7 @@ void RpdAsMajorConnector::queryLingualConfrontations(JNIEnv* const& env, jmethod
 	}
 }
 
-void RpdWithLingualCoverage::registerLingualCoverage(vector<Tooth> teeth[nZones]) const {
+void RpdWithLingualCoverage::registerLingualCoverage(vector<Tooth> (&teeth)[nZones]) const {
 	deque<bool> tmpFlags(positions_.size());
 	for (auto flag = tmpFlags.begin(); flag < tmpFlags.end(); ++flag)
 		*flag = true;
@@ -140,13 +140,13 @@ RpdWithLingualCoverage::RpdWithLingualCoverage(vector<Position> const& positions
 
 RpdWithLingualCoverage::RpdWithLingualCoverage(vector<Position> const& positions, Material const& material, Direction const& rootDirection) : RpdWithLingualCoverage(positions, material, vector<Direction>{rootDirection}) {}
 
-void RpdWithLingualCoverage::registerLingualCoverage(vector<Tooth> teeth[nZones], deque<bool> const& flags) const {
+void RpdWithLingualCoverage::registerLingualCoverage(vector<Tooth> (&teeth)[nZones], deque<bool> const& flags) const {
 	for (auto i = 0; i < positions_.size(); ++i)
 		if (flags[i])
 			getTooth(teeth, positions_[i]).setLingualCoverage(rootDirections_[i]);
 }
 
-void RpdWithClaspRootOrRest::registerClaspRootOrRest(vector<Tooth> teeth[nZones]) {
+void RpdWithClaspRootOrRest::registerClaspRootOrRest(vector<Tooth> (&teeth)[nZones]) {
 	for (auto i = 0; i < rootDirections_.size(); ++i)
 		getTooth(teeth, positions_[positions_.size() == 1 ? 0 : i]).setClaspRootOrRest(rootDirections_[i]);
 }
@@ -155,7 +155,7 @@ RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(vector<Position> const& positions
 
 RpdWithClaspRootOrRest::RpdWithClaspRootOrRest(vector<Position> const& positions, Direction const& rootDirection) : RpdWithClaspRootOrRest(positions, vector<Direction>{rootDirection}) {}
 
-void RpdWithLingualClaspArms::setLingualClaspArms(vector<Tooth> teeth[nZones]) {
+void RpdWithLingualClaspArms::setLingualClaspArms(vector<Tooth> (&teeth)[nZones]) {
 	for (auto i = 0; i < positions_.size(); ++i)
 		hasLingualArms_[i] = !getTooth(teeth, positions_[i]).hasLingualConfrontation();
 }
@@ -164,17 +164,17 @@ RpdWithLingualClaspArms::RpdWithLingualClaspArms(vector<Position> const& positio
 
 RpdWithLingualClaspArms::RpdWithLingualClaspArms(vector<Position> const& positions, Material const& material, Direction const& rootDirection) : RpdWithLingualClaspArms(positions, material, vector<Direction>{rootDirection}) {}
 
-void RpdWithLingualClaspArms::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void RpdWithLingualClaspArms::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	for (auto i = 0; i < positions_.size(); ++i)
 		if (hasLingualArms_[i])
 			HalfClasp(positions_[i], material_, ~rootDirections_[i], LINGUAL).draw(designImage, teeth);
 }
 
-void RpdWithLingualClaspArms::registerLingualCoverage(vector<Tooth> teeth[nZones]) const { RpdWithLingualCoverage::registerLingualCoverage(teeth, hasLingualArms_); }
+void RpdWithLingualClaspArms::registerLingualCoverage(vector<Tooth> (&teeth)[nZones]) const { RpdWithLingualCoverage::registerLingualCoverage(teeth, hasLingualArms_); }
 
 RpdWithLingualRest::RpdWithLingualRest(vector<Position> const& positions, Material const& material, Direction const& direction) : Rpd(positions), RpdWithClaspRootOrRest(positions, direction), RpdWithLingualCoverage(positions, material, direction) {}
 
-void RpdWithLingualRest::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void RpdWithLingualRest::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	for (auto i = 0; i < positions_.size(); ++i)
 		LingualRest(vector<Position>{positions_[i]}, material_, RpdWithLingualCoverage::rootDirections_[i]).draw(designImage, teeth);
 }
@@ -202,7 +202,7 @@ AkersClasp* AkersClasp::createFromIndividual(JNIEnv* const& env, jmethodID const
 	return new AkersClasp(positions, claspMaterial, claspTipDirection, enableBuccalArm, enableLingualArm, enableRest);
 }
 
-void AkersClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void AkersClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdWithLingualClaspArms::draw(designImage, teeth);
 	if (enableRest_)
 		OcclusalRest(positions_, ~direction_).draw(designImage, teeth);
@@ -210,7 +210,7 @@ void AkersClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones])
 		HalfClasp(positions_, material_, direction_, BUCCAL).draw(designImage, teeth);
 }
 
-void AkersClasp::setLingualClaspArms(vector<Tooth> teeth[nZones]) {
+void AkersClasp::setLingualClaspArms(vector<Tooth> (&teeth)[nZones]) {
 	if (hasLingualArms_[0])
 		RpdWithLingualClaspArms::setLingualClaspArms(teeth);
 }
@@ -227,7 +227,7 @@ CanineAkersClasp* CanineAkersClasp::createFromIndividual(JNIEnv* const& env, jme
 
 CanineAkersClasp::CanineAkersClasp(vector<Position> const& positions, Material const& claspMaterial, Direction const& direction) : Rpd(positions), RpdWithDirection(direction), RpdWithLingualRest(positions, WROUGHT_WIRE, ~direction), claspMaterial_(claspMaterial) {}
 
-void CanineAkersClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void CanineAkersClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdWithLingualRest::draw(designImage, teeth);
 	HalfClasp(positions_, claspMaterial_, direction_, BUCCAL).draw(designImage, teeth);
 }
@@ -240,17 +240,17 @@ CombinationAnteriorPosteriorPalatalStrap* CombinationAnteriorPosteriorPalatalStr
 	return new CombinationAnteriorPosteriorPalatalStrap(positions, hasLingualConfrontations);
 }
 
-CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStrap(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
-void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
 	vector<Point> curve, innerCurve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2], positions_[3]}, true, tmpCurve, curves, {}, distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, &innerCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0], positions_[1]}, true, tmpCurve, curves, {}, distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &innerCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
@@ -275,7 +275,7 @@ CombinationClasp* CombinationClasp::createFromIndividual(JNIEnv* const& env, jme
 	return new CombinationClasp(positions, claspTipDirection);
 }
 
-void CombinationClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void CombinationClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdWithLingualClaspArms::draw(designImage, teeth);
 	OcclusalRest(positions_, ~direction_).draw(designImage, teeth);
 	HalfClasp(positions_, WROUGHT_WIRE, direction_, BUCCAL).draw(designImage, teeth);
@@ -291,7 +291,7 @@ CombinedClasp* CombinedClasp::createFromIndividual(JNIEnv* const& env, jmethodID
 	return new CombinedClasp(positions, claspMaterial);
 }
 
-void CombinedClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void CombinedClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdWithLingualClaspArms::draw(designImage, teeth);
 	auto isInSameZone = positions_[0].zone == positions_[1].zone;
 	OcclusalRest(positions_[0], isInSameZone ? DISTAL : MESIAL).draw(designImage, teeth);
@@ -308,14 +308,14 @@ ContinuousClasp* ContinuousClasp::createFromIndividual(JNIEnv* const& env, jmeth
 	return new ContinuousClasp(positions, claspMaterial);
 }
 
-void ContinuousClasp::setLingualClaspArms(vector<Tooth> teeth[nZones]) {
+void ContinuousClasp::setLingualClaspArms(vector<Tooth> (&teeth)[nZones]) {
 	RpdWithLingualClaspArms::setLingualClaspArms(teeth);
 	hasLingualArms_[0] = hasLingualArms_[1] = hasLingualArms_[0] && hasLingualArms_[1];
 }
 
 ContinuousClasp::ContinuousClasp(vector<Position> const& positions, Material const& material) : Rpd(positions), RpdWithClaspRootOrRest(positions, {positions[0].zone == positions[1].zone ? MESIAL : DISTAL, DISTAL}), RpdWithLingualClaspArms(positions, material, {positions[0].zone == positions[1].zone ? MESIAL : DISTAL, DISTAL}) {}
 
-void ContinuousClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void ContinuousClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto isInSameZone = positions_[0].zone == positions_[1].zone;
 	OcclusalRest(positions_[0], isInSameZone ? MESIAL : DISTAL).draw(designImage, teeth);
 	OcclusalRest(positions_[1], DISTAL).draw(designImage, teeth);
@@ -339,7 +339,7 @@ DentureBase* DentureBase::createFromIndividual(JNIEnv* const& env, jmethodID con
 	return new DentureBase(positions);
 }
 
-void DentureBase::setSide(vector<Tooth> const teeth[nZones]) {
+void DentureBase::setSide(const vector<Tooth> (&teeth)[nZones]) {
 	auto isCoveringTail = false;
 	for (auto i = 0; i < 2; ++i)
 		if (isLastTooth(positions_[i])) {
@@ -349,11 +349,11 @@ void DentureBase::setSide(vector<Tooth> const teeth[nZones]) {
 	side_ = !isCoveringTail && isBlockedByMajorConnector(teeth, positions_) ? SINGLE : DOUBLE;
 }
 
-void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones]) const { registerDentureBase(teeth, positions_); }
+void DentureBase::registerDentureBase(vector<Tooth> (&teeth)[nZones]) const { registerDentureBase(teeth, positions_); }
 
-void DentureBase::registerExpectedAnchors(vector<Tooth> teeth[nZones]) const { registerExpectedAnchors(teeth, positions_); }
+void DentureBase::registerExpectedAnchors(vector<Tooth> (&teeth)[nZones]) const { registerExpectedAnchors(teeth, positions_); }
 
-void DentureBase::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void DentureBase::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	if (side_ == DOUBLE) {
 		vector<vector<Point>> curves;
 		computeStringCurves(teeth, positions_, {1.6F, -1.6F}, {true, true}, {true, true}, true, curves);
@@ -370,7 +370,7 @@ void DentureBase::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]
 	}
 }
 
-void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones], vector<Position> positions) const {
+void DentureBase::registerDentureBase(vector<Tooth> (&teeth)[nZones], vector<Position> positions) const {
 	if (positions[0].zone == positions[1].zone)
 		for (auto position = positions[0]; position <= positions[1]; ++position)
 			getTooth(teeth, position).setDentureBase(side_);
@@ -380,7 +380,7 @@ void DentureBase::registerDentureBase(vector<Tooth> teeth[nZones], vector<Positi
 	}
 }
 
-void DentureBase::registerExpectedAnchors(vector<Tooth> teeth[nZones], vector<Position> const& positions) {
+void DentureBase::registerExpectedAnchors(vector<Tooth> (&teeth)[nZones], vector<Position> const& positions) {
 	if (positions.size() == 2) {
 		getTooth(teeth, positions[0]).setExpectedDentureBaseAnchor(positions[0].zone == positions[1].zone ? MESIAL : DISTAL);
 		getTooth(teeth, positions[1]).setExpectedDentureBaseAnchor(DISTAL);
@@ -399,7 +399,7 @@ EdentulousSpace* EdentulousSpace::createFromIndividual(JNIEnv* const& env, jmeth
 	return new EdentulousSpace(positions);
 }
 
-void EdentulousSpace::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void EdentulousSpace::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	vector<vector<Point>> curves;
 	computeStringCurves(teeth, positions_, {0.25F, -0.25F}, {false, false}, {false, false}, false, curves);
 	for (auto curve = curves.begin(); curve < curves.end(); ++curve) {
@@ -416,13 +416,13 @@ FullPalatalPlate* FullPalatalPlate::createFromIndividual(JNIEnv* const& env, jme
 	return new FullPalatalPlate(positions, hasLingualConfrontations);
 }
 
-FullPalatalPlate::FullPalatalPlate(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+FullPalatalPlate::FullPalatalPlate(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
-void FullPalatalPlate::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void FullPalatalPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
 	vector<Point> curve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, positions_, true, curve, curves, {}, &distalPoints);
+	computeLingualCurve(teeth, positions_, curve, curves, &distalPoints, {});
 	reverse(curve.begin(), curve.end());
 	computeDistalCurve(teeth, positions_, distalPoints, distalCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
@@ -442,9 +442,9 @@ LingualBar* LingualBar::createFromIndividual(JNIEnv* const& env, jmethodID const
 	return new LingualBar(positions, hasLingualConfrontations);
 }
 
-LingualBar::LingualBar(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+LingualBar::LingualBar(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
-void LingualBar::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void LingualBar::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	vector<Point> curve, tmpCurve;
 	vector<vector<Point>> curves;
 	float avgRadius;
@@ -467,14 +467,14 @@ LingualPlate* LingualPlate::createFromIndividual(JNIEnv* const& env, jmethodID c
 	return new LingualPlate(positions, hasLingualConfrontations);
 }
 
-LingualPlate::LingualPlate(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+LingualPlate::LingualPlate(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
-void LingualPlate::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void LingualPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
 	vector<Point> curve, tmpCurve;
 	computeOuterCurve(teeth, positions_, curve);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, positions_, true, tmpCurve, curves);
+	computeLingualCurve(teeth, positions_, tmpCurve, curves);
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
 		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
@@ -494,7 +494,7 @@ LingualRest* LingualRest::createFromIndividual(JNIEnv* const& env, jmethodID con
 	return new LingualRest(positions, CAST, restMesialOrDistal);
 }
 
-void LingualRest::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void LingualRest::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto curve = tooth.getCurve(240, 300);
 	vector<Point> tmpCurve{curve.back(), curve[0]};
@@ -521,7 +521,7 @@ OcclusalRest* OcclusalRest::createFromIndividual(JNIEnv* const& env, jmethodID c
 	return new OcclusalRest(positions, restMesialOrDistal);
 }
 
-void OcclusalRest::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void OcclusalRest::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto isMesial = direction_ == MESIAL;
 	auto curve = tooth.getCurve(isMesial ? 340 : 160, isMesial ? 20 : 200);
@@ -540,17 +540,17 @@ PalatalPlate* PalatalPlate::createFromIndividual(JNIEnv* const& env, jmethodID c
 	return new PalatalPlate(positions, hasLingualConfrontations);
 }
 
-PalatalPlate::PalatalPlate(vector<Position> const& positions, bool const hasLingualConfrontations[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
+PalatalPlate::PalatalPlate(vector<Position> const& positions, const bool (&hasLingualConfrontations)[nZones][nTeethPerZone]) : RpdAsMajorConnector(positions, hasLingualConfrontations) {}
 
-void PalatalPlate::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void PalatalPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
 	vector<Point> curve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2], positions_[3]}, true, tmpCurve, curves, {}, distalPoints[1]);
+	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
 	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0], positions_[1]}, true, tmpCurve, curves, {}, distalPoints[0]);
+	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
@@ -575,7 +575,7 @@ RingClasp* RingClasp::createFromIndividual(JNIEnv* const& env, jmethodID const& 
 	return new RingClasp(positions, claspMaterial, tipSide);
 }
 
-void RingClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void RingClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	OcclusalRest(positions_, MESIAL).draw(designImage, teeth);
 	if (material_ == CAST)
 		OcclusalRest(positions_, DISTAL).draw(designImage, teeth);
@@ -598,7 +598,7 @@ Rpa* Rpa::createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, j
 	return new Rpa(positions, claspMaterial);
 }
 
-void Rpa::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void Rpa::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	OcclusalRest(positions_, MESIAL).draw(designImage, teeth);
 	GuidingPlate(positions_).draw(designImage, teeth);
 	HalfClasp(positions_, material_, MESIAL, BUCCAL).draw(designImage, teeth);
@@ -612,7 +612,7 @@ Rpi* Rpi::createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, j
 	return new Rpi(positions);
 }
 
-void Rpi::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void Rpi::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	OcclusalRest(positions_, MESIAL).draw(designImage, teeth);
 	GuidingPlate(positions_).draw(designImage, teeth);
 	IBar(positions_).draw(designImage, teeth);
@@ -632,7 +632,7 @@ WwClasp* WwClasp::createFromIndividual(JNIEnv* const& env, jmethodID const& midG
 
 GuidingPlate::GuidingPlate(vector<Position> const& positions) : Rpd(positions) {}
 
-void GuidingPlate::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void GuidingPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto& centroid = tooth.getCentroid();
 	auto point = centroid + (static_cast<Point2f>(tooth.getAnglePoint(180)) - centroid) * 1.1F;
@@ -645,7 +645,7 @@ HalfClasp::HalfClasp(vector<Position> const& positions, Material const& material
 
 HalfClasp::HalfClasp(Position const& position, Material const& material, Direction const& direction, Side const& side) : HalfClasp(vector<Position>{position}, material, direction, side) {}
 
-void HalfClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void HalfClasp::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	vector<Point> curve;
 	switch ((direction_ == DISTAL) * 2 + (side_ == LINGUAL)) {
@@ -668,7 +668,7 @@ void HalfClasp::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) 
 
 IBar::IBar(vector<Position> const& positions) : Rpd(positions) {}
 
-void IBar::draw(Mat const& designImage, vector<Tooth> const teeth[nZones]) const {
+void IBar::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
 	auto a = tooth.getRadius() * 1.5F;
 	auto &p1 = tooth.getAnglePoint(75), &p2 = tooth.getAnglePoint(165);

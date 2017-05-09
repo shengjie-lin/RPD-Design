@@ -78,7 +78,7 @@ void RpdDesign::loadBaseImage() {
 	auto fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
 	if (!fileName.isEmpty()) {
 		auto image = imread(fileName.toLocal8Bit().data());
-		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, teeth_, designImages_, &baseImage_)) {
+		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, &teeth_, &designImages_, &baseImage_)) {
 			updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
 			updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
 			justLoadedRpds_ = false;
