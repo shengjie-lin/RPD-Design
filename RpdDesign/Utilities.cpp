@@ -1,3 +1,4 @@
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <opencv2/imgproc.hpp>
 
@@ -824,11 +825,9 @@ bool queryRpds(JNIEnv* const& env, jobject const& ontModel, vector<Rpd*>& rpds) 
 	return isValid;
 }
 
-bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], Mat (&remediedDesignImages)[2], vector<Tooth> (*const& teeth)[nZones], Mat (*const& designImages)[2], Mat* const& baseImage) {
-	if (image.empty())
-		return false;
+void analyzeBaseImage(Mat const& base, vector<Tooth> (&remediedTeeth)[nZones], Mat (&remediedDesignImages)[2], vector<Tooth> (*const& teeth)[nZones], Mat (*const& designImages)[2], Mat* const& baseImage) {
 	Mat thisBaseImage;
-	copyMakeBorder(image, thisBaseImage, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
+	copyMakeBorder(base, thisBaseImage, 80, 80, 80, 80, BORDER_CONSTANT, Scalar::all(255));
 	if (baseImage)
 		*baseImage = thisBaseImage;
 	Mat tmpImage;
@@ -947,7 +946,6 @@ bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], 
 		}
 	}
 	remedyImage = oldRemedyImage;
-	return true;
 }
 
 void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&designImages)[2], bool const& justLoadedImage, bool const& justLoadedRpds) {

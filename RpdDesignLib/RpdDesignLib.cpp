@@ -2,7 +2,7 @@
 
 #include "com_shengjie_Main.h"
 #include "dllmain.h"
-#include "resource.h"
+#include "../RpdDesign/resource.h"
 #include "../RpdDesign/Tooth.h"
 #include "../RpdDesign/Utilities.h"
 

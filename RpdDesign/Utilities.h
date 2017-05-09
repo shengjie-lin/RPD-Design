@@ -63,6 +63,6 @@ bool isLastTooth(Rpd::Position const& position);
 
 bool queryRpds(JNIEnv* const& env, jobject const& ontModel, vector<Rpd*>& rpds);
 
-bool analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], Mat (&remediedDesignImages)[2], vector<Tooth> (*const& teeth)[nZones] = nullptr, Mat (*const& designImages)[2] = nullptr, Mat* const& baseImage = nullptr);
+void analyzeBaseImage(Mat const& image, vector<Tooth> (&remediedTeeth)[nZones], Mat (&remediedDesignImages)[2], vector<Tooth> (*const& teeth)[nZones] = nullptr, Mat (*const& designImages)[2] = nullptr, Mat* const& baseImage = nullptr);
 
 void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&designImages)[2], bool const& justLoadedImage, bool const& justLoadedRpds);

@@ -24,7 +24,7 @@ Add to `PATH`:
 In `%ROOT%\RpdDesign\RpdDesign.cpp`, modify accordingly the following line:
 > `string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";`
 
-Use `lrelease` to generated Qt Linguist translation files for `%ROOT%\RpdDesign\rpddesign_[en,zh].ts`.
+Use `lrelease` to generate Qt Linguist translation files from sources `%ROOT%\RpdDesign\rpddesign_[en,zh].ts`.
 
 ### Run & Test
 After successful build, the executalbe will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesign.exe`.

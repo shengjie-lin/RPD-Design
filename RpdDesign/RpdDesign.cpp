@@ -1,9 +1,12 @@
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <QFileDialog>
 #include <QMessageBox>
 
 #include "RpdDesign.h"
+#include "resource.h"
 #include "RpdViewer.h"
 #include "Tooth.h"
 #include "Utilities.h"
@@ -14,15 +17,16 @@ RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	ui_.setupUi(this);
 	rpdViewer_ = new RpdViewer(this);
 	ui_.verticalLayout->insertWidget(0, rpdViewer_);
-	setMinimumSize(512, 512);
+	setMinimumSize(600, 600);
 	remedyImage = ui_.remedyCheckBox->isChecked();
 	showBaseImage_ = ui_.baseCheckBox->isChecked();
 	showDesignImage_ = ui_.designCheckBox->isChecked();
-	chsTranslator_.load("rpddesign_zh.qm");
-	engTranslator_.load("rpddesign_en.qm");
+	chsTranslator_.load(":/qrc/rpddesign_zh.qm");
+	engTranslator_.load(":/qrc/rpddesign_en.qm");
 	switchLanguage(&isEnglish_);
 	connect(ui_.switchLanguagePushButton, SIGNAL(clicked()), this, SLOT(switchLanguage()));
 	connect(ui_.loadBasePushButton, SIGNAL(clicked()), this, SLOT(loadBaseImage()));
+	connect(ui_.loadDefaultBasePushButton, SIGNAL(clicked()), this, SLOT(loadDefaultBaseImage()));
 	connect(ui_.loadRpdPushButton, SIGNAL(clicked()), this, SLOT(loadRpdInfo()));
 	connect(ui_.saveDesignPushButton, SIGNAL(clicked()), this, SLOT(saveDesign()));
 	connect(ui_.remedyCheckBox, SIGNAL(toggled(bool)), this, SLOT(onRemedyImageChanged(bool const&)));
@@ -55,6 +59,7 @@ void RpdDesign::changeEvent(QEvent* event) {
 		ui_.designCheckBox->setText(tr("Design"));
 		ui_.switchLanguagePushButton->setText(tr("Switch Language"));
 		ui_.loadBasePushButton->setText(tr("Load Base"));
+		ui_.loadDefaultBasePushButton->setText(tr("Load Default Base"));
 		ui_.loadRpdPushButton->setText(tr("Load RPD"));
 		ui_.saveDesignPushButton->setText(tr("Save Design"));
 	}
@@ -74,19 +79,29 @@ void RpdDesign::updateViewer() {
 	rpdViewer_->setCurImage(curImage);
 }
 
+void RpdDesign::analyzeAndUpdate(Mat const& base) {
+	analyzeBaseImage(base, remediedTeeth_, remediedDesignImages_, &teeth_, &designImages_, &baseImage_);
+	updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
+	updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
+	justLoadedRpds_ = false;
+	updateViewer();
+}
+
 void RpdDesign::loadBaseImage() {
 	auto const& fileName = QFileDialog::getOpenFileName(this, tr("Select Base Image"), "", tr("All supported formats (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pbm *.pgm *.ppm *.sr *.ras *.tiff *.tif);;Windows bitmaps (*.bmp *.dib);;JPEG files (*.jpeg *.jpg *.jpe);;JPEG 2000 files (*.jp2);;Portable Network Graphics (*.png);;Portable image format (*.pbm *.pgm *.ppm);;Sun rasters (*.sr *.ras);;TIFF files (*.tiff *.tif)"));
 	if (!fileName.isEmpty()) {
 		auto const& image = imread(fileName.toLocal8Bit().data());
-		if (analyzeBaseImage(image, remediedTeeth_, remediedDesignImages_, &teeth_, &designImages_, &baseImage_)) {
-			updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
-			updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
-			justLoadedRpds_ = false;
-			updateViewer();
-		}
-		else
+		if (image.empty())
 			QMessageBox::critical(this, tr("Error"), tr("Not a Valid Image!"));
+		else
+			analyzeAndUpdate(image);
 	}
+}
+
+void RpdDesign::loadDefaultBaseImage() {
+	auto const& hRsrc = FindResource(nullptr, MAKEINTRESOURCE(IDB_PNG1), TEXT("PNG"));
+	auto const& pBuf = static_cast<uchar*>(LockResource(LoadResource(nullptr, hRsrc)));
+	analyzeAndUpdate(imdecode(vector<uchar>(pBuf, pBuf + SizeofResource(nullptr, hRsrc)), IMREAD_COLOR));
 }
 
 void RpdDesign::loadRpdInfo() {

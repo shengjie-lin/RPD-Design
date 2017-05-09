@@ -157,12 +157,12 @@
   <ItemGroup>
     <ClInclude Include="..\RpdDesign\EllipticCurve.h" />
     <ClInclude Include="..\RpdDesign\GlobalVariables.h" />
+    <ClInclude Include="..\RpdDesign\resource.h" />
     <ClInclude Include="..\RpdDesign\Rpd.h" />
     <ClInclude Include="..\RpdDesign\Tooth.h" />
     <ClInclude Include="..\RpdDesign\Utilities.h" />
     <ClInclude Include="com_shengjie_Main.h" />
     <ClInclude Include="dllmain.h" />
-    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\RpdDesign\EllipticCurve.cpp" />

@@ -33,10 +33,10 @@
     <ClInclude Include="com_shengjie_Main.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="dllmain.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="dllmain.h">
+    <ClInclude Include="..\RpdDesign\resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qrc">
+        <file>rpddesign_en.qm</file>
+        <file>rpddesign_zh.qm</file>
+    </qresource>
+</RCC>

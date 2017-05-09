@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
+    <width>713</width>
     <height>400</height>
    </rect>
   </property>
@@ -139,7 +139,14 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_5">
+      <widget class="QPushButton" name="loadDefaultBasePushButton">
+       <property name="text">
+        <string notr="true">Load Default Base</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_9">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>

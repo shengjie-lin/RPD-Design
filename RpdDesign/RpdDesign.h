@@ -19,6 +19,7 @@ public:
 private:
 	void changeEvent(QEvent* event) override;
 	void updateViewer();
+	void analyzeAndUpdate(Mat const& base);
 	static string jenaLibPath;
 	bool isEnglish_ = true;
 	bool justLoadedRpds_ = false, showBaseImage_, showDesignImage_;
@@ -32,6 +33,7 @@ private:
 	vector<Tooth> teeth_[nZones], remediedTeeth_[nZones];
 private slots:
 	void loadBaseImage();
+	void loadDefaultBaseImage();
 	void loadRpdInfo();
 	void onRemedyImageChanged(bool const& thisRemedyImage);
 	void onShowBaseChanged(bool const& showBaseImage);
