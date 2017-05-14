@@ -356,7 +356,7 @@ void DentureBase::registerExpectedAnchors(vector<Tooth> (&teeth)[nZones]) const 
 void DentureBase::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	if (side_ == DOUBLE) {
 		vector<vector<Point>> curves;
-		computeStringCurves(teeth, positions_, {1.6F, -1.6F}, {true, true}, {true, true}, true, curves);
+		computeStringCurves(teeth, positions_, {distanceScales[DENTURE_BASE_CURVE], -distanceScales[DENTURE_BASE_CURVE]}, {true, true}, {true, true}, true, curves);
 		for (auto i = 0; i < 2; ++i)
 			computePiecewiseSmoothCurve(curves[i], curves[i]);
 		curves[0].insert(curves[0].end(), curves[1].rbegin(), curves[1].rend());
@@ -364,7 +364,7 @@ void DentureBase::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZon
 	}
 	else {
 		vector<Point> curve;
-		computeStringCurve(teeth, positions_, 1.6F, {true, true}, {true, true}, false, curve);
+		computeStringCurve(teeth, positions_, distanceScales[DENTURE_BASE_CURVE], {true, true}, {true, true}, false, curve);
 		computeSmoothCurve(curve, curve);
 		polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}

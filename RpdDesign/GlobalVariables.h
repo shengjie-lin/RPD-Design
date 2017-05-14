@@ -28,7 +28,17 @@ enum RpdClass {
 	WW_CLASP
 };
 
-const int lineThicknessOfLevel[]{1, 4, 7};
+enum DistanceScaledCurve {
+	BYPASS,
+	DENTURE_BASE_CURVE,
+	INNER,
+	MESIAL_OR_DISTAL,
+	OUTER
+};
+
+const float distanceScales[]{1.5F, 1.6F, 1.75F, 2.25F, 2.4F};
+
+const int lineThicknessOfLevel[]{2, 5, 8};
 
 int const nTeethPerZone = 8, nZones = 4;
 

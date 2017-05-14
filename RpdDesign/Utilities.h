@@ -57,7 +57,7 @@ Point2f computeNormalDirection(Point2f const& point, float* const& angle = nullp
 
 bool shouldAnchor(const vector<Tooth> (&teeth)[nZones], Rpd::Position const& position, Rpd::Direction const& direction);
 
-void findAnchorPoints(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Rpd::Position>& startEndPositions, const vector<Point>* const& anchorPoints = nullptr, vector<Point>* const& thisAnchorPoints = nullptr);
+void findAnchorPoints(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Rpd::Position>& startEndPositions, const vector<Point>* const& inAnchorPoints = nullptr, vector<Point>* const& outAnchorPoints = nullptr);
 
 bool isLastTooth(Rpd::Position const& position);
 
