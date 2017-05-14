@@ -375,23 +375,21 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 
 void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints) {
 	vector<Rpd::Position> startEndPositions;
-	vector<Point> thisAnchorPoints;
+	vector<Point> thisAnchorPoints, tmpCurve;
 	findAnchorPoints(teeth, positions, startEndPositions, anchorPoints, &thisAnchorPoints);
 	if (startEndPositions[0].zone == startEndPositions[1].zone) {
 		auto const& zone = startEndPositions[0].zone;
 		auto const& startOrdinal = startEndPositions[0].ordinal;
 		auto const& endOrdinal = startEndPositions[1].ordinal;
 		auto curOrdinal = startOrdinal - 1;
-		vector<Point> tmpCurve;
 		auto lastPosition = startEndPositions[0];
 		auto lastAnchorPoint = thisAnchorPoints[0];
 		while (curOrdinal <= endOrdinal) {
 			++curOrdinal;
 			auto const& isValidPosition = curOrdinal <= endOrdinal;
 			auto const& isStart = lastPosition == startEndPositions[0] && !anchorPoints;
-			auto isEnd = curOrdinal == endOrdinal;
+			auto isEnd = curOrdinal == endOrdinal, hasMesialClaspRootOrRest = false, hasDistalClaspRootOrRest = false, hasLingualConfrontation = false, hasSingleDb = false;
 			auto thisPosition = Rpd::Position(zone, curOrdinal);
-			auto hasMesialClaspRootOrRest = false, hasDistalClaspRootOrRest = false, hasLingualConfrontation = false, hasSingleDb = false;
 			Point thisAchorPoint;
 			if (isValidPosition) {
 				auto& tooth = getTooth(teeth, thisPosition);
@@ -410,7 +408,7 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 					isEnd = !isValidPosition;
 				}
 				auto hasCurve = true;
-				if (lastPosition.zone == thisPosition.zone && lastPosition <= thisPosition) {
+				if (lastPosition.zone == thisPosition.zone && lastPosition.ordinal <= thisPosition.ordinal) {
 					computeStringCurve(teeth, {lastPosition, thisPosition}, 0, {false, false}, {false, false}, false, tmpCurve);
 					if (lastAnchorPoint != Point())
 						tmpCurve[0] = lastAnchorPoint;
@@ -493,9 +491,10 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 					else
 						break;
 				}
-				computeInnerCurve(teeth, {++Rpd::Position(startPositions[i]), startEndPositions[i]}, avgRadius, thisCurves[i], curves, new vector<Point>{hasNone && !hasDistalClaspRootOrRest ? Point() : getTooth(teeth, startPositions[i]).getAnglePoint(180) , thisAnchorPoints[i]});
+				auto const& thisStartPosition = ++Rpd::Position(startPositions[i]);
+				computeInnerCurve(teeth, {thisStartPosition, startEndPositions[i]}, avgRadius, thisCurves[i], curves, new vector<Point>{hasNone && !hasDistalClaspRootOrRest ? Point() : getTooth(teeth, startPositions[i]).getAnglePoint(180) , thisAnchorPoints[i]});
 				if (hasNone && !hasDistalClaspRootOrRest)
-					tmpPoints[i] = getTooth(teeth, ++Rpd::Position(startPositions[i])).getAnglePoint(0);
+					tmpPoints[i] = getTooth(teeth, thisStartPosition).getAnglePoint(0);
 			}
 			else {
 				auto &tooth = getTooth(teeth, startPositions[i]), &nextTooth = getTooth(teeth, --Rpd::Position(startPositions[i]));
@@ -503,7 +502,6 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 			}
 		}
 		curve.insert(curve.end(), thisCurves[0].rbegin(), thisCurves[0].rend());
-		vector<Point> tmpCurve;
 		if (hasLingualConfrontation) {
 			computeLingualConfrontationCurve(teeth, startPositions, tmpCurve);
 			curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
@@ -900,7 +898,7 @@ void analyzeBaseImage(Mat const& base, vector<Tooth> (&remediedTeeth)[nZones], M
 		}
 		auto const& seventhTooth = thisTeeth[zone][nTeethPerZone - 2];
 		auto& eighthTooth = thisTeeth[zone][nTeethPerZone - 1];
-		auto const& translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.1);
+		auto const& translation = roundToPoint(rotate(computeNormalDirection(seventhTooth.getAnglePoint(180)), CV_PI * (zone % 2 - 0.5)) * seventhTooth.getRadius() * 2.16);
 		auto contour = eighthTooth.getContour();
 		for (auto point = contour.begin(); point < contour.end(); ++point)
 			*point += translation;
@@ -913,7 +911,7 @@ void analyzeBaseImage(Mat const& base, vector<Tooth> (&remediedTeeth)[nZones], M
 	float distance = 0;
 	for (auto zone = 0; zone < nZones; ++zone)
 		distance += thisTeeth[zone][nTeethPerZone - 1].getRadius();
-	(distance *= 2) /= 3;
+	(distance *= 3) /= 4;
 	auto const& translation = roundToPoint(direction * distance);
 	centroids.clear();
 	for (auto zone = 0; zone < nZones; ++zone) {
