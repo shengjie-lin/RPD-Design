@@ -62,4 +62,4 @@ Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Depen
 _N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`. Modify the arguments to specify the valid classpath (-cp) and the desired output directory (-d). Before run, add `%JDK_DIR%\bin` to `PATH`._
 
 ### Run & Test
-After successful build, running the program directly will produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest`. They should both resemble `%ROOT%\sample\sample.png`.
+After successful build, running the program directly will produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest\`. They should both resemble `%ROOT%\sample\sample.png`.
