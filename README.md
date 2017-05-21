@@ -54,12 +54,12 @@ To build the project, you will need:
 * [IntelliJ IDEA](https://www.jetbrains.com/idea/)
 * [OpenCV 3.x](http://opencv.org/)
 * [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-* [Apache Jena](https://jena.apache.org/)
+* [Apache Jena 3.x](https://jena.apache.org/)
 * `RpdDesignLib.dll` as generated in `RpdDesignLib`
 
 Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Dependencies in Modules (or modify `%ROOT%\RpdDesignLibTest\RpdDesignLibTest.iml` directly).
 
-_N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`. Modify the arguments to specify the valid classpath (-cp) and the desired output path (-o). Before run, add `%JDK_DIR%\bin\` to `PATH`._ Then use the function signatures as indicated in the header to replace the ones in `%ROOT%\RpdDesignLib\RpdDesignLib.[h,cpp]`.
+_N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`. Modify the arguments to specify the valid classpath (-cp) and the desired output path (-o). Before run, add `%JDK_DIR%\bin\` to `PATH`._ Then use the function signatures as indicated in the generated header to replace the ones in `%ROOT%\RpdDesignLib\RpdDesignLib.[h,cpp]`.
 
 ### Run & Test
 After successful build, running the program directly will produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest\`. They should both resemble `%ROOT%\sample\sample.png`.

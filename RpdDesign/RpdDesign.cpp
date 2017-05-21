@@ -11,7 +11,7 @@
 #include "Tooth.h"
 #include "Utilities.h"
 
-string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";
+string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.3.0/lib/";
 
 RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	ui_.setupUi(this);
