@@ -61,6 +61,11 @@ void Rpd::queryPositions(JNIEnv* const& env, jmethodID const& midGetInt, jmethod
 				swap(positions[i], positions[j]);
 	if (autoComplete && count == 1)
 		positions.push_back(positions[0]);
+	else if (count == 3)
+		if (positions[0].zone == positions[1].zone)
+			positions.push_back(positions.back());
+		else
+			positions.insert(positions.begin(), positions[0]);
 }
 
 RpdWithMaterial::RpdWithMaterial(Material const& material) : material_(material) {}

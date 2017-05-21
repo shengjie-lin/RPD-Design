@@ -161,7 +161,7 @@
     <ClInclude Include="..\RpdDesign\Rpd.h" />
     <ClInclude Include="..\RpdDesign\Tooth.h" />
     <ClInclude Include="..\RpdDesign\Utilities.h" />
-    <ClInclude Include="com_shengjie_Main.h" />
+    <ClInclude Include="RpdDesignLib.h" />
     <ClInclude Include="dllmain.h" />
   </ItemGroup>
   <ItemGroup>

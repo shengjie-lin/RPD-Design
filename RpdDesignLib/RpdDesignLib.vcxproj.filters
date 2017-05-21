@@ -30,13 +30,13 @@
     <ClInclude Include="..\RpdDesign\Utilities.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="com_shengjie_Main.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="dllmain.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\RpdDesign\resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RpdDesignLib.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

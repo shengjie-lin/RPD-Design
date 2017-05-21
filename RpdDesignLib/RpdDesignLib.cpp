@@ -1,7 +1,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
-#include "com_shengjie_Main.h"
 #include "dllmain.h"
+#include "RpdDesignLib.h"
 #include "../RpdDesign/resource.h"
 #include "../RpdDesign/Tooth.h"
 #include "../RpdDesign/Utilities.h"
@@ -9,11 +9,10 @@
 jobject matToJMat(JNIEnv* const& env, Mat const& mat) {
 	auto const& clsStrMat = "org/opencv/core/Mat";
 	auto const& clsMat = env->FindClass(clsStrMat);
-	auto const& matConstructor = env->GetMethodID(clsMat, "<init>", "()V");
-	auto const& jMat = env->NewObject(clsMat, matConstructor);
+	auto const& midMatInit = env->GetMethodID(clsMat, "<init>", "()V");
+	auto const& jMat = env->NewObject(clsMat, midMatInit);
 	auto const& midGetNativeObjAddr = env->GetMethodID(clsMat, "getNativeObjAddr", "()J");
-	auto const& matAddr = env->CallLongMethod(jMat, midGetNativeObjAddr);
-	*reinterpret_cast<Mat*>(matAddr) = mat;
+	*reinterpret_cast<Mat*>(env->CallLongMethod(jMat, midGetNativeObjAddr)) = mat;
 	return jMat;
 }
 
@@ -21,8 +20,7 @@ Mat& jMatToMat(JNIEnv* const& env, jobject const& jMat) {
 	auto const& clsStrMat = "org/opencv/core/Mat";
 	auto const& clsMat = env->FindClass(clsStrMat);
 	auto const& midGetNativeObjAddr = env->GetMethodID(clsMat, "getNativeObjAddr", "()J");
-	auto const& matAddr = env->CallLongMethod(jMat, midGetNativeObjAddr);
-	return *reinterpret_cast<Mat*>(matAddr);
+	return *reinterpret_cast<Mat*>(env->CallLongMethod(jMat, midGetNativeObjAddr));
 }
 
 JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_ontology_OntModel_2Lorg_opencv_core_Mat_2(JNIEnv* env, jclass, jobject ontModel, jobject base) {

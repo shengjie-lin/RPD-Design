@@ -1,5 +1,5 @@
 # RPD Design
-Part of Shengjie Lin's graduation project at the Department of Electronic Engineering, Tsinghua University.
+Shengjie Lin's graduation project at the Department of Electronic Engineering, Tsinghua University.
 
 ## RpdDesign
 Given both the base image and the descriptive Ontology file, the program will generate the RPD design layout.
@@ -59,7 +59,7 @@ To build the project, you will need:
 
 Open Project Structure (Ctrl+Alt+Shift+S) and specify accordingly items of Dependencies in Modules (or modify `%ROOT%\RpdDesignLibTest\RpdDesignLibTest.iml` directly).
 
-_N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`. Modify the arguments to specify the valid classpath (-cp) and the desired output directory (-d). Before run, add `%JDK_DIR%\bin` to `PATH`._
+_N.B. `generate_header.bat` contains the command that will call `javah` to generate the C++ header for `RpdDesignLib`. Modify the arguments to specify the valid classpath (-cp) and the desired output path (-o). Before run, add `%JDK_DIR%\bin\` to `PATH`._ Then use the function signatures as indicated in the header to replace the ones in `%ROOT%\RpdDesignLib\RpdDesignLib.h` and `%ROOT%\RpdDesignLib\RpdDesignLib.cpp`.
 
 ### Run & Test
 After successful build, running the program directly will produce `design_with_base.png` and `design.png` in `%ROOT%\RpdDesignLibTest\`. They should both resemble `%ROOT%\sample\sample.png`.
