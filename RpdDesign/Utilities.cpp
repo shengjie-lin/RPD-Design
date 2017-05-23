@@ -459,7 +459,7 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 				}
 				if (hasMesialClaspRootOrRest || hasDistalClaspRootOrRest || hasLingualConfrontation || hasSingleDb) {
 					lastPosition = Rpd::Position(zone, curOrdinal + (hasMesialClaspRootOrRest ? 0 : 1));
-					lastAnchorPoint = getTooth(teeth, Rpd::Position(zone, curOrdinal)).getAnglePoint(hasMesialClaspRootOrRest ? 0 : 180);
+					lastAnchorPoint = hasSingleDb && isEnd ? Point() : getTooth(teeth, Rpd::Position(zone, curOrdinal)).getAnglePoint(hasMesialClaspRootOrRest ? 0 : 180);
 				}
 			}
 		}
@@ -680,8 +680,7 @@ Point2f computeNormalDirection(Point2f const& point, float* const& angle) {
 		thisAngle += CV_2PI;
 	if (angle)
 		*angle = thisAngle;
-	auto const& normalDirection = Point2f(pow(curTeethEllipse.size.height, 2) * cos(thisAngle), pow(curTeethEllipse.size.width, 2) * sin(thisAngle));
-	return normalDirection / norm(normalDirection);
+	return normalize(Point2f(pow(curTeethEllipse.size.height, 2) * cos(thisAngle), pow(curTeethEllipse.size.width, 2) * sin(thisAngle)));
 }
 
 bool shouldAnchor(const vector<Tooth> (&teeth)[nZones], Rpd::Position const& position, Rpd::Direction const& direction) {

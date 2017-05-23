@@ -1,0 +1,405 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Rpd" Collapsed="true">
+    <Position X="7.75" Y="0.5" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AQAAAABAAAAAAAAAACIAAAAAABAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithMaterial" Collapsed="true">
+    <Position X="9.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAEAIAAAAAAAAAABAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithDirection" Collapsed="true">
+    <Position X="5.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAEAAAAABAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdAsMajorConnector" Collapsed="true">
+    <Position X="9" Y="1.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <InheritanceLine Type="Rpd" ManuallyRouted="true">
+      <Path>
+        <Point X="8.375" Y="1.048" />
+        <Point X="8.375" Y="1.256" />
+        <Point X="10" Y="1.256" />
+        <Point X="10" Y="1.5" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACCAAAAAAAIAAgAAAAAAAAEAABAAAAAAAgA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithLingualCoverage" Collapsed="true">
+    <Position X="2.5" Y="1.5" Width="2.25" />
+    <InheritanceLine Type="RpdWithMaterial" ManuallyRouted="true">
+      <Path>
+        <Point X="10.375" Y="1.048" />
+        <Point X="10.375" Y="1.26" />
+        <Point X="3.625" Y="1.26" />
+        <Point X="3.625" Y="1.5" />
+      </Path>
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="-0.522" Y="0.059" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AQAACAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithClaspRootOrRest" Collapsed="true">
+    <Position X="6.25" Y="1.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAABAAAAAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithLingualClaspArms" Collapsed="true">
+    <Position X="1" Y="2.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAAAEAAAAAAAIQAgAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RpdWithLingualRest" Collapsed="true">
+    <Position X="4.25" Y="2.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAABAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AkersClasp" Collapsed="true">
+    <Position X="0.5" Y="4" Width="1.25" />
+    <InheritanceLine Type="RpdWithDirection" ManuallyRouted="true">
+      <Path>
+        <Point X="6.375" Y="1.048" />
+        <Point X="6.375" Y="1.245" />
+        <Point X="0.84" Y="1.245" />
+        <Point X="0.84" Y="3.76" />
+        <Point X="1.125" Y="3.76" />
+        <Point X="1.125" Y="4" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>BAQAAAAAAAEAAAAACAIAAAAAABAAAAAAAAAAAAAAIAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CanineAkersClasp" Collapsed="true">
+    <Position X="4.25" Y="4" Width="1.75" />
+    <InheritanceLine Type="RpdWithDirection" ManuallyRouted="true">
+      <Path>
+        <Point X="6.375" Y="1.048" />
+        <Point X="6.375" Y="1.288" />
+        <Point X="5.125" Y="1.288" />
+        <Point X="5.125" Y="2.488" />
+        <Point X="4.09" Y="2.488" />
+        <Point X="4.09" Y="3.749" />
+        <Point X="5.125" Y="3.749" />
+        <Point X="5.125" Y="4" />
+      </Path>
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="0.11" Y="-0.002" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <InheritanceLine Type="RpdWithLingualRest">
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="-0.531" Y="-0.007" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAKAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CombinationAnteriorPosteriorPalatalStrap" Collapsed="true">
+    <Position X="8.5" Y="2.75" Width="3.25" />
+    <InheritanceLine Type="RpdAsMajorConnector">
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="0.11" Y="0.013" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAABAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CombinationClasp" Collapsed="true">
+    <Position X="2.25" Y="7.75" Width="1.75" />
+    <InheritanceLine Type="RpdWithDirection" ManuallyRouted="true">
+      <Path>
+        <Point X="6.375" Y="1.048" />
+        <Point X="6.375" Y="1.288" />
+        <Point X="6.09" Y="1.288" />
+        <Point X="6.09" Y="2.475" />
+        <Point X="4.09" Y="2.475" />
+        <Point X="4.09" Y="7.51" />
+        <Point X="3.125" Y="7.51" />
+        <Point X="3.125" Y="7.75" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAABAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CombinedClasp" Collapsed="true">
+    <Position X="2.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAACAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ContinuousClasp" Collapsed="true">
+    <Position X="2.25" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAACAIAAAIAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DentureBase" Collapsed="true">
+    <Position X="12.25" Y="6.75" Width="1.25" />
+    <InheritanceLine Type="Rpd" ManuallyRouted="true">
+      <Path>
+        <Point X="8.375" Y="1.048" />
+        <Point X="8.375" Y="1.233" />
+        <Point X="12.09" Y="1.233" />
+        <Point X="12.09" Y="6.51" />
+        <Point X="12.875" Y="6.51" />
+        <Point X="12.875" Y="6.75" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAgBCAIAAABAACAAAAEAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="EdentulousSpace" Collapsed="true">
+    <Position X="12.25" Y="4.25" Width="1.5" />
+    <InheritanceLine Type="Rpd" ManuallyRouted="true">
+      <Path>
+        <Point X="8.375" Y="1.048" />
+        <Point X="8.375" Y="1.239" />
+        <Point X="12.097" Y="1.239" />
+        <Point X="12.097" Y="4.01" />
+        <Point X="13" Y="4.01" />
+        <Point X="13" Y="4.25" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FullPalatalPlate" Collapsed="true">
+    <Position X="9.25" Y="5.25" Width="1.5" />
+    <InheritanceLine Type="RpdAsMajorConnector" ManuallyRouted="true">
+      <Path>
+        <Point X="10" Y="2.177" />
+        <Point X="10" Y="2.567" />
+        <Point X="8.3" Y="2.567" />
+        <Point X="8.3" Y="4.95" />
+        <Point X="10" Y="4.95" />
+        <Point X="10" Y="5.25" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAIAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LingualBar" Collapsed="true">
+    <Position X="9.25" Y="4" Width="1.25" />
+    <InheritanceLine Type="RpdAsMajorConnector" ManuallyRouted="true">
+      <Path>
+        <Point X="10" Y="2.177" />
+        <Point X="10" Y="2.561" />
+        <Point X="8.3" Y="2.561" />
+        <Point X="8.3" Y="3.7" />
+        <Point X="9.875" Y="3.7" />
+        <Point X="9.875" Y="4" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LingualPlate" Collapsed="true">
+    <Position X="9.25" Y="7.75" Width="1.25" />
+    <InheritanceLine Type="RpdAsMajorConnector" ManuallyRouted="true">
+      <Path>
+        <Point X="10" Y="2.177" />
+        <Point X="10" Y="2.554" />
+        <Point X="8.3" Y="2.554" />
+        <Point X="8.3" Y="7.45" />
+        <Point X="9.875" Y="7.45" />
+        <Point X="9.875" Y="7.75" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAAAAEAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LingualRest" Collapsed="true">
+    <Position X="4.5" Y="5.25" Width="1.25" />
+    <InheritanceLine Type="RpdWithDirection" ManuallyRouted="true">
+      <Path>
+        <Point X="6.375" Y="1.048" />
+        <Point X="6.375" Y="1.288" />
+        <Point X="5.125" Y="1.288" />
+        <Point X="5.125" Y="2.509" />
+        <Point X="4.09" Y="2.509" />
+        <Point X="4.09" Y="5.01" />
+        <Point X="5.125" Y="5.01" />
+        <Point X="5.125" Y="5.25" />
+      </Path>
+    </InheritanceLine>
+    <InheritanceLine Type="RpdWithLingualRest" ManuallyRouted="true">
+      <Path>
+        <Point X="5.125" Y="3.556" />
+        <Point X="5.125" Y="3.763" />
+        <Point X="4.09" Y="3.763" />
+        <Point X="4.09" Y="5.01" />
+        <Point X="5.125" Y="5.01" />
+        <Point X="5.125" Y="5.25" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OcclusalRest" Collapsed="true">
+    <Position X="6.5" Y="5.25" Width="1.25" />
+    <InheritanceLine Type="RpdWithDirection" ManuallyRouted="true">
+      <Path>
+        <Point X="6.375" Y="1.048" />
+        <Point X="6.375" Y="1.288" />
+        <Point X="6.09" Y="1.288" />
+        <Point X="6.09" Y="4.998" />
+        <Point X="6.117" Y="4.998" Type="JumpStart" />
+        <Point X="6.283" Y="4.998" Type="JumpEnd" />
+        <Point X="7.125" Y="4.998" />
+        <Point X="7.125" Y="5.25" />
+      </Path>
+    </InheritanceLine>
+    <InheritanceLine Type="RpdWithClaspRootOrRest">
+      <InheritanceModifierLabel ManuallyPlaced="true">
+        <Position X="-0.522" Y="0.053" />
+      </InheritanceModifierLabel>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAEAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PalatalPlate" Collapsed="true">
+    <Position X="9.25" Y="6.5" Width="1.25" />
+    <InheritanceLine Type="RpdAsMajorConnector" ManuallyRouted="true" FixedFromPoint="true">
+      <Path>
+        <Point X="10" Y="2.177" />
+        <Point X="10" Y="2.551" />
+        <Point X="8.3" Y="2.551" />
+        <Point X="8.3" Y="6.2" />
+        <Point X="9.875" Y="6.2" />
+        <Point X="9.875" Y="6.5" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgCAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RingClasp" Collapsed="true">
+    <Position X="2.25" Y="4" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgCAIAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Rpa" Collapsed="true">
+    <Position X="6.5" Y="2.75" Width="1.25" />
+    <InheritanceLine Type="RpdWithMaterial" ManuallyRouted="true">
+      <Path>
+        <Point X="10.375" Y="1.048" />
+        <Point X="10.375" Y="1.26" />
+        <Point X="8.84" Y="1.26" />
+        <Point X="8.84" Y="2.523" />
+        <Point X="7.125" Y="2.523" />
+        <Point X="7.125" Y="2.75" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Rpi" Collapsed="true">
+    <Position X="6.5" Y="4" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WwClasp" Collapsed="true">
+    <Position X="0.5" Y="5.5" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAACAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="GuidingPlate" Collapsed="true">
+    <Position X="12.25" Y="5.5" Width="1.25" />
+    <InheritanceLine Type="Rpd" ManuallyRouted="true">
+      <Path>
+        <Point X="8.375" Y="1.048" />
+        <Point X="8.375" Y="1.244" />
+        <Point X="12.09" Y="1.244" />
+        <Point X="12.09" Y="5.26" />
+        <Point X="12.875" Y="5.26" />
+        <Point X="12.875" Y="5.5" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="HalfClasp" Collapsed="true">
+    <Position X="12.25" Y="1.5" Width="1.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIEAABAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IBar" Collapsed="true">
+    <Position X="12.25" Y="3" Width="1.25" />
+    <InheritanceLine Type="Rpd" ManuallyRouted="true">
+      <Path>
+        <Point X="8.375" Y="1.048" />
+        <Point X="8.375" Y="1.244" />
+        <Point X="12.09" Y="1.244" />
+        <Point X="12.09" Y="2.76" />
+        <Point X="12.875" Y="2.76" />
+        <Point X="12.875" Y="3" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
+      <FileName>Rpd.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Microsoft YaHei UI" Size="9" />
+</ClassDiagram>

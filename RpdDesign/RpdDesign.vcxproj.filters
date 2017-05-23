@@ -136,7 +136,7 @@
     <None Include="rpddesign_zh.qm">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="ClassDiagram.cd" />
+    <None Include="RpdClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\sample\base.png">
