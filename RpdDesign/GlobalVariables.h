@@ -36,7 +36,7 @@ enum DistanceScaledCurve {
 	OUTER
 };
 
-const float distanceScales[]{1.5F, 1.6F, 1.75F, 2.25F, 2.4F};
+const float distanceScales[]{1.5F, 1.75F, 1.8F, 2.4F, 2.5F};
 
 const int lineThicknessOfLevel[]{2, 5, 8};
 

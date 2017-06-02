@@ -313,39 +313,42 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 		distalPoint = distalPoints[1];
 }
 
-void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, vector<Point>* const& innerCurve) {
+void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, int& mesialOrdinal, vector<Point>* const& innerCurve) {
 	auto startPositions = positions;
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, startPositions[i], Rpd::MESIAL))
 			++startPositions[i];
-	auto const& ordinal = max(startPositions[0].ordinal, startPositions[1].ordinal);
+	mesialOrdinal = max(startPositions[0].ordinal, startPositions[1].ordinal);
+	auto const& isLevel = startPositions[0].ordinal == startPositions[1].ordinal;
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
 	for (auto i = 0; i < 2; ++i)
-		computeStringCurve(teeth, {startPositions[i], Rpd::Position(positions[i].zone, ordinal)}, 0, {true, false}, {true, false}, false, curves[i], &sumOfRadii, &nTeeth);
+		computeStringCurve(teeth, {startPositions[i], Rpd::Position(positions[i].zone, mesialOrdinal)}, 0, {true, false}, {true, false}, false, curves[i], &sumOfRadii, &nTeeth);
 	auto const& avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin() + 1; point < curves[i].end(); ++point)
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
 	if (innerCurve) {
 		innerCurve->clear();
-		innerCurve->push_back(*(curves[0].end() - 2));
-		innerCurve->push_back((curves[0].back() + curves[1].back()) / 2);
-		innerCurve->push_back(*(curves[1].end() - 2));
+		innerCurve->push_back(curves[0][2]);
+		innerCurve->push_back((*(curves[0].end() - 2 + isLevel) + *(curves[1].end() - 2 + isLevel)) / 2);
+		innerCurve->push_back(curves[1][2]);
 	}
-	curve = vector<Point>{curves[0].begin(), curves[0].end() - 2};
-	curve.push_back((*(curves[0].end() - 2) + *(curves[1].end() - 2)) / 2);
-	curve.insert(curve.end(), curves[1].rbegin() + 2, curves[1].rend());
+	curve = vector<Point>{curves[0].begin(), curves[0].begin() + 2};
+	curve.push_back((*(curves[0].end() - 3 + isLevel) + *(curves[1].end() - 3 + isLevel)) / 2);
+	curve.insert(curve.end(), curves[1].rend() - 2, curves[1].rend());
 	computeSmoothCurve(curve, curve);
 }
 
-void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, vector<Point>* const& innerCurve) {
+void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, int const& mesialOrdinal, vector<Point>* const& innerCurve) {
 	auto endPositions = positions;
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, endPositions[i], Rpd::DISTAL))
 			--endPositions[i];
 	auto const& ordinal = min(endPositions[0].ordinal, endPositions[1].ordinal);
+	auto const& hasConflict = ordinal <= mesialOrdinal;
+	auto const& isLevel = endPositions[0].ordinal == endPositions[1].ordinal;
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
@@ -359,17 +362,34 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin(); point < curves[i].end() - 1; ++point)
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
+	Point tmpPoint;
 	if (innerCurve) {
-		innerCurve->push_back((innerCurve->back() + curves[0][1]) / 2);
-		innerCurve->push_back(curves[0][1]);
-		innerCurve->push_back((curves[0][0] + curves[1][0]) / 2);
-		innerCurve->push_back(curves[1][1]);
-		innerCurve->push_back((curves[1][1] + (*innerCurve)[0]) / 2);
+		innerCurve->push_back((innerCurve->back() + *(curves[0].end() - 3)) / 2);
+		innerCurve->push_back(*(curves[0].end() - 3));
+		if (hasConflict) {
+			auto const& idx = endPositions[0].ordinal == ordinal;
+			auto point = getTooth(teeth, Rpd::Position(endPositions[!idx].zone, endPositions[idx].ordinal)).getCentroid();
+			point -= computeNormalDirection(point) * avgRadius * distanceScales[MESIAL_OR_DISTAL];
+			tmpPoint = (*(curves[idx].end() - 3) + roundToPoint(point)) / 2;
+		}
+		else
+			tmpPoint = (curves[0][1 - isLevel] + curves[1][1 - isLevel]) / 2;
+		innerCurve->push_back(tmpPoint);
+		innerCurve->push_back(*(curves[1].end() - 3));
+		innerCurve->push_back((*(curves[1].end() - 3) + (*innerCurve)[0]) / 2);
 		computeSmoothCurve(*innerCurve, *innerCurve, true);
 	}
-	curve = vector<Point>{curves[0].rbegin(), curves[0].rend() - 2};
-	curve.push_back((curves[0][1] + curves[1][1]) / 2);
-	curve.insert(curve.end(), curves[1].begin() + 2, curves[1].end());
+	curve = vector<Point>{curves[0].rbegin(), curves[0].rbegin() + 2};
+	if (hasConflict) {
+		auto const& idx = endPositions[0].ordinal == ordinal;
+		auto point = getTooth(teeth, Rpd::Position(endPositions[!idx].zone, endPositions[idx].ordinal)).getAnglePoint(180);
+		point -= roundToPoint(computeNormalDirection(point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
+		tmpPoint = (*(curves[idx].end() - 2) + point) / 2;
+	}
+	else
+		tmpPoint = (curves[0][2 - isLevel] + curves[1][2 - isLevel]) / 2;
+	curve.push_back(tmpPoint);
+	curve.insert(curve.end(), curves[1].end() - 2, curves[1].end());
 	computeSmoothCurve(curve, curve);
 }
 

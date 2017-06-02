@@ -22,7 +22,7 @@ Add to `PATH`:
 * `C:\Program Files\Java\jre1.8.0_131\bin\server\` or alike
 
 In `%ROOT%\RpdDesign\RpdDesign.cpp`, modify accordingly the following line:
-> `string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.2.0/lib/";`
+> `string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.3.0/lib/";`
 
 Use `lrelease` to generate Qt Linguist translation files from sources `%ROOT%\RpdDesign\rpddesign_[en,zh].ts`.
 
