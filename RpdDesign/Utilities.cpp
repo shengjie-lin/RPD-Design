@@ -463,6 +463,7 @@ void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positio
 							break;
 					}
 					isEnd = curOrdinal == endOrdinal;
+					tmpCurve.clear();
 					if (hasLingualConfrontation) {
 						computeLingualConfrontationCurve(teeth, {Rpd::Position(zone, thisStartOrdinal), Rpd::Position(zone, curOrdinal)}, tmpCurve);
 						curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());

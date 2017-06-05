@@ -77,7 +77,10 @@ void RpdWithMaterial::queryMaterial(JNIEnv* const& env, jmethodID const& midGetI
 
 RpdWithDirection::RpdWithDirection(Rpd::Direction const& direction) : direction_(direction) {}
 
-void RpdWithDirection::queryDirection(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midResourceGetProperty, jobject const& dpClaspTipDirection, jobject const& individual, Rpd::Direction& claspTipDirection) { claspTipDirection = static_cast<Rpd::Direction>(env->CallIntMethod(env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection), midGetInt)); }
+void RpdWithDirection::queryDirection(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midResourceGetProperty, jobject const& dpClaspTipDirection, jobject const& individual, Rpd::Direction& claspTipDirection) {
+	auto const& tmp = env->CallObjectMethod(individual, midResourceGetProperty, dpClaspTipDirection);
+	claspTipDirection = tmp ? static_cast<Rpd::Direction>(env->CallIntMethod(tmp, midGetInt)) : Rpd::DISTAL;
+}
 
 void RpdAsMajorConnector::registerMajorConnector(vector<Tooth> (&teeth)[nZones]) const { registerMajorConnector(teeth, positions_); }
 
