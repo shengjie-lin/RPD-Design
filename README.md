@@ -6,11 +6,11 @@ Given both the base image and the descriptive Ontology file, the program will ge
 
 ### Build
 To build the project, you will need:
-* [Visual Studio 2015](https://www.visualstudio.com/)
+* [Visual Studio 2017](https://www.visualstudio.com/)
 * [Qt 5.x for Windows](https://www.qt.io/)
 * [Qt VS Tools](http://doc.qt.io/qtvstools/index.html)
 * [OpenCV 3.x](http://opencv.org/)
-* [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+* [JDK 8.x](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Jena 3.x](https://jena.apache.org/)
 
 Set new environment variables:
@@ -30,7 +30,7 @@ Use `lrelease` to generate Qt Linguist translation files from sources `%ROOT%\Rp
 After successful build, the executable will be stored as `%ROOT%\x64\[Debug,Release]\RpdDesign.exe`.
 
 Before execution, add to `PATH`:
-* `C:\Qt\Qt5.8.0\5.8\msvc2015_64\bin\` or alike
+* `C:\Qt\Qt5.9.0\5.9\msvc2017_64\bin\` or alike
 
 You may use sample resources in `%ROOT%\sample\` to produce the following design:
 > <img src=sample\sample.png width=400>
@@ -51,9 +51,9 @@ Serves as a test program, which calls in Java `RpdDesignLib.dll` to generate RPD
 
 ### Build
 To build the project, you will need:
-* [IntelliJ IDEA](https://www.jetbrains.com/idea/)
+* [IntelliJ IDEA 2017](https://www.jetbrains.com/idea/)
 * [OpenCV 3.x](http://opencv.org/)
-* [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+* [JDK 8.x](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Jena 3.x](https://jena.apache.org/)
 * `RpdDesignLib.dll` as generated in `RpdDesignLib`
 
