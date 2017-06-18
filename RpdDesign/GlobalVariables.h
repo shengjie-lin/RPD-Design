@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <map>
-#include <opencv2/core/types.hpp>
 
 using namespace std;
 using namespace cv;
