@@ -29,7 +29,7 @@ JNIEXPORT jobject JNICALL Java_com_shengjie_Main_getRpdDesign__Lorg_apache_jena_
 	analyzeBaseImage(jMatToMat(env, base), teeth, designImages);
 	vector<Rpd*> rpds;
 	queryRpds(env, ontModel, rpds);
-	updateDesign(teeth, rpds, designImages, true, true);
+	updateDesign(teeth, rpds, designImages, true, true, true);
 	for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd)
 		delete *rpd;
 	bitwise_and(designImages[0], designImages[1], designImages[0]);

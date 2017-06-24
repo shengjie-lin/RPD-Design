@@ -984,7 +984,9 @@ void analyzeBaseImage(Mat const& base, vector<Tooth> (&remediedTeeth)[nZones], M
 	remedyImage = oldRemedyImage;
 }
 
-void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&designImages)[2], bool const& justLoadedImage, bool const& justLoadedRpds) {
+void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&designImages)[2], bool const& isRemedied, bool const& justLoadedImage, bool const& justLoadedRpds) {
+	auto oldRemedyImage = remedyImage;
+	remedyImage = isRemedied;
 	if (!justLoadedImage)
 		for (auto zone = 0; zone < nZones; ++zone)
 			for (auto ordinal = 0; ordinal < nTeethPerZone; ++ordinal)
@@ -1021,10 +1023,10 @@ void updateDesign(vector<Tooth> (&teeth)[nZones], vector<Rpd*>& rpds, Mat (&desi
 			dentureBase->registerDentureBase(teeth);
 	}
 	designImages[1] = Mat(designImages[0].size(), CV_8U, 255);
-	for (auto zone = 0; zone < nZones; ++zone) {
+	for (auto zone = 0; zone < nZones; ++zone)
 		if (Tooth::isEighthUsed[zone])
 			polylines(designImages[1], teeth[zone][nTeethPerZone - 1].getContour(), true, 0, lineThicknessOfLevel[0], LINE_AA);
-	}
 	for (auto rpd = rpds.begin(); rpd < rpds.end(); ++rpd)
 		(*rpd)->draw(designImages[1], teeth);
+	remedyImage = oldRemedyImage;
 }

@@ -9,7 +9,7 @@ EllipticCurve::EllipticCurve(Point2f const& center, Size const& axes, float cons
 
 bool EllipticCurve::getCurve(vector<Point>& curve) const {
 	auto const& radius = axes_.width;
-	if (radius <= 0 || radius > sqrt((remedyImage ? remediedTeethEllipse : teethEllipse).size.area() / 2) && abs(endAngle_ - startAngle_) < 5)
+	if (radius <= 0 || radius > sqrt((remedyImage ? remediedTeethEllipse : teethEllipse).size.area() * 2) || abs(endAngle_ - startAngle_) < 2)
 		return false;
 	ellipse2Poly(center_, axes_, inclination_, startAngle_, endAngle_, 1, curve);
 	if (shouldReverse_)

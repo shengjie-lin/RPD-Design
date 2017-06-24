@@ -81,8 +81,8 @@ void RpdDesign::updateViewer() {
 
 void RpdDesign::analyzeAndUpdate(Mat const& base) {
 	analyzeBaseImage(base, remediedTeeth_, remediedDesignImages_, &teeth_, &designImages_, &baseImage_);
-	updateDesign(teeth_, rpds_, designImages_, true, justLoadedRpds_);
-	updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, justLoadedRpds_);
+	updateDesign(teeth_, rpds_, designImages_, false, true, justLoadedRpds_);
+	updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, true, justLoadedRpds_);
 	justLoadedRpds_ = false;
 	updateViewer();
 }
@@ -123,8 +123,8 @@ void RpdDesign::loadRpdInfo() {
 		env_->DeleteLocalRef(tmpStr);
 		if (queryRpds(env_, ontModel, rpds_))
 			if (baseImage_.data) {
-				updateDesign(teeth_, rpds_, designImages_, false, true);
-				updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, false, true);
+				updateDesign(teeth_, rpds_, designImages_, false, false, true);
+				updateDesign(remediedTeeth_, rpds_, remediedDesignImages_, true, false, true);
 				updateViewer();
 			}
 			else
