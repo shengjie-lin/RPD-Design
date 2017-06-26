@@ -784,6 +784,14 @@
     
 
 
+    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#aker_clasp_data_property -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#aker_clasp_data_property">
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#clasp_data_property"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anatomical_factors -->
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#anatomical_factors">
@@ -1691,7 +1699,7 @@
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_buccal_arm -->
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_buccal_arm">
-        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#clasp_data_property"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#aker_clasp_data_property"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#wrought_wire_clasp"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
     </owl:DatatypeProperty>
@@ -1701,7 +1709,7 @@
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_lingual_arm -->
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_lingual_arm">
-        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#clasp_data_property"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#aker_clasp_data_property"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#wrought_wire_clasp"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
     </owl:DatatypeProperty>
@@ -1711,7 +1719,7 @@
     <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_rest -->
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#enable_rest">
-        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#clasp_data_property"/>
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#aker_clasp_data_property"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#wrought_wire_clasp"/>
     </owl:DatatypeProperty>
     
@@ -4551,6 +4559,14 @@ note : set for tooth now</rdfs:comment>
 
     <owl:Class rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combination_anterior_posterior_palatal_strap">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#maxillary_major_connector"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combination_clasp -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#combination_clasp">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/msiip/ontologies/CDSSinRPD#circumferential_clasp"/>
     </owl:Class>
     
 
