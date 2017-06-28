@@ -313,18 +313,18 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 		distalPoint = distalPoints[1];
 }
 
-void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, int& mesialOrdinal, vector<Point>* const& innerCurve) {
+void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, vector<int>& mesialOrdinals, vector<Point>* const& innerCurve) {
 	auto startPositions = positions;
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, startPositions[i], Rpd::MESIAL))
 			++startPositions[i];
-	mesialOrdinal = max(startPositions[0].ordinal, startPositions[1].ordinal);
+	mesialOrdinals = {startPositions[0].ordinal, startPositions[1].ordinal};
 	auto const& isLevel = startPositions[0].ordinal == startPositions[1].ordinal;
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
 	auto nTeeth = 0;
 	for (auto i = 0; i < 2; ++i)
-		computeStringCurve(teeth, {startPositions[i], Rpd::Position(positions[i].zone, mesialOrdinal)}, 0, {true, false}, {true, false}, false, curves[i], &sumOfRadii, &nTeeth);
+		computeStringCurve(teeth, {startPositions[i], Rpd::Position(positions[i].zone, max(mesialOrdinals[0], mesialOrdinals[1]))}, 0, {true, false}, {true, false}, false, curves[i], &sumOfRadii, &nTeeth);
 	auto const& avgRadius = sumOfRadii / nTeeth;
 	for (auto i = 0; i < 2; ++i)
 		for (auto point = curves[i].begin() + 1; point < curves[i].end(); ++point)
@@ -341,13 +341,13 @@ void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 	computeSmoothCurve(curve, curve);
 }
 
-void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, int const& mesialOrdinal, vector<Point>* const& innerCurve) {
+void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, const vector<int>* const& mesialOrdinals, vector<Point>* const& innerCurve) {
 	auto endPositions = positions;
 	for (auto i = 0; i < 2; ++i)
 		if (!shouldAnchor(teeth, endPositions[i], Rpd::DISTAL))
 			--endPositions[i];
 	auto const& ordinal = min(endPositions[0].ordinal, endPositions[1].ordinal);
-	auto const& hasConflict = ordinal <= mesialOrdinal;
+	auto const& hasConflict = mesialOrdinals && ordinal <= max((*mesialOrdinals)[0], (*mesialOrdinals)[1]);
 	auto const& isLevel = endPositions[0].ordinal == endPositions[1].ordinal;
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
@@ -364,8 +364,10 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
 	Point tmpPoint;
 	if (innerCurve) {
-		innerCurve->push_back((innerCurve->back() + *(curves[0].end() - 3)) / 2);
-		innerCurve->push_back(*(curves[0].end() - 3));
+		if (mesialOrdinals && (*mesialOrdinals)[1] < endPositions[0].ordinal) {
+			innerCurve->push_back((innerCurve->back() + *(curves[0].end() - 3)) / 2);
+			innerCurve->push_back(*(curves[0].end() - 3));
+		}
 		if (hasConflict) {
 			auto const& idx = endPositions[0].ordinal == ordinal;
 			auto point = getTooth(teeth, Rpd::Position(endPositions[!idx].zone, endPositions[idx].ordinal)).getCentroid();
@@ -375,8 +377,10 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 		else
 			tmpPoint = (curves[0][1 - isLevel] + curves[1][1 - isLevel]) / 2;
 		innerCurve->push_back(tmpPoint);
-		innerCurve->push_back(*(curves[1].end() - 3));
-		innerCurve->push_back((*(curves[1].end() - 3) + (*innerCurve)[0]) / 2);
+		if (mesialOrdinals && (*mesialOrdinals)[0] < endPositions[1].ordinal) {
+			innerCurve->push_back(*(curves[1].end() - 3));
+			innerCurve->push_back((*(curves[1].end() - 3) + (*innerCurve)[0]) / 2);
+		}
 		computeSmoothCurve(*innerCurve, *innerCurve, true);
 	}
 	curve = vector<Point>{curves[0].rbegin(), curves[0].rbegin() + 2};

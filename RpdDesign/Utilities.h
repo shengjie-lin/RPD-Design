@@ -41,9 +41,9 @@ void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Posit
 
 void computeLingualCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, vector<vector<Point>>& curves, Point& distalPoint, const vector<Point>* const& anchorPoints = nullptr);
 
-void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, int& mesialOrdinal, vector<Point>* const& innerCurve = nullptr);
+void computeMesialCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point>& curve, vector<int>& mesialOrdinals, vector<Point>* const& innerCurve = nullptr);
 
-void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, int const& mesialOrdinal = -1, vector<Point>* const& innerCurve = nullptr);
+void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, vector<Point> const& distalPoints, vector<Point>& curve, const vector<int>* const& mesialOrdinals = nullptr, vector<Point>* const& innerCurve = nullptr);
 
 void computeInnerCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Position> const& positions, float const& avgRadius, vector<Point>& curve, vector<vector<Point>>& curves, const vector<Point>* const& anchorPoints = nullptr);
 

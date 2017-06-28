@@ -252,16 +252,16 @@ CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStr
 
 void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
-	int mesialOrdinal;
+	vector<int> mesialOrdinals;
 	vector<Point> curve, innerCurve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
 	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinal, &innerCurve);
+	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinals, &innerCurve);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
 	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
-	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, mesialOrdinal, &innerCurve);
+	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals, &innerCurve);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	auto const& thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
@@ -553,16 +553,16 @@ PalatalPlate::PalatalPlate(vector<Position> const& positions, const bool (&hasLi
 
 void PalatalPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
-	int mesialOrdinal;
+	vector<int> mesialOrdinals;
 	vector<Point> curve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
 	vector<vector<Point>> curves;
 	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinal);
+	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinals);
 	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
 	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
-	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, mesialOrdinal);
+	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	auto const& thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
