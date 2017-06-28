@@ -252,26 +252,40 @@ CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStr
 
 void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
-	vector<int> mesialOrdinals;
-	vector<Point> curve, innerCurve, mesialCurve, distalCurve, tmpCurve, distalPoints(2);
+	vector<Point> curve, innerCurve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
-	computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
-	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
-	computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinals, &innerCurve);
-	curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
-	computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
-	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
-	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals, &innerCurve);
-	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
+	if (!positions_[0].ordinal && !positions_[2].ordinal) {
+		computeLingualCurve(teeth, {positions_[1], positions_[3]}, curve, curves, &distalPoints);
+		vector<Tooth> const& tmpTeeth = {getTooth(teeth, positions_[2]), getTooth(teeth, positions_[0])};
+		innerCurve = {tmpTeeth[0].getAnglePoint(180), (tmpTeeth[0].getAnglePoint(0) + tmpTeeth[1].getAnglePoint(0)) / 2, tmpTeeth[1].getAnglePoint(180)};
+		auto const& avgRadius = (tmpTeeth[0].getRadius() + tmpTeeth[1].getRadius()) / 2;
+		for (auto point = innerCurve.begin(); point < innerCurve.end(); ++point)
+			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
+		computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, nullptr, &innerCurve);
+		curve.insert(curve.end(), distalCurve.rbegin(), distalCurve.rend());
+	}
+	else {
+		vector<int> mesialOrdinals;
+		vector<Point> mesialCurve, tmpCurve;
+		distalPoints = vector<Point>(2);
+		computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
+		curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
+		computeMesialCurve(teeth, {positions_[2], positions_[0]}, mesialCurve, mesialOrdinals, &innerCurve);
+		curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
+		computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
+		curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
+		computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals, &innerCurve);
+		curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
+		polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	}
+	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, innerCurve, true, 0, lineThicknessOfLevel[2], LINE_AA);
 	auto const& thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	fillPoly(thisDesign, vector<vector<Point>>{innerCurve}, 255, LINE_AA);
-	polylines(thisDesign, innerCurve, true, 0, lineThicknessOfLevel[2], LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
-		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 CombinationClasp::CombinationClasp(vector<Position> const& positions, Direction const& direction) : Rpd(positions), RpdWithDirection(direction), RpdWithClaspRootOrRest(positions, ~direction), RpdWithLingualClaspArms(positions, CAST, ~direction) {}
@@ -432,15 +446,14 @@ void FullPalatalPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)
 	vector<Point> curve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
 	computeLingualCurve(teeth, positions_, curve, curves, &distalPoints);
-	reverse(curve.begin(), curve.end());
 	computeDistalCurve(teeth, positions_, distalPoints, distalCurve);
-	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
+	curve.insert(curve.end(), distalCurve.rbegin(), distalCurve.rend());
+	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	auto const& thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
-		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 LingualBar* LingualBar::createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]) {
@@ -458,8 +471,8 @@ void LingualBar::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZone
 	vector<vector<Point>> curves;
 	float avgRadius;
 	computeOuterCurve(teeth, positions_, curve, &avgRadius);
-	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	computeInnerCurve(teeth, positions_, avgRadius, tmpCurve, curves);
+	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
 		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	curve.insert(curve.end(), tmpCurve.rbegin(), tmpCurve.rend());
@@ -481,8 +494,8 @@ LingualPlate::LingualPlate(vector<Position> const& positions, const bool (&hasLi
 void LingualPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
 	vector<Point> curve, tmpCurve;
-	computeOuterCurve(teeth, positions_, curve);
 	vector<vector<Point>> curves;
+	computeOuterCurve(teeth, positions_, curve);
 	computeLingualCurve(teeth, positions_, tmpCurve, curves);
 	polylines(designImage, curve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
@@ -564,13 +577,13 @@ void PalatalPlate::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZo
 	curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
 	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals);
 	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
+	polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
+	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
+		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	auto const& thisDesign = Mat(designImage.size(), CV_8U, 255);
 	fillPoly(thisDesign, vector<vector<Point>>{curve}, 128, LINE_AA);
 	bitwise_and(thisDesign, designImage, designImage);
-	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
-		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
-	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 }
 
 RingClasp::RingClasp(vector<Position> const& positions, Material const& material, Side const& tipSide) : Rpd(positions), RpdWithClaspRootOrRest(positions, material == CAST ? vector<Direction>{MESIAL, DISTAL} : vector<Direction>{MESIAL}), RpdWithLingualClaspArms(positions, material, MESIAL), tipSide_(tipSide) {}
