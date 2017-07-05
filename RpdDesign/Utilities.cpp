@@ -347,7 +347,7 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 		if (!shouldAnchor(teeth, endPositions[i], Rpd::DISTAL))
 			--endPositions[i];
 	auto const& ordinal = min(endPositions[0].ordinal, endPositions[1].ordinal);
-	auto const& hasConflict = mesialOrdinals && ordinal <= max((*mesialOrdinals)[0], (*mesialOrdinals)[1]) || !mesialOrdinals && innerCurve && ordinal <= 1;
+	auto const& hasConflict = mesialOrdinals && ordinal <= max((*mesialOrdinals)[0], (*mesialOrdinals)[1]);
 	auto const& isLevel = endPositions[0].ordinal == endPositions[1].ordinal;
 	vector<vector<Point>> curves(2);
 	float sumOfRadii = 0;
@@ -364,7 +364,7 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
 	Point tmpPoint;
 	if (innerCurve) {
-		if (!mesialOrdinals || (*mesialOrdinals)[1] < endPositions[0].ordinal) {
+		if ((*mesialOrdinals)[1] < endPositions[0].ordinal) {
 			innerCurve->push_back((innerCurve->back() + *(curves[0].end() - 3)) / 2);
 			innerCurve->push_back(*(curves[0].end() - 3));
 		}
@@ -377,7 +377,7 @@ void computeDistalCurve(const vector<Tooth> (&teeth)[nZones], vector<Rpd::Positi
 		else
 			tmpPoint = (curves[0][1 - isLevel] + curves[1][1 - isLevel]) / 2;
 		innerCurve->push_back(tmpPoint);
-		if (!mesialOrdinals || (*mesialOrdinals)[0] < endPositions[1].ordinal) {
+		if ((*mesialOrdinals)[0] < endPositions[1].ordinal) {
 			innerCurve->push_back(*(curves[1].end() - 3));
 			innerCurve->push_back((*(curves[1].end() - 3) + (*innerCurve)[0]) / 2);
 		}

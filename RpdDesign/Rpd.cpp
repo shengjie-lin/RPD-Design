@@ -252,20 +252,24 @@ CombinationAnteriorPosteriorPalatalStrap::CombinationAnteriorPosteriorPalatalStr
 
 void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	RpdAsMajorConnector::draw(designImage, teeth);
+	vector<int> mesialOrdinals;
 	vector<Point> curve, innerCurve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
 	if (!positions_[0].ordinal && !positions_[2].ordinal) {
+		mesialOrdinals = {1, 1};
 		computeLingualCurve(teeth, {positions_[1], positions_[3]}, curve, curves, &distalPoints);
-		vector<Tooth> const& tmpTeeth = {getTooth(teeth, positions_[2]), getTooth(teeth, positions_[0])};
-		innerCurve = {tmpTeeth[0].getAnglePoint(180), (tmpTeeth[0].getAnglePoint(0) + tmpTeeth[1].getAnglePoint(0)) / 2, tmpTeeth[1].getAnglePoint(180)};
-		auto const& avgRadius = (tmpTeeth[0].getRadius() + tmpTeeth[1].getRadius()) / 2;
+		reverse(curve.begin(), curve.end());
+		vector<Tooth> const& tmpTeeth = {getTooth(teeth, ++Position(positions_[2])), getTooth(teeth, positions_[2]), getTooth(teeth, positions_[0]), getTooth(teeth, ++Position(positions_[0]))};
+		innerCurve = {tmpTeeth[0].getCentroid(), (tmpTeeth[1].getCentroid() + tmpTeeth[2].getCentroid()) / 2, tmpTeeth[3].getCentroid()};
+		float sumOfRadii = 0;
+		auto const& nTeeth = tmpTeeth.size();
+		for (auto i = 0; i < nTeeth; ++i)
+			sumOfRadii += tmpTeeth[i].getRadius();
+		auto const& avgRadius = sumOfRadii / nTeeth;
 		for (auto point = innerCurve.begin(); point < innerCurve.end(); ++point)
 			*point -= roundToPoint(computeNormalDirection(*point) * avgRadius * distanceScales[MESIAL_OR_DISTAL]);
-		computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, nullptr, &innerCurve);
-		curve.insert(curve.end(), distalCurve.rbegin(), distalCurve.rend());
 	}
 	else {
-		vector<int> mesialOrdinals;
 		vector<Point> mesialCurve, tmpCurve;
 		distalPoints = vector<Point>(2);
 		computeLingualCurve(teeth, {positions_[2], positions_[3]}, tmpCurve, curves, distalPoints[1]);
@@ -274,10 +278,10 @@ void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, cons
 		curve.insert(curve.end(), mesialCurve.begin(), mesialCurve.end());
 		computeLingualCurve(teeth, {positions_[0], positions_[1]}, tmpCurve, curves, distalPoints[0]);
 		curve.insert(curve.end(), tmpCurve.begin(), tmpCurve.end());
-		computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals, &innerCurve);
-		curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 		polylines(designImage, mesialCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	}
+	computeDistalCurve(teeth, {positions_[1], positions_[3]}, distalPoints, distalCurve, &mesialOrdinals, &innerCurve);
+	curve.insert(curve.end(), distalCurve.begin(), distalCurve.end());
 	polylines(designImage, distalCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
 	for (auto thisCurve = curves.begin(); thisCurve < curves.end(); ++thisCurve)
 		polylines(designImage, *thisCurve, false, 0, lineThicknessOfLevel[2], LINE_AA);
