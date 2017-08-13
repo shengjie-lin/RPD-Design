@@ -18,7 +18,9 @@ public:
 	Point2f const& getCentroid() const;
 	Point2f const& getNormalDirection() const;
 	vector<Point> const& getContour() const;
+	// 获取指定角度区间对应的弧，默认凸包
 	vector<Point> getCurve(int const& startAngle, int const& endAngle, bool const& isConvex = true) const;
+	// 找到轮廓上的所有整数度数对应的点，少点可插值
 	void findAnglePoints(int const& zone);
 	void setClaspRootOrRest(Rpd::Direction const& direction);
 	void setContour(vector<Point> const& contour);

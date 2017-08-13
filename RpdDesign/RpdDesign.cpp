@@ -14,16 +14,21 @@
 string RpdDesign::jenaLibPath = "D:/Utilities/apache-jena-3.3.0/lib/";
 
 RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
+	// UI初始化
 	ui_.setupUi(this);
 	rpdViewer_ = new RpdViewer(this);
 	ui_.verticalLayout->insertWidget(0, rpdViewer_);
 	setMinimumSize(600, 600);
+	// 全局参数获取
 	remedyImage = ui_.remedyCheckBox->isChecked();
 	showBaseImage_ = ui_.baseCheckBox->isChecked();
 	showDesignImage_ = ui_.designCheckBox->isChecked();
+	// 载入内嵌翻译包
 	chsTranslator_.load(":/qrc/rpddesign_zh.qm");
 	engTranslator_.load(":/qrc/rpddesign_en.qm");
+	// 语种生效，isEnglish_初值在声明中定义
 	switchLanguage(&isEnglish_);
+	// 关联按钮功能
 	connect(ui_.switchLanguagePushButton, SIGNAL(clicked()), this, SLOT(switchLanguage()));
 	connect(ui_.loadBasePushButton, SIGNAL(clicked()), this, SLOT(loadBaseImage()));
 	connect(ui_.loadDefaultBasePushButton, SIGNAL(clicked()), this, SLOT(loadDefaultBaseImage()));
@@ -32,6 +37,7 @@ RpdDesign::RpdDesign(QWidget* const& parent) : QWidget(parent) {
 	connect(ui_.remedyCheckBox, SIGNAL(toggled(bool)), this, SLOT(onRemedyImageChanged(bool const&)));
 	connect(ui_.baseCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowBaseChanged(bool const&)));
 	connect(ui_.designCheckBox, SIGNAL(toggled(bool)), this, SLOT(onShowDesignChanged(bool const&)));
+	// 初始化Java虚拟机
 	JavaVMInitArgs vmInitArgs;
 	vmInitArgs.version = JNI_VERSION_1_8;
 	vmInitArgs.nOptions = 1;

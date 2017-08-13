@@ -10,6 +10,7 @@ Tooth::Tooth(vector<Point> const& contour) { setContour(contour); }
 vector<Point> const& Tooth::getContour() const { return contour_; }
 
 void Tooth::setContour(vector<Point> const& contour) {
+	// 设置轮廓同时计算等效半径与中心
 	contour_ = contour;
 	auto const& moment = moments(contour);
 	radius_ = sqrt(moment.m00 / CV_PI);

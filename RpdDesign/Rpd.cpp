@@ -255,6 +255,7 @@ void CombinationAnteriorPosteriorPalatalStrap::draw(Mat const& designImage, cons
 	vector<int> mesialOrdinals;
 	vector<Point> curve, innerCurve, distalCurve, distalPoints;
 	vector<vector<Point>> curves;
+	//区别对待极端情形
 	if (!positions_[0].ordinal && !positions_[2].ordinal) {
 		mesialOrdinals = {1, 1};
 		computeLingualCurve(teeth, {positions_[1], positions_[3]}, curve, curves, &distalPoints);
@@ -697,6 +698,7 @@ IBar::IBar(vector<Position> const& positions) : Rpd(positions) {}
 
 void IBar::draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const {
 	auto& tooth = getTooth(teeth, positions_[0]);
+	// 计算I杆的椭弧参数
 	auto const& a = tooth.getRadius() * 1.5F;
 	auto &p1 = tooth.getAnglePoint(75), &p2 = tooth.getAnglePoint(165);
 	auto const& c = (p1 + p2) / 2;

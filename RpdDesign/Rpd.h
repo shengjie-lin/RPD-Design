@@ -11,11 +11,13 @@ class Tooth;
 
 class Rpd {
 public:
+	// 方向：近中或远中
 	enum Direction {
 		MESIAL,
 		DISTAL
 	};
 
+	// 边：颊侧或舌侧
 	enum Side {
 		BUCCAL,
 		LINGUAL
@@ -60,6 +62,7 @@ protected:
 	Rpd::Direction direction_;
 };
 
+// 大连接体
 class RpdAsMajorConnector : public Rpd {
 public:
 	void registerMajorConnector(vector<Tooth> (&teeth)[nZones]) const;
@@ -75,6 +78,7 @@ private:
 	static void registerExpectedAnchors(vector<Tooth> (&teeth)[nZones], vector<Position> const& positions);
 };
 
+// 存在舌侧覆盖的RPD，会引起大连接体在舌侧的绕开
 class RpdWithLingualCoverage : public virtual Rpd, public RpdWithMaterial {
 public:
 	virtual void registerLingualCoverage(vector<Tooth> (&teeth)[nZones]) const;
@@ -85,6 +89,7 @@ protected:
 	vector<Direction> rootDirections_;
 };
 
+// 存在卡环根部或支托的RPD，影响舌杆里侧曲线
 class RpdWithClaspRootOrRest : public virtual Rpd {
 public:
 	void registerClaspRootOrRest(vector<Tooth> (&teeth)[nZones]);
@@ -95,6 +100,7 @@ private:
 	vector<Direction> rootDirections_;
 };
 
+// 存在舌侧卡环臂的RPD，需判断是否被大连接体舌侧对抗屏蔽
 class RpdWithLingualClaspArms : public RpdWithLingualCoverage {
 	friend class AkersClasp;
 	friend class ContinuousClasp;
@@ -109,12 +115,14 @@ private:
 	deque<bool> hasLingualArms_;
 };
 
+// 存在舌支托的RPD，意味着同时存在卡环根部和舌侧覆盖
 class RpdWithLingualRest : public RpdWithClaspRootOrRest, public RpdWithLingualCoverage {
 protected:
 	RpdWithLingualRest(vector<Position> const& positions, Material const& material, Direction const& direction);
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// Aker's卡环
 class AkersClasp : public RpdWithDirection, public RpdWithClaspRootOrRest, public RpdWithLingualClaspArms {
 public:
 	static AkersClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetBoolean, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspTipDirection, jobject const& dpClaspMaterial, jobject const& dpEnableBuccalArm, jobject const& dpEnableLingualArm, jobject const& dpEnableRest, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -127,6 +135,7 @@ private:
 	bool enableBuccalArm_, enableRest_;
 };
 
+// 尖牙Aker's卡环
 class CanineAkersClasp : public RpdWithDirection, public RpdWithLingualRest {
 public:
 	static CanineAkersClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspTipDirection, jobject const& dpClaspMaterial, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -136,6 +145,7 @@ private:
 	Material claspMaterial_;
 };
 
+// 前后腭带
 class CombinationAnteriorPosteriorPalatalStrap : public RpdAsMajorConnector {
 public:
 	static CombinationAnteriorPosteriorPalatalStrap* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -144,6 +154,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 结合卡环
 class CombinationClasp : public RpdWithDirection, public RpdWithClaspRootOrRest, public RpdWithLingualClaspArms {
 public:
 	static CombinationClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspTipDirection, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -152,6 +163,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 联合卡环
 class CombinedClasp : public RpdWithClaspRootOrRest, public RpdWithLingualClaspArms {
 public:
 	static CombinedClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspMaterial, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -160,6 +172,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 连续卡环
 class ContinuousClasp : public RpdWithClaspRootOrRest, public RpdWithLingualClaspArms {
 public:
 	static ContinuousClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspMaterial, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -169,6 +182,7 @@ private:
 	void setLingualClaspArms(vector<Tooth> (&teeth)[nZones]) override;
 };
 
+// 基托
 class DentureBase : public Rpd {
 public:
 	enum Side {
@@ -188,6 +202,7 @@ private:
 	Side side_ = Side();
 };
 
+// 缺牙区
 class EdentulousSpace : public Rpd {
 public:
 	static EdentulousSpace* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -196,6 +211,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 全腭板
 class FullPalatalPlate : public RpdAsMajorConnector {
 public:
 	static FullPalatalPlate* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -204,6 +220,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 舌杆
 class LingualBar : public RpdAsMajorConnector {
 public:
 	static LingualBar* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -212,6 +229,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 舌板
 class LingualPlate : public RpdAsMajorConnector {
 public:
 	static LingualPlate* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -220,6 +238,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 舌支托
 class LingualRest : public RpdWithDirection, public RpdWithLingualRest {
 	friend class RpdWithLingualRest;
 public:
@@ -229,6 +248,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 合支托
 class OcclusalRest : public RpdWithDirection, public RpdWithClaspRootOrRest {
 	friend class AkersClasp;
 	friend class CombinationClasp;
@@ -245,6 +265,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 腭板
 class PalatalPlate : public RpdAsMajorConnector {
 public:
 	static PalatalPlate* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpLingualConfrontation, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -253,6 +274,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 圈形卡环
 class RingClasp : public RpdWithClaspRootOrRest, public RpdWithLingualClaspArms {
 public:
 	static RingClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspMaterial, jobject const& dpClaspTipSide, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -263,6 +285,7 @@ private:
 	Side tipSide_;
 };
 
+// RPA卡环组
 class Rpa : public RpdWithMaterial, public RpdWithClaspRootOrRest {
 public:
 	static Rpa* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspMaterial, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -271,6 +294,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// RPI卡环组
 class Rpi : public RpdWithClaspRootOrRest {
 public:
 	static Rpi* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midStatementGetProperty, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -279,6 +303,7 @@ private:
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 弯制卡环
 class WwClasp : public AkersClasp {
 public:
 	static WwClasp* createFromIndividual(JNIEnv* const& env, jmethodID const& midGetBoolean, jmethodID const& midGetInt, jmethodID const& midHasNext, jmethodID const& midListProperties, jmethodID const& midNext, jmethodID const& midResourceGetProperty, jmethodID const& midStatementGetProperty, jobject const& dpClaspTipDirection, jobject const& dpEnableBuccalArm, jobject const& dpEnableLingualArm, jobject const& dpEnableRest, jobject const& dpToothZone, jobject const& dpToothOrdinal, jobject const& opComponentPosition, jobject const& individual, bool (&isEighthToothUsed)[nZones]);
@@ -286,6 +311,7 @@ private:
 	WwClasp(vector<Position> const& positions, Direction const& direction, bool const& enableBuccalArm, bool const& enableLingualArm, bool const& enableRest);
 };
 
+// 导平面版，存在于RPA和RPI中
 class GuidingPlate : public Rpd {
 	friend class Rpa;
 	friend class Rpi;
@@ -293,6 +319,7 @@ class GuidingPlate : public Rpd {
 	void draw(Mat const& designImage, const vector<Tooth> (&teeth)[nZones]) const override;
 };
 
+// 半卡环，基本绘制单元
 class HalfClasp : public Rpd, public RpdWithMaterial, public RpdWithDirection {
 	friend class RpdWithLingualClaspArms;
 	friend class AkersClasp;
@@ -307,6 +334,7 @@ class HalfClasp : public Rpd, public RpdWithMaterial, public RpdWithDirection {
 	Side side_;
 };
 
+// I杆，RPI的组件之一
 class IBar : public Rpd {
 	friend class Rpi;
 	explicit IBar(vector<Position> const& positions);
